@@ -62,6 +62,7 @@ ANTI_PETROS_BOT = create_bot()
 
 # loading all cogs
 if __name__ == '__main__':
+    ANTI_PETROS_BOT.load_extension("antipetros_discordbot.cogs.admin_cog")
     for extension in get_initial_extensions():
         print(f"{extension.split('.')[-1]}.py loaded")
         ANTI_PETROS_BOT.load_extension(extension)
@@ -72,9 +73,11 @@ if __name__ == '__main__':
 @ANTI_PETROS_BOT.event
 async def on_ready():
     print('trying to log on as {0}!'.format(ANTI_PETROS_BOT.user.name))
-    channel = ANTI_PETROS_BOT.get_channel(645930607683174401)
+
     print(f'{ANTI_PETROS_BOT.user.name} has connected to Discord!')
-    # await channel.send('I have awoken! Muhahahahhaha')
+    if BASE_CONFIG.getboolean('general_settings', 'use_startup_message') is True:
+        channel = ANTI_PETROS_BOT.get_channel(BASE_CONFIG.getint('startup_message', 'channel'))
+        await channel.send(BASE_CONFIG.get('startup_message', 'message'))
 # running the bot
 
 ANTI_PETROS_BOT.run(get_token(), bot=True, reconnect=True)
