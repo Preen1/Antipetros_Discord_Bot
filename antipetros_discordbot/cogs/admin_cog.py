@@ -9,6 +9,7 @@ from collections import namedtuple
 from pprint import pformat
 from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG
 from urllib.parse import urlparse
+from antipetros_discordbot.utility.misc import config_channels_convert
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -16,13 +17,12 @@ class Administration(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.allowed_roles = ["Dev Helper", "Admin"]
-        self.allowed_channels = ["bot-development-and-testing"]
+        self.allowed_channels = config_channels_convert(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels'))
 
     @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('admin', 'allowed_roles'))
     async def reload_all_ext(self, ctx):
-        author_roles = [_user_role.name for _user_role in ctx.author.roles]
-        if any(_allowed_role in author_roles for _allowed_role in self.allowed_roles) and ctx.channel.name in self.allowed_channels:
+        if ctx.channel.name in self.allowed_channels:
             _extensions_list = []
             _base_location = BASE_CONFIG.get('general_settings', 'cogs_location')
             for _extension in BASE_CONFIG.options('extensions'):
@@ -34,6 +34,14 @@ class Administration(commands.Cog):
                         print(str(error))
             reloaded_extensions = '\n'.join(_extensions_list)
             await ctx.send(f"**successfully reloaded the following extensions:**\n{reloaded_extensions}")
+
+    @commands.command(name='die_antipetros_die')
+    @commands.has_any_role(*COGS_CONFIG.getlist('admin', 'allowed_roles'))
+    async def shutdown(self, ctx):
+        if ctx.channel.name in self.allowed_channels:
+            _a10_pic = "https://www.jetav8r.com/A10Gallery1/0090.jpg"
+            await ctx.send(f'So long cruel world. As my last act I will gift you an A10 Bombing run\n{_a10_pic}')
+            await self.bot.logout()
 
 
 def setup(bot):

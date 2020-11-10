@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from antipetros_discordbot.utility.exceptions import TokenError
 from gidtools.gidconfig import ConfigHandler, Get
 import configparser
+
 from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG
 # endregion[Imports]
 

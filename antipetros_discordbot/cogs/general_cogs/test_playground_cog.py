@@ -5,11 +5,14 @@ from datetime import datetime, timedelta
 from gidtools.gidfiles import writejson, loadjson, pathmaker
 import os
 import random
+from concurrent.futures import ThreadPoolExecutor
 from collections import namedtuple
 from pprint import pformat
+from io import BytesIO
 from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG
 from antipetros_discordbot.utility.locations import find_path
 from antipetros_discordbot.utility.misc import config_channels_convert
+
 from PIL import Image, ImageFont, ImageDraw
 from tempfile import TemporaryDirectory
 
@@ -21,22 +24,26 @@ class TestPlayground(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.allowed_roles = ["Dev Helper", "Admin"]
-        self.allowed_channels = ["bot-development-and-testing"]
+        self.allowed_channels = config_channels_convert(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels'))
+        self.base_map_image = Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_w_outposts.png")
+        self.outpost_overlay = {'city': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_city_marker.png"),
+                                'volcano': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_volcano_marker.png"),
+                                'airport': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_airport_marker.png")}
 
     @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     async def embed_test(self, ctx):
-        author_roles = [_user_role.name for _user_role in ctx.author.roles]
-        if any(_allowed_role in author_roles for _allowed_role in self.allowed_roles) and ctx.channel.name in self.allowed_channels:
+        if ctx.channel.name in self.allowed_channels:
             embed = discord.Embed(title='this is a test embed'.title(), description=f'it is posted in {ctx.channel.name}')
             embed.add_field(name='From', value=ctx.author.name)
             embed.set_footer(text='destroy all humans'.upper())
             await ctx.send(embed=embed)
 
     @commands.command(name='changesettings')
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     async def change_setting_to(self, ctx, config, section, option, value):
-        author_roles = [_user_role.name for _user_role in ctx.author.roles]
-        if any(_allowed_role in author_roles for _allowed_role in self.allowed_roles) and ctx.channel.name in self.allowed_channels:
+
+        if ctx.channel.name in self.allowed_channels:
             if config.casefold() in ['base_config', 'cogs_config']:
                 if config.casefold() == 'base_config':
                     _config = BASE_CONFIG
@@ -52,15 +59,8 @@ class TestPlayground(commands.Cog):
             else:
                 await ctx.send('config you specified does not exist!')
 
-    @commands.command(name='die_antipetros_die')
-    async def shutdown(self, ctx):
-        author_roles = [_user_role.name for _user_role in ctx.author.roles]
-        if any(_allowed_role in author_roles for _allowed_role in self.allowed_roles) and ctx.channel.name in self.allowed_channels:
-            _a10_pic = "https://www.jetav8r.com/A10Gallery1/0090.jpg"
-            await ctx.send(f'So long cruel world. As my last act I will gift you an A10 Bombing run\n{_a10_pic}')
-            await self.bot.logout()
-
     @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     async def roll_a_d(self, ctx, sides: int, amount: int = 1):
         _result = 0
         _dice = []
@@ -71,17 +71,18 @@ class TestPlayground(commands.Cog):
         await ctx.send(f"**you have rolled a total of:** {str(_result)}\n**dice result:** {', '.join(map(str,_dice))}")
 
     @commands.command()
-    async def draw_me_a_picture(self, ctx):
-        _name = ctx.author.name
-        font = ImageFont.truetype("ariblk.ttf", 24)
-        img = Image.new('RGB', (400, 400), color='green')
-        draw = ImageDraw.Draw(img)
-        draw.text((10, 200), f"Nobody likes you, {_name}", (0, 0, 0), font=font)
-        with TemporaryDirectory() as tmpdirname:
-            img.save(os.path.join(tmpdirname, "tmpimage.png"))
-            with open(os.path.join(tmpdirname, "tmpimage.png"), 'rb') as timage:
-                picture = discord.File(timage)
-                await ctx.send(file=picture)
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    async def map_changed(self, ctx, marker, color):
+        if ctx.channel.name in self.allowed_channels:
+            marker_image = self.outpost_overlay.get(marker)
+            marker_alpha = marker_image.getchannel('A')
+            marker_image = Image.new('RGBA', marker_image.size, color=color)
+            marker_image.putalpha(marker_alpha)
+            self.base_map_image.paste(marker_image, mask=marker_alpha)
+            with BytesIO() as image_binary:
+                self.base_map_image.save(image_binary, 'PNG', optimize=True)
+                image_binary.seek(0)
+                await ctx.send(file=discord.File(fp=image_binary, filename="map.png"))
 
 
 def setup(bot):
