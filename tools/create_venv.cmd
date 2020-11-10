@@ -23,6 +23,7 @@ rem ---------------------------------------------------
 set TIMEBLOCK=%_years%-%_months%-%_days%_%_hours%-%_minutes%-%_seconds%
 Echo ################# Current time is %TIMEBLOCK%
 Echo.
+call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64
 Echo.
 Echo.
 Echo -------------------------------------------- BASIC VENV SETUP --------------------------------------------
@@ -31,6 +32,9 @@ Echo.
 Echo ################# changing directory to %OLDHOME_FOLDER%
 cd %OLDHOME_FOLDER%
 Echo.
+echo ################# suspending Dropbox
+call pssuspend64 Dropbox
+echo.
 Echo ################# removing old venv folder
 RD /S /Q ..\.venv
 echo.
@@ -60,196 +64,247 @@ echo.
 Echo +++++++++++++++++++++++++++++ Standard Packages +++++++++++++++++++++++++++++
 echo.
 Echo ################# Installing Setuptools
-call pip install setuptools
+call pip install --upgrade --pre setuptools
 echo.
-Echo ################# Installing pywin32
-call pip install pywin32
-echo.
+rem Echo ################# Installing pywin32
+rem call pip install --upgrade --pre pywin32
+rem echo.
 Echo ################# Installing python-dotenv
-call pip install python-dotenv
+call pip install --upgrade --pre python-dotenv
 echo.
 echo.
-rem Echo +++++++++++++++++++++++++++++ Qt Packages +++++++++++++++++++++++++++++
-rem echo.
-rem Echo ################# Installing PyQt5
-rem call pip install PyQt5
-rem echo.
-rem Echo ################# Installing pyopengl
-rem call pip install pyopengl
-rem echo.
-rem Echo ################# Installing PyQt3D
-rem call pip install PyQt3D
-rem echo.
-rem Echo ################# Installing PyQtChart
-rem call pip install PyQtChart
-rem echo.
-rem Echo ################# Installing PyQtDataVisualization
-rem call pip install PyQtDataVisualization
-rem echo.
-rem Echo ################# Installing PyQtWebEngine
-rem call pip install PyQtWebEngine
-rem echo.
-rem Echo ################# Installing pyqtgraph
-rem call pip install pyqtgraph
-rem echo.
-rem Echo ################# Installing QScintilla
-rem call pip install QScintilla
-rem echo.
+Echo +++++++++++++++++++++++++++++ Qt Packages +++++++++++++++++++++++++++++
+echo.
+Echo ################# Installing PyQt5
+call pip install --upgrade --pre PyQt5
+echo.
+Echo ################# Installing pyopengl
+call pip install --upgrade --pre pyopengl
+echo.
+Echo ################# Installing PyQt3D
+call pip install --upgrade --pre PyQt3D
+echo.
+Echo ################# Installing PyQtChart
+call pip install --upgrade --pre PyQtChart
+echo.
+Echo ################# Installing PyQtDataVisualization
+call pip install --upgrade --pre PyQtDataVisualization
+echo.
+Echo ################# Installing PyQtWebEngine
+call pip install --upgrade --pre PyQtWebEngine
+echo.
+Echo ################# Installing pyqtgraph
+call pip install --upgrade --pre pyqtgraph
+echo.
+Echo ################# Installing QScintilla
+call pip install --upgrade --pre QScintilla
+echo.
 
 echo.
 
 Echo +++++++++++++++++++++++++++++ Packages From Github +++++++++++++++++++++++++++++
 echo.
 Echo ################# Installing git+https://github.com/overfl0/Armaclass.git
-call pip install git+https://github.com/overfl0/Armaclass.git
+call pip install --upgrade --pre git+https://github.com/overfl0/Armaclass.git
+echo.
 echo.
 
-
+Echo +++++++++++++++++++++++++++++ Misc Packages +++++++++++++++++++++++++++++
 echo.
-
-rem Echo +++++++++++++++++++++++++++++ Misc Packages +++++++++++++++++++++++++++++
-rem echo.
-rem Echo ################# Installing pyperclip
-rem call pip install pyperclip
-rem echo.
+Echo ################# Installing pyperclip
+call pip install --upgrade --pre pyperclip
+echo.
 Echo ################# Installing jinja2
-call pip install jinja2
+call pip install --upgrade --pre jinja2
 echo.
 Echo ################# Installing bs4
-call pip install bs4
+call pip install --upgrade --pre bs4
 echo.
 Echo ################# Installing requests
-call pip install requests
+call pip install --upgrade --pre requests
 echo.
 Echo ################# Installing PyGithub
-call pip install PyGithub
+call pip install --upgrade --pre PyGithub
 echo.
 Echo ################# Installing fuzzywuzzy
-call pip install fuzzywuzzy
+call pip install --upgrade --pre fuzzywuzzy
 echo.
-rem Echo ################# Installing fuzzysearch
-rem call pip install fuzzysearch
-rem echo.
+Echo ################# Installing fuzzysearch
+call pip install --upgrade --pre fuzzysearch
+echo.
 Echo ################# Installing python-Levenshtein
-call pip install python-Levenshtein
+call pip install --upgrade --pre python-Levenshtein
 echo.
 Echo ################# Installing jsonpickle
-call pip install jsonpickle
+call pip install --upgrade --pre jsonpickle
 echo.
 Echo ################# Installing discord.py
-call pip install discord.py
+call pip install --upgrade --pre discord.py
 echo.
 Echo ################# Installing regex
-call pip install regex
+call pip install --upgrade --pre regex
 echo.
-
-
+Echo ################# Installing marshmallow
+call pip install --upgrade --pre marshmallow
+echo.
+Echo ################# Installing click
+call pip install --upgrade --pre click
+echo.
+Echo ################# Installing checksumdir
+call pip install --upgrade --pre checksumdir
+echo.
+Echo ################# Installing pdfkit
+call pip install --upgrade --pre pdfkit
+echo.
+Echo ################# Installing numpy
+call pip install --no-cache-dir --force-reinstall numpy==1.19.3
+echo.
+Echo ################# Installing pillow
+call pip install --no-cache-dir Pillow
+echo.
+rem Echo ################# Installing sip
+rem call pip install --upgrade --pre --no-cache-dir --force-reinstall sip
+rem echo.
+rem Echo ################# Installing PyQt-builder
+rem call pip install --upgrade --pre --no-cache-dir --force-reinstall PyQt-builder
+rem echo.
+rem Echo ################# Installing python-poppler-qt5
+rem call pip install --upgrade --pre --no-cache-dir --force-reinstall git+https://github.com/mitya57/python-poppler-qt5.git@sip5
+rem echo.
 echo.
 Echo +++++++++++++++++++++++++++++ Gid Packages +++++++++++++++++++++++++++++
 echo.
+Echo ################# Installing flit
+call pip install --force-reinstall --no-cache-dir --upgrade --pre flit
+echo.
 Echo ################# Installing D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\gidtools_utils
-call pip install -e D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\gidtools_utils
+pushd D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\gidtools_utils
+call flit install -s
+popd
 echo.
-rem Echo ################# Installing D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\gidqtutils
-rem call pip install -e D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\gidqtutils
-rem echo.
+Echo ################# Installing D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\gidqtutils
+call pip install -e D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\gidqtutils
+echo.
 Echo ################# Installing D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\gidlogger_rep
-call pip install -e D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\gidlogger_rep
 echo.
-rem Echo ################# Installing D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Gid_Vscode_Wrapper
-rem call pip install -e D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Gid_Vscode_Wrapper
-rem echo.
-rem Echo ################# Installing D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Gid_View_models
-rem call pip install -e D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Gid_View_models
-rem echo.
-rem echo.
+
+call pip install --force-reinstall --no-cache-dir --upgrade --pre gidlogger
+
+echo.
+Echo ################# Installing D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Gid_Vscode_Wrapper
+call pip install -e D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Gid_Vscode_Wrapper
+echo.
+Echo ################# Installing D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Gid_View_models
+call pip install -e D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Gid_View_models
+echo.
+echo.
 
 Echo ################# changing directory to %OLDHOME_FOLDER%
 cd %OLDHOME_FOLDER%
 echo.
-Echo ################# writing ..\requirements_dev.txt
-echo ########################################################## created at --^> %TIMEBLOCK% ##########################################################> ..\requirements_dev.txt
-call pip freeze >> ..\requirements_dev.txt
+rem Echo ################# writing ..\requirements_dev.txt
+rem echo ########################################################## created at --^> %TIMEBLOCK% ##########################################################> ..\requirements_dev.txt
+rem call pip freeze>>..\requirements_dev.txt
 echo.
 echo.
 echo.
 Echo +++++++++++++++++++++++++++++ Test Packages +++++++++++++++++++++++++++++
 echo.
 
-rem Echo ################# Installing pytest-qt
-rem call pip install pytest-qt
-rem echo.
+Echo ################# Installing pytest-qt
+call pip install --upgrade --pre pytest-qt
+echo.
 Echo ################# Installing pytest
-call pip install pytest
+call pip install --upgrade --pre pytest
 echo.
 
 echo.
 Echo +++++++++++++++++++++++++++++ Dev Packages +++++++++++++++++++++++++++++
 echo.
 Echo ################# Installing wheel
-call pip install --no-cache-dir wheel
+call pip install --no-cache-dir --upgrade --pre wheel
 echo.
-rem Echo ################# Installing https://github.com/pyinstaller/pyinstaller/tarball/develop
-rem call pip install --force-reinstall --no-cache-dir https://github.com/pyinstaller/pyinstaller/tarball/develop
-rem echo.
+Echo ################# Installing https://github.com/pyinstaller/pyinstaller/tarball/develop
+call pip install --force-reinstall --no-cache-dir --upgrade --pre https://github.com/pyinstaller/pyinstaller/tarball/develop
+echo.
 Echo ################# Installing pep517
-call pip install  --no-cache-dir pep517
+call pip install  --no-cache-dir --upgrade --pre pep517
 echo.
-rem Echo ################# Installing pyqt5-tools==5.15.1.1.7.5
-rem call pip install --pre pyqt5-tools==5.15.1.1.7.5
-rem echo.
-rem Echo ################# Installing PyQt5-stubs
-rem call pip install PyQt5-stubs
-rem echo.
-rem Echo ################# Installing sip
-rem call pip install sip
-rem echo.
-rem Echo ################# Installing PyQt-builder
-rem call pip install PyQt-builder
-rem echo.
-rem Echo ################# Installing pyqtdeploy
-rem call pip install pyqtdeploy
-rem echo.
+
+Echo ################# Installing pyqt5-tools==5.15.1.1.7.5
+call pip install --pre --upgrade --pre pyqt5-tools==5.15.1.1.7.5
+echo.
+Echo ################# Installing PyQt5-stubs
+call pip install --upgrade --pre PyQt5-stubs
+echo.
+Echo ################# Installing discord.py-stubs
+call pip install --upgrade --pre discord.py-stubs
+echo.
+
+Echo ################# Installing pyqtdeploy
+call pip install --upgrade --pre pyqtdeploy
+echo.
 rem Echo ################# Installing nuitka
-rem call pip install nuitka
+rem call pip install --upgrade --pre nuitka
 rem echo.
-rem Echo ################# Installing memory-profiler
-rem call pip install memory-profiler
-rem echo.
-rem Echo ################# Installing matplotlib
-rem call pip install matplotlib
-rem echo.
-rem Echo ################# Installing import-profiler
-rem call pip install import-profiler
-rem echo.
-rem Echo ################# Installing objectgraph
-rem call pip install objectgraph
-rem echo.
-rem Echo ################# Installing pipreqs
-rem call pip install pipreqs
-rem echo.
-rem Echo ################# Installing pydeps
-rem call pip install pydeps
-rem echo.
+Echo ################# Installing memory-profiler
+call pip install --upgrade --pre memory-profiler
+echo.
+Echo ################# Installing matplotlib
+call pip install --upgrade --pre matplotlib
+echo.
+Echo ################# Installing import-profiler
+call pip install --upgrade --pre import-profiler
+echo.
+Echo ################# Installing objectgraph
+call pip install --upgrade --pre objectgraph
+echo.
+Echo ################# Installing pipreqs
+call pip install --upgrade --pre pipreqs
+echo.
+Echo ################# Installing pydeps
+call pip install --upgrade --pre pydeps
+echo.
 Echo ################# Installing bootstrap-discord-bot
-call pip install bootstrap-discord-bot
+call pip install --upgrade --pre bootstrap-discord-bot
 echo.
-rem echo.
+Echo ################# Installing jishaku
+call pip install --upgrade --pre jishaku
+echo.
+Echo ################# Installing disputils
+call pip install --upgrade --pre disputils
+echo.
+Echo ################# Installing discord-pretty-help
+call pip install --upgrade --pre discord-pretty-help
+echo.
+Echo ################# Installing discord-flags
+call pip install --upgrade --pre discord-flags
+echo.
+echo.
 
-rem echo -------------------calling pyqt5toolsinstalluic.exe-----------------------------
-rem call ..\.venv\Scripts\pyqt5toolsinstalluic.exe
-rem echo.
-rem echo.
+echo -------------------calling pyqt5toolsinstalluic.exe-----------------------------
+call ..\.venv\Scripts\pyqt5toolsinstalluic.exe
+echo.
+echo.
 
 echo.
-Echo ################# converting ..\requirements_dev.txt to ..\requirements.txt by calling %OLDHOME_FOLDER%convert_requirements_dev_to_normal.py
-call %OLDHOME_FOLDER%convert_requirements_dev_to_normal.py
+rem Echo ################# converting ..\requirements_dev.txt to ..\requirements.txt by calling %OLDHOME_FOLDER%convert_requirements_dev_to_normal.py
+rem call %OLDHOME_FOLDER%convert_requirements_dev_to_normal.py
 echo.
 Echo INSTALL THE PACKAGE ITSELF AS -dev PACKAGE SO I DONT HAVE TO DEAL WITH RELATIVE PATHS
-rem call pip install -e ..
-call pip install --no-cache-dir --force-reinstall -e ..
+cd ..\
+rem call pip install -e --upgrade --pre .
+call flit --debug install -s
 echo.
 echo.
+echo.
+Echo setting modified env vars!!
+call %OLDHOME_FOLDER%create_venv_extra_envvars.py %OLDHOME_FOLDER% pyqtsocius
+echo.
+Echo ################# restarting Dropbox
+call pssuspend64 Dropbox -r
+echo.
+
 echo ###############################################################################################################
 echo +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 echo ---------------------------------------------------------------------------------------------------------------
