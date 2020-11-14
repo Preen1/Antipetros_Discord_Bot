@@ -39,11 +39,11 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import gidlogger as glog
 from gidtools.gidfiles import (QuickFile, readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
                                dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
-from gidtools.gidconfig import ConfigHandler
+from gidconfig import ConfigHandler
 
 # endregion[Imports]
 
-__updated__ = '2020-11-08 12:50:11'
+__updated__ = '2020-11-14 20:01:05'
 
 # region [AppUserData]
 

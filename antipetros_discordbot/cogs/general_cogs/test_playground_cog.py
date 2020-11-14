@@ -12,7 +12,7 @@ from io import BytesIO
 from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG
 from antipetros_discordbot.utility.locations import find_path
 from antipetros_discordbot.utility.misc import config_channels_convert
-
+from antipetros_discordbot.data.fixed_data.faq_data import FAQ_BY_NUMBERS
 from PIL import Image, ImageFont, ImageDraw
 from tempfile import TemporaryDirectory
 
@@ -20,11 +20,23 @@ from tempfile import TemporaryDirectory
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
+FAQ_THING = """**FAQ No 17**
+_How to become a server member?_
+_Read the channel description on teamspeak or below_
+
+_**Becoming a member:**_
+```
+Joining our ranks is simple: play with us and participate in this community! If the members like you you may be granted trial membership by an admin upon recommendation.
+
+Your contribution and participation to this community will determine how long the trial period will be, and whether or not it results in full membership. As a trial member, you will receive in-game membership and a [trial] tag on these forums which assures you an invite to all events including official member meetings. Do note that only full members are entitled to vote on issues at meetings.
+```"""
+
+
 class TestPlayground(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.allowed_channels = config_channels_convert(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels'))
+        self.allowed_channels = config_channels_convert(COGS_CONFIG.getlist('test_playground', 'allowed_channels'))
         self.base_map_image = Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_w_outposts.png")
         self.outpost_overlay = {'city': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_city_marker.png"),
                                 'volcano': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_volcano_marker.png"),
@@ -83,6 +95,22 @@ class TestPlayground(commands.Cog):
                 self.base_map_image.save(image_binary, 'PNG', optimize=True)
                 image_binary.seek(0)
                 await ctx.send(file=discord.File(fp=image_binary, filename="map.png"))
+
+    @commands.command(name='FAQ_you')
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    async def get_faq_by_number(self, ctx, faq_number: int):
+        print('triggered')
+        if ctx.channel.name in self.allowed_channels:
+            print('is correct channel')
+            _faq_dict = FAQ_BY_NUMBERS
+            _msg = _faq_dict.get(faq_number, None)
+
+            if _msg is None:
+                print("_msg is none")
+                _msg = "Canot find the requested FAQ"
+            else:
+                _msg = "**FAQ you too**\n\n" + _msg
+            await ctx.send(_msg)
 
 
 def setup(bot):
