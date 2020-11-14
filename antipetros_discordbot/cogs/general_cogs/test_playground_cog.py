@@ -32,7 +32,7 @@ class TestPlayground(commands.Cog):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
-    async def embed_test(self, ctx):
+    async def embed_experiment(self, ctx):
         if ctx.channel.name in self.allowed_channels:
             embed = discord.Embed(title='this is a test embed'.title(), description=f'it is posted in {ctx.channel.name}')
             embed.add_field(name='From', value=ctx.author.name)
