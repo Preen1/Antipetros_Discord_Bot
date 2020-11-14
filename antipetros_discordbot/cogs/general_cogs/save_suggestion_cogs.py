@@ -19,11 +19,9 @@ class SaveSuggestion(commands.Cog):
         self.bot = bot
         self.number = '1'
         self.save_file = find_path(COGS_CONFIG.get('save_suggestions', 'save_file'))
-        self.applicable_channels = config_channels_convert(COGS_CONFIG.getlist('save_suggestions', 'trigger_channels'))
-        self.allowed_roles = COGS_CONFIG.getlist('save_suggestions', 'trigger_roles')
+        self.allowed_channels = config_channels_convert(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels'))
 
-    def save_to_json(self, user, message, time):
-
+    async def save_to_json(self, user, message, time):
         if os.path.isfile(self.save_file) is True:
             _json = loadjson(self.save_file)
         else:
@@ -33,34 +31,32 @@ class SaveSuggestion(commands.Cog):
         _json[user].append((time, message))
         writejson(_json, self.save_file)
 
-    @ commands.Cog.listener()
+    @commands.Cog.listener()
+    @commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
         now_time = datetime.now().isoformat(timespec='seconds')
-        member = payload.member
-        if any(_channel_id == payload.channel_id for _channel_name, _channel_id in self.applicable_channels.items()):
-            for role in member.roles:
-                if role.name in self.allowed_roles:
-                    self.save_to_json(str(message.author), message.content, now_time)
-                    await channel.send(f"""{message.author.mention} I have saved this message of yours!
-                                    If you don't want it saved send the following message in this channel and I will delete the saved message ----> `-$-delete_my_message`!
+        if any(_channel_id == payload.channel_id for _channel_name, _channel_id in self.allowed_channels.items()):
+            await self.save_to_json(str(message.author), message.content, now_time)
+            await channel.send(f"""{message.author.mention} I have saved this message of yours!
+                            If you don't want it saved send the following message in this channel and I will delete the saved message ----> `-$-delete_my_message`!
 
-                                    If you want to see all the data I have saved from you, use `-$-request_my_data` and I will send you your data as pm!
-                                    If you want me to delete all your saved data, use `-$-delete_all_my_data` !warning! this is not reversible and the dev team most likely will not be able to consider the deleted suggestions""")
+                            If you want to see all the data I have saved from you, use `-$-request_my_data` and I will send you your data as pm!
+                            If you want me to delete all your saved data, use `-$-delete_all_my_data` !warning! this is not reversible and the dev team most likely will not be able to consider the deleted suggestions""")
 
-    @ commands.command()
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
     async def clear_all(self, ctx):
-
-        author_roles = [_user_role.name for _user_role in ctx.author.roles]
-        if any(_allowed_role in author_roles for _allowed_role in self.allowed_roles):
+        if ctx.channel.name in self.allowed_channels:
             writejson({}, self.save_file)
             _msg = 'I have cleared the file'
         else:
             _msg = 'you dont have the permission for that'
         await ctx.send(_msg)
 
-    @ commands.command()
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
     async def retrieve_all(self, ctx):
         _txt = ''
         x = loadjson(self.save_file)
@@ -74,7 +70,8 @@ class SaveSuggestion(commands.Cog):
             _txt = 'no saved entries found'
         await ctx.send(_txt)
 
-    @ commands.command()
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
     async def request_my_data(self, ctx):
         user = ctx.author
         _json = loadjson(self.save_file)
