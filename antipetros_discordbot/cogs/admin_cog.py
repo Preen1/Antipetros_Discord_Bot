@@ -39,8 +39,7 @@ class Administration(commands.Cog):
     @commands.has_any_role(*COGS_CONFIG.getlist('admin', 'allowed_roles'))
     async def shutdown(self, ctx):
         if ctx.channel.name in self.allowed_channels:
-            _a10_pic = "https://www.jetav8r.com/A10Gallery1/0090.jpg"
-            await ctx.send(f'So long cruel world. As my last act I will gift you an A10 Bombing run\n{_a10_pic}')
+            await ctx.send('cya!')
             await self.bot.logout()
 
 

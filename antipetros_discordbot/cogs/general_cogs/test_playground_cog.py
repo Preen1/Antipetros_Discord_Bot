@@ -37,10 +37,13 @@ class TestPlayground(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.allowed_channels = config_channels_convert(COGS_CONFIG.getlist('test_playground', 'allowed_channels'))
-        self.base_map_image = Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_w_outposts.png")
+        self.base_map_image = Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v3_2000_w_outposts.png")
         self.outpost_overlay = {'city': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_city_marker.png"),
                                 'volcano': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_volcano_marker.png"),
                                 'airport': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_airport_marker.png")}
+        self.old_map_message = None
+        self.old_messages = {}
+        self.last_timeStamp = datetime.utcfromtimestamp(0)
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
@@ -91,15 +94,17 @@ class TestPlayground(commands.Cog):
             marker_image = Image.new('RGBA', marker_image.size, color=color)
             marker_image.putalpha(marker_alpha)
             self.base_map_image.paste(marker_image, mask=marker_alpha)
+
             with BytesIO() as image_binary:
                 self.base_map_image.save(image_binary, 'PNG', optimize=True)
                 image_binary.seek(0)
-                await ctx.send(file=discord.File(fp=image_binary, filename="map.png"))
+                if self.old_map_message is not None:
+                    await self.old_map_message.delete()
+                self.old_map_message = await ctx.send(file=discord.File(fp=image_binary, filename="map.png"))
 
     @commands.command(name='FAQ_you')
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     async def get_faq_by_number(self, ctx, faq_number: int):
-        print('triggered')
         if ctx.channel.name in self.allowed_channels:
             print('is correct channel')
             _faq_dict = FAQ_BY_NUMBERS
@@ -111,6 +116,21 @@ class TestPlayground(commands.Cog):
             else:
                 _msg = "**FAQ you too**\n\n" + _msg
             await ctx.send(_msg)
+
+    # @commands.Cog.listener()
+    # async def on_message(self, message):
+    #     _channel = message.channel
+    #     if _channel.name == "bot-development-and-testing" and message.author.name != self.bot.user.name:
+    #         time_difference = (datetime.utcnow() - self.last_timeStamp).total_seconds()
+    #         if time_difference > 500:
+    #             _old_message = self.old_messages.get(_channel.name, None)
+    #             if _old_message is not None:
+    #                 try:
+    #                     await _old_message.delete()
+    #                 except discord.errors.NotFound:
+    #                     print("old_message_was deleted")
+    #             self.old_messages[_channel.name] = await _channel.send(f"**this message will always be the last message in the channel**")
+    #             self.last_timeStamp = datetime.utcnow()
 
 
 def setup(bot):

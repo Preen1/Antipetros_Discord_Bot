@@ -48,7 +48,7 @@ def get_token():
 
 
 def create_bot():
-    return commands.Bot(command_prefix=commands.when_mentioned_or(dynamic_command_prefix()), HELP_COMMAND=get_help_command())
+    return commands.Bot(command_prefix=commands.when_mentioned_or(dynamic_command_prefix()), HELP_COMMAND=get_help_command(), self_bot=False)
 
 
 def get_initial_extensions():
