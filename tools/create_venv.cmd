@@ -64,7 +64,12 @@ ECHO.
 ECHO ################# Removing old venv folder
 RD /S /Q ..\.venv
 ECHO.
+ECHO.
+ECHO.
 
+ECHO.
+ECHO.
+ECHO.
 ECHO ################# creating new venv folder
 mkdir ..\.venv
 ECHO.

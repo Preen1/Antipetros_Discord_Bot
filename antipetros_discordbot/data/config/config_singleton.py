@@ -37,13 +37,13 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 # * Gid Imports -->
 import gidlogger as glog
-from gidtools.gidfiles import (QuickFile, readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
-                               dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
+from antipetros_discordbot.utility.gidtools_functions import pathmaker
+
 from gidconfig import ConfigHandler
 
 # endregion[Imports]
 
-__updated__ = '2020-11-14 20:01:05'
+__updated__ = '2020-11-19 19:19:16'
 
 # region [AppUserData]
 

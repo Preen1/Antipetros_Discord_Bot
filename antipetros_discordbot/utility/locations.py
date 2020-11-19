@@ -38,13 +38,12 @@ from glob import iglob
 
 # * Gid Imports -->
 import gidlogger as glog
-from gidtools.gidfiles import (QuickFile, readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
-                               dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file, work_in)
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, work_in
 from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG
 import antipetros_discordbot
 # endregion[Imports]
 
-__updated__ = '2020-11-08 12:46:46'
+__updated__ = '2020-11-19 19:24:01'
 
 # region [AppUserData]
 

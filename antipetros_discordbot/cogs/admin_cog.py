@@ -3,7 +3,7 @@ from discord import DiscordException
 from discord.ext import commands
 from github import Github, GithubException
 from datetime import datetime, timedelta
-from gidtools.gidfiles import writejson, loadjson, pathmaker
+from antipetros_discordbot.utility.gidtools_functions import writejson, loadjson, pathmaker
 import os
 from collections import namedtuple
 from pprint import pformat
