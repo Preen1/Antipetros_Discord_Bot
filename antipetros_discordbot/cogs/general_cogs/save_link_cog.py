@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from github import Github, GithubException
 from datetime import datetime, timedelta
-from gidtools.gidfiles import writejson, loadjson, pathmaker
+from gidtools.gidfiles import writejson, loadjson, pathmaker, writeit
 import os
 from collections import namedtuple
 from pprint import pformat
@@ -13,7 +13,7 @@ from antipetros_discordbot.utility.misc import config_channels_convert
 from concurrent.futures import ThreadPoolExecutor
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 from asyncio import get_event_loop
-import requests
+import aiohttp
 
 
 class SaveLink(commands.Cog):
@@ -27,9 +27,13 @@ class SaveLink(commands.Cog):
         self.allowed_channels = config_channels_convert(COGS_CONFIG.getlist('save_link', 'allowed_channels'))
         self.forbidden_links = []
         self.forbidden_url_words = loadjson(find_path('forbidden_url_words.json'))
-        self.create_forbidden_link_list()
 
-    def process_raw_blocklist_content(self, raw_content):
+    @commands.Cog.listener(name='on_ready')
+    async def extra_cog_setup(self):
+        await self.create_forbidden_link_list()
+        print(f"\n{'-' * 30}\n{self.__class__.__name__} Cog ----> finished extra setup\n{'-' * 30}")
+
+    async def process_raw_blocklist_content(self, raw_content):
         _out = []
         for line in raw_content.splitlines():
             if line.startswith('0') and line not in ['', '0.0.0.0 0.0.0.0']:
@@ -38,11 +42,14 @@ class SaveLink(commands.Cog):
                 _out.append(forbidden_url.strip())
         return set(_out)
 
-    def create_forbidden_link_list(self):
-        _loop = get_event_loop()
-        _response = requests.get(self.blocklist_hostfile_url)
-        _content = _response.content.decode('utf-8', errors='ignore')
-        self.forbidden_links = self.process_raw_blocklist_content(_content)
+    async def create_forbidden_link_list(self):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(self.blocklist_hostfile_url) as _response:
+                if _response.status == 200:
+                    _content = await _response.read()
+                    _content = _content.decode('utf-8', errors='ignore')
+
+                    self.forbidden_links = await self.process_raw_blocklist_content(_content)
 
     async def save_to_json(self, inputer, link_name, now_time, delete_time, link):
         if os.path.isfile(self.save_file) is True:
@@ -74,4 +81,5 @@ class SaveLink(commands.Cog):
 
 
 def setup(bot):
+    _cog = SaveLink(bot)
     bot.add_cog(SaveLink(bot))
