@@ -21,6 +21,10 @@ class SaveSuggestion(commands.Cog):
         self.save_file = find_path(COGS_CONFIG.get('save_suggestions', 'save_file'))
         self.allowed_channels = config_channels_convert(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels'))
 
+    @commands.Cog.listener(name='on_ready')
+    async def extra_cog_setup(self):
+        print(f"\n{'-' * 30}\n{self.__class__.__name__} Cog ----> nothing to set up\n{'-' * 30}")
+
     async def save_to_json(self, user, message, time):
         if os.path.isfile(self.save_file) is True:
             _json = loadjson(self.save_file)
@@ -34,16 +38,19 @@ class SaveSuggestion(commands.Cog):
     @commands.Cog.listener()
     @commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
     async def on_raw_reaction_add(self, payload):
-        channel = self.bot.get_channel(payload.channel_id)
-        message = await channel.fetch_message(payload.message_id)
-        now_time = datetime.now().isoformat(timespec='seconds')
-        if any(_channel_id == payload.channel_id for _channel_name, _channel_id in self.allowed_channels.items()):
-            await self.save_to_json(str(message.author), message.content, now_time)
-            await channel.send(f"""{message.author.mention} I have saved this message of yours!
-                            If you don't want it saved send the following message in this channel and I will delete the saved message ----> `-$-delete_my_message`!
+        user = await self.bot.fetch_user(payload.user_id)
+        if user.name != self.bot.user.name and user.id != 155149108183695360:
+            if str(payload.emoji) == "\U0001f4be":
+                channel = self.bot.get_channel(payload.channel_id)
+                message = await channel.fetch_message(payload.message_id)
+                now_time = datetime.now().isoformat(timespec='seconds')
+                if any(_channel_id == payload.channel_id for _channel_name, _channel_id in self.allowed_channels.items()):
+                    await self.save_to_json(str(message.author), message.content, now_time)
+                    await channel.send(f"""{message.author.mention} I have saved this message of yours!
+                                        If you don't want it saved send the following message in this channel and I will delete the saved message ----> `-$-delete_my_message`!
 
-                            If you want to see all the data I have saved from you, use `-$-request_my_data` and I will send you your data as pm!
-                            If you want me to delete all your saved data, use `-$-delete_all_my_data` !warning! this is not reversible and the dev team most likely will not be able to consider the deleted suggestions""")
+                                        If you want to see all the data I have saved from you, use `-$-request_my_data` and I will send you your data as pm!
+                                        If you want me to delete all your saved data, use `-$-delete_all_my_data` !warning! this is not reversible and the dev team most likely will not be able to consider the deleted suggestions""")
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
@@ -76,8 +83,13 @@ class SaveSuggestion(commands.Cog):
         user = ctx.author
         _json = loadjson(self.save_file)
         _data = _json.get(str(user), None)
-        _out = pformat(_data) if _data is not None else 'we have nothing saved from you'
-        await user.send(_out)
+        if _data is None:
+            await user.send('we have nothing saved from you')
+        else:
+            _out = ''
+            for time, _save_content in _data:
+                _out += f'**At {time} we saved this message from you:**\n```{_save_content}```\n\n'
+            await user.send(_out)
 
     def channel_from_id(self, _id):
         return self.bot.get_channel(_id)
