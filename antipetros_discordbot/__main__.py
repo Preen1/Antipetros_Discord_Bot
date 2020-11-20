@@ -1,34 +1,44 @@
+# region [Module_Docstring]
+
+"""
+Main module, starts the Antistasi Discord Bot.
+
+"""
+# endregion [Module_Docstring]
+
+__updated__ = '2020-11-20 21:30:44'
 
 # region [Imports]
-from pprint import pprint
 import os
-import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 from antipetros_discordbot.utility.exceptions import TokenError
 import configparser
-import argparse
 from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG
 # endregion[Imports]
 
 # region [Constants]
 
+# Constant for checks if run while developing or by enduser
 # -------------------
 DEV = False
 # -------------------
 
+# import location of the Admin Cog as it is not loaded dynamically
 ADMIN_COG = "antipetros_discordbot.cogs.admin_cog"
-try:
-    HELP_COMMAND = BASE_CONFIG.get('general_settings', 'help_command')
-except configparser.NoOptionError as error:
-    print(error)
-    HELP_COMMAND = None
-
 
 # endregion [Constants]
 
+# region [Helper_Functions]
+
 
 def dynamic_command_prefix():
+    """
+    loads command prefix settings from the Base Config, if not found sets it to '$$'
+
+    Returns:
+        either string or if 'invoke_by_mention' is set to True, retrurns 'commands.when_mentioned_or' callable
+    """
     try:
         prefix = BASE_CONFIG.get('general_settings', 'command_prefix')
     except configparser.NoOptionError as error:
@@ -40,6 +50,12 @@ def dynamic_command_prefix():
 
 
 def get_help_command():
+    """
+    loads help command from config, if not found sets it to 'antipetros_help"
+
+    Returns:
+        str: help_command
+    """
     try:
         _out = BASE_CONFIG.get('general_settings', 'help_command')
     except configparser.NoOptionError as error:
@@ -50,6 +66,18 @@ def get_help_command():
 
 # TODO: Deal wit the tripple or quadrouple redundancy in regards to the env file
 def get_token(envfile=None):
+    """
+    Reloads env file then reads and returns the Token.
+
+    Args:
+        envfile (str, optional): path to env file. Defaults to None.
+
+    Raises:
+        TokenError: raised if Token is not set in the env or set to nothing or set to 'xxxx'
+
+    Returns:
+        str: Token
+    """
     _file = '.env' if envfile is None else envfile
     load_dotenv(_file)
     _temp_token = os.getenv('DISCORD_TOKEN')
@@ -60,13 +88,32 @@ def get_token(envfile=None):
 
 
 def get_initial_extensions():
+    """
+    Reads extensions to load from the config.
+
+    Cogs should be specified in the config as [folder].[cog_name without '.py'] = [boolean]
+
+    Relies on 'cog_location' under 'general_settings' in the BaseConfig, for the base cog folder.
+
+    Yields:
+        str: the full cog import path if the cog is set to load
+    """
     _base_location = BASE_CONFIG.get('general_settings', 'cogs_location')
     for _extension in BASE_CONFIG.options('extensions'):
         if BASE_CONFIG.getboolean('extensions', _extension) is True:
             yield _base_location + '.' + _extension
 
+# endregion [Helper_Functions]
+
+# region [Main_function]
+
 
 def main():
+    """
+    Starts the Antistasi Discord Bot 'AntiPetros'.
+
+    creates the bot, loads the extensions and starts the bot with the Token.
+    """
 
     _envfile = None
 
@@ -87,6 +134,8 @@ def main():
             await channel.send(BASE_CONFIG.get('startup_message', 'message'))
 
     ANTI_PETROS_BOT.run(get_token(_envfile), bot=True, reconnect=True)
+
+# endregion [Main_function]
 
 
 if __name__ == '__main__':
