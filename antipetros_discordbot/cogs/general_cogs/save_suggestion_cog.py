@@ -19,7 +19,7 @@ class SaveSuggestion(commands.Cog):
         self.bot = bot
         self.number = '1'
         self.save_file = find_path(COGS_CONFIG.get('save_suggestions', 'save_file'))
-        self.allowed_channels = config_channels_convert(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels'))
+        self.allowed_channels = set(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels'))
 
     @commands.Cog.listener(name='on_ready')
     async def extra_cog_setup(self):

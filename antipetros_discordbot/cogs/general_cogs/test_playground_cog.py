@@ -36,7 +36,7 @@ class TestPlayground(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.allowed_channels = config_channels_convert(COGS_CONFIG.getlist('test_playground', 'allowed_channels'))
+        self.allowed_channels = set(COGS_CONFIG.getlist('test_playground', 'allowed_channels'))
         self.base_map_image = Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v3_2000_w_outposts.png")
         self.outpost_overlay = {'city': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_city_marker.png"),
                                 'volcano': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_volcano_marker.png"),

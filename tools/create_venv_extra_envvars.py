@@ -2,7 +2,7 @@ import os
 import sys
 
 os.chdir(sys.argv[1])
-PROJECT_NAME = sys.argv[2]
+PROJECT_NAME = sys.argv[2].lower()
 REL_ACTIVATE_SCRIPT_PATH = './.venv/Scripts/activate.bat'
 REPLACEMENT = r"""@echo off
 
@@ -19,11 +19,10 @@ popd
 
 
 def create_project_meta_env_file():
-    os.chdir('../')
     _workspacedirbatch = os.getcwd()
     _toplevelmodule = os.path.join(_workspacedirbatch, PROJECT_NAME)
     _main_script_file = os.path.join(_toplevelmodule, '__main__.py')
-    with open("tools/_project_meta.env", 'w') as envfile:
+    with open(r".\tools\_project_meta.env", 'w') as envfile:
         envfile.write(f'WORKSPACEDIR={_workspacedirbatch}\n')
         envfile.write(f'TOPLEVELMODULE={_toplevelmodule}\n')
         envfile.write(f'MAIN_SCRIPT_FILE={_main_script_file}\n')

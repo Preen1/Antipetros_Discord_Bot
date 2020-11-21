@@ -43,7 +43,7 @@ from gidconfig import ConfigHandler
 
 # endregion[Imports]
 
-__updated__ = '2020-11-19 19:19:16'
+__updated__ = '2020-11-21 13:07:56'
 
 # region [AppUserData]
 
@@ -58,9 +58,9 @@ log.info(glog.imported(__name__))
 
 # region [Constants]
 
-THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-BASE_CONFIG = ConfigHandler(pathmaker(THIS_FILE_DIR, "base_config.ini"))
-COGS_CONFIG = ConfigHandler(pathmaker(THIS_FILE_DIR, 'cogs_config.ini'))
+CONFIG_DIR = os.path.abspath(os.path.dirname(__file__))
+BASE_CONFIG = ConfigHandler(pathmaker(CONFIG_DIR, "base_config.ini"))
+COGS_CONFIG = ConfigHandler(pathmaker(CONFIG_DIR, 'cogs_config.ini'))
 # endregion[Constants]
 
 
