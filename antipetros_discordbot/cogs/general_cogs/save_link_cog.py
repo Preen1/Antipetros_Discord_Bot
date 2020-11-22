@@ -15,6 +15,7 @@ from antipetros_discordbot.utility.enums import RequestStatus
 from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
 import asyncio
 from tempfile import TemporaryDirectory
+from antipetros_discordbot.utility.sqldata_storager import LinkDataStorageSQLite
 # endregion [Imports]
 
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -31,7 +32,7 @@ class SaveLink(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.data_storage_handler = None
+        self.data_storage_handler = LinkDataStorageSQLite()
         self.allowed_channels = set(COGS_CONFIG.getlist('save_link', 'allowed_channels'))
         self.forbidden_links = set(loadjson(pathmaker(THIS_FILE_DIR, r'..\..\data\data_storage\json_data\forbidden_link_list.json')))
         self.forbidden_url_words = loadjson(find_path('forbidden_url_words.json'))
@@ -70,8 +71,51 @@ class SaveLink(commands.Cog):
                     print(_path)
                     writejson(list(self.forbidden_links), pathmaker(THIS_FILE_DIR, r'..\..\data\data_storage\json_data\forbidden_link_list.json'))
 
+    async def link_name_list(self):
+        return self.data_storage_handler.all_link_names
+
     async def save(self, link_item):
-        pass
+        self.data_storage_handler.add_data(link_item)
+
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'delete_all_allowed_roles'))
+    async def delete_all_links(self, ctx):
+        if ctx.channel.name in self.allowed_channels:
+            self.data_storage_handler.delete_all()
+            await ctx.send("cleared all saved links")
+
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    async def get_link(self, ctx, name):
+        if ctx.channel.name in self.allowed_channels:
+            _link = self.data_storage_handler.get_link(name)
+            await ctx.send(_link)
+
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    async def get_all_links(self, ctx, in_format='plain'):
+        if ctx.channel.name in self.allowed_channels:
+            with TemporaryDirectory() as tempdir:
+                if in_format == 'json':
+                    _link_dict = self.data_storage_handler.get_all_links('json')
+                    _name = 'all_links.json'
+                    _path = pathmaker(tempdir, _name)
+                    if len(_link_dict) == 0:
+                        await ctx.send('no saved links')
+                        return
+                    writejson(_link_dict, _path)
+
+                elif in_format == 'plain':
+                    _link_list = self.data_storage_handler.get_all_links('plain')
+                    _name = 'all_links.txt'
+                    _path = pathmaker(tempdir, _name)
+                    if len(_link_list) == 0:
+                        await ctx.send('no saved links')
+                        return
+                    writeit(_path, '\n'.join(_link_list))
+
+                _file = discord.File(_path, _name)
+                await ctx.send(file=_file)
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
@@ -84,6 +128,10 @@ class SaveLink(commands.Cog):
             author = ctx.author
             link_name = link.split('.')[1] if link_name is None else link_name
             link_name = link_name.upper()
+            _name_list = await self.link_name_list()
+            if link_name in _name_list:
+                await ctx.send(f"The link_name '{link_name}', is already taken, please choose a different Name.")
+                return None
             link = urlparse(link, scheme='https').geturl().replace('///', '//')
 
             if all(forbidden_link.casefold() not in link.casefold() for forbidden_link in self.forbidden_links) and all(forbidden_word.casefold() not in link.casefold() for forbidden_word in self.forbidden_url_words):
