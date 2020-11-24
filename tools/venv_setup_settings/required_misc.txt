@@ -17,3 +17,4 @@ PyGithub
 discord
 discord_flags
 fpdf2
+url-normalize
