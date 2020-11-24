@@ -6,7 +6,7 @@ Main module, starts the Antistasi Discord Bot.
 """
 # endregion [Module_Docstring]
 
-__updated__ = '2020-11-24 01:00:21'
+__updated__ = '2020-11-24 06:52:37'
 
 # region [Imports]
 import os
@@ -15,7 +15,19 @@ from dotenv import load_dotenv
 from antipetros_discordbot.utility.exceptions import TokenError
 import configparser
 from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG
+import gidlogger as glog
+import logging
 # endregion[Imports]
+
+# region [Logging]
+
+_log_file = glog.log_folderer(__name__)
+log = glog.main_logger(_log_file, BASE_CONFIG.get('logging', 'logging_level'))
+log.info(glog.NEWRUN())
+if BASE_CONFIG.getboolean('logging', 'use_logging') is False:
+    logging.disable(logging.CRITICAL)
+
+# endregion[Logging]
 
 # region [Constants]
 
@@ -38,7 +50,7 @@ def dynamic_command_prefix():
     try:
         prefix = BASE_CONFIG.get('general_settings', 'command_prefix')
     except configparser.NoOptionError as error:
-        print(error)
+        log.error(error)
         prefix = '$$'
     if BASE_CONFIG.getboolean('general_settings', 'invoke_by_mention') is True:
         prefix = commands.when_mentioned_or(prefix)
@@ -55,7 +67,7 @@ def get_help_command():
     try:
         _out = BASE_CONFIG.get('general_settings', 'help_command')
     except configparser.NoOptionError as error:
-        print(error)
+        log.error(error)
         _out = 'antipetros_help'
     return _out
 
@@ -115,14 +127,14 @@ def main():
 
     ANTI_PETROS_BOT.load_extension(ADMIN_COG)
     for extension in get_initial_extensions():
-        print(f"{extension.split('.')[-1]}.py loaded")
+        log.info("%s.py loaded", extension.split('.')[-1])
         ANTI_PETROS_BOT.load_extension(extension)
 
     @ANTI_PETROS_BOT.event
     async def on_ready():
-        print(f'trying to log on as {ANTI_PETROS_BOT.user.name}!')
+        log.info('trying to log on as %s!', ANTI_PETROS_BOT.user.name)
 
-        print(f'{ANTI_PETROS_BOT.user.name} has connected to Discord!')
+        log.info('%s has connected to Discord!', ANTI_PETROS_BOT.user.name)
         channel = ANTI_PETROS_BOT.get_channel(BASE_CONFIG.getint('startup_message', 'channel'))
         if BASE_CONFIG.getboolean('startup_message', 'use_startup_message') is True:
             await channel.send(BASE_CONFIG.get('startup_message', 'message'))

@@ -33,7 +33,8 @@ currently implemented config options:
     - notify_with_link --> boolean if the notification DM should include the bad link
 """
 
-__updated__ = '2020-11-24 02:57:15'
+__updated__ = '2020-11-24 07:33:55'
+# region [Imports]
 
 # * Standard Library Imports -->
 import os
@@ -43,11 +44,10 @@ from urllib.parse import urlparse
 
 # * Third Party Imports -->
 import aiohttp
-
-# region [Imports]
-
 import discord
 from discord.ext import commands
+
+import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.utility.enums import RequestStatus
@@ -58,6 +58,13 @@ from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, 
 from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG
 
 # endregion [Imports]
+
+# region [Logging]
+
+log = glog.aux_logger(__name__)
+log.info(glog.imported(__name__))
+
+# endregion[Logging]
 
 # region [Constants]
 
@@ -106,12 +113,12 @@ class SaveLink(commands.Cog):
 
         self.allowed_channels = set(COGS_CONFIG.getlist('save_link', 'allowed_channels'))
         self.forbidden_links = set(loadjson(pathmaker(THIS_FILE_DIR, r'..\..\data\data_storage\json_data\forbidden_link_list.json')))  # read previously saved blacklist, because extra_setup method does not run when the cog is only reloaded
-        self.forbidden_url_words = map(lambda x: str(x).casefold(), loadjson(find_path('forbidden_url_words.json')))
+        self.forbidden_url_words = set(map(lambda x: str(x).casefold(), loadjson(pathmaker(THIS_FILE_DIR, r'..\..\data\data_storage\json_data\forbidden_url_words.json'))))
         self.link_channel = None  # weird setup because again, the extra setup does not execute when only reloaded.
         try:
             self.link_channel = self.channel_from_id(COGS_CONFIG.getint('save_link', 'link_channel'))
         except AttributeError as error:
-            print('link_channel had error: ' + str(error))
+            log.error('link_channel had error: %s', str(error))
 
         # will be removed soon and values will be gathered from config
         self.bad_link_image = (pathmaker(THIS_FILE_DIR, r"..\..\data\fixed_data\bertha.png"), 'bertha.png')
@@ -171,7 +178,7 @@ class SaveLink(commands.Cog):
 
         await self._create_forbidden_link_list()
         self.link_channel = self.channel_from_id(COGS_CONFIG.getint('save_link', 'link_channel'))
-        print(f"\n{'-' * 30}\n{self} Cog ----> finished extra setup\n{'-' * 30}")
+        log.info(f"{self} Cog ----> finished extra setup")
 
 # endregion [Listener]
 
@@ -188,9 +195,13 @@ class SaveLink(commands.Cog):
         Args:
             ctx (discord.context): mandatory command argument
         """
-        if ctx.channel.name in self.allowed_channels:
-            self.data_storage_handler.delete_all()
-            await ctx.send("cleared all saved links")
+        log.debug("command was triggered in %s", ctx.channel.name)
+        if ctx.channel.name not in self.allowed_channels:
+            log.debug("channel not is 'allowed channel'")
+            return
+        self.data_storage_handler.delete_all()
+        await ctx.send("cleared all saved links")
+        log.info("all links were deleted from the DataStorage by request of '%s'", ctx.author.name)
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
@@ -204,9 +215,14 @@ class SaveLink(commands.Cog):
             ctx (discord.context): mandatory command argument
             name (str): link name
         """
-        if ctx.channel.name in self.allowed_channels:
-            _link = self.data_storage_handler.get_link(name)
-            await ctx.send(_link)
+        log.debug("command was triggered in %s", ctx.channel.name)
+        if ctx.channel.name not in self.allowed_channels:
+            log.debug("channel not is 'allowed channel'")
+            return
+        log.info("Link with Link name '%s' was requested", name)
+        _link = self.data_storage_handler.get_link(name)
+        await ctx.send(_link)
+        log.info("retrieve link '%s'", _link)
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
@@ -218,29 +234,31 @@ class SaveLink(commands.Cog):
             ctx (discord.context): mandatory command argument
             in_format (str, optional): output format, currently possible: 'json', 'plain' is txt. Defaults to 'plain'.
         """
+        log.debug("command was triggered in %s", ctx.channel.name)
+        if ctx.channel.name not in self.allowed_channels:
+            log.debug("channel not is 'allowed channel'")
+            return
+        with TemporaryDirectory() as tempdir:
+            if in_format == 'json':
+                _link_dict = self.data_storage_handler.get_all_links('json')
+                _name = 'all_links.json'
+                _path = pathmaker(tempdir, _name)
+                if len(_link_dict) == 0:
+                    await ctx.send('no saved links')
+                    return
+                writejson(_link_dict, _path)
 
-        if ctx.channel.name in self.allowed_channels:
-            with TemporaryDirectory() as tempdir:
-                if in_format == 'json':
-                    _link_dict = self.data_storage_handler.get_all_links('json')
-                    _name = 'all_links.json'
-                    _path = pathmaker(tempdir, _name)
-                    if len(_link_dict) == 0:
-                        await ctx.send('no saved links')
-                        return
-                    writejson(_link_dict, _path)
+            else:
+                _link_list = self.data_storage_handler.get_all_links('plain')
+                _name = 'all_links.txt'
+                _path = pathmaker(tempdir, _name)
+                if len(_link_list) == 0:
+                    await ctx.send('no saved links')
+                    return
+                writeit(_path, '\n'.join(_link_list))
 
-                elif in_format == 'plain':
-                    _link_list = self.data_storage_handler.get_all_links('plain')
-                    _name = 'all_links.txt'
-                    _path = pathmaker(tempdir, _name)
-                    if len(_link_list) == 0:
-                        await ctx.send('no saved links')
-                        return
-                    writeit(_path, '\n'.join(_link_list))
-
-                _file = discord.File(_path, _name)
-                await ctx.send(file=_file)
+            _file = discord.File(_path, _name)
+            await ctx.send(file=_file)
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
@@ -257,24 +275,27 @@ class SaveLink(commands.Cog):
             link_name (str, optional): name to save the link as, if not given will be generated from url. Defaults to None.
             days_to_hold (int, optional): time befor the link will be deleted from storage channel in days, if not give will be retrieved from config. Defaults to None.
         """
-
+        log.debug("command was triggered in %s", ctx.channel.name)
         if ctx.channel.name not in self.allowed_channels:
+            log.debug("channel not is 'allowed channel'")
             return
 
         # check if it is a forbidden link, before computing all that expansive shit
         to_check_link = await self._make_check_link(link)
-        print(to_check_link)
+        log.debug("link transformed to  check link: '%s'", to_check_link)
         parsed_link = urlparse(link, scheme='https').geturl().replace('///', '//')
         date_and_time = datetime.utcnow()
         if all(to_check_link != forbidden_link for forbidden_link in self.forbidden_links) and all(forbidden_word not in to_check_link for forbidden_word in self.forbidden_url_words):
-
+            log.debug("'%s' NOT in forbidden link list and does not contain a forbidden word", parsed_link)
             # create link name if none was supplied
             if link_name is None:
+                log.debug("No Link name provided")
                 link_name = await self._make_link_name(link)
             link_name = link_name.upper()
 
             # check if link name is already occupied
             if await self._check_link_name_existing(link_name) is True:
+                log.error("link name '%s' already in DataStorage", link_name)
                 await ctx.send(f"The link_name '{link_name}', is already taken, please choose a different Name.")
                 return None
 
@@ -285,6 +306,12 @@ class SaveLink(commands.Cog):
 
             # create the link item and save it
             link_item = LINK_DATA_ITEM(author, link_name, date_and_time, delete_date_and_time, parsed_link)
+            log.info("new link --> author: '%s', link_name: '%s', delete_date_time: '%s', days_until_delete: '%s', parsed_link: '%s'",
+                     author.name,
+                     link_name,
+                     delete_date_and_time.isoformat(timespec='seconds'),
+                     str(days),
+                     parsed_link)
             await self.save(link_item)
 
             # if this is a debug run, delete the answer message after 30 seconds else delete after specified time (86400 is the number of seconds in a day)
@@ -297,6 +324,7 @@ class SaveLink(commands.Cog):
             await ctx.send('✅ Link was successfully saved', delete_after=60)
 
         else:
+            log.warning("link '%s' matched against a forbidden link or contained a forbidden word", parsed_link)
             delete_answer = None if self.is_debug is False else 30
 
             # send warning for forbidden link infraction
@@ -304,15 +332,25 @@ class SaveLink(commands.Cog):
             if ctx.channel.permissions_for(ctx.me).manage_messages:
                 # if channel permissions for bot allows it, because it has an forbidden link in it and should most likely be deleted from the discord
                 await ctx.message.delete(delay=None)
+                log.debug("was able to delete the offending link")
                 was_deleted = True
             else:
+                log.error("was NOT able to delete the offending link")
                 was_deleted = False
 
             # notify users specified in the config of the attempt at saving an forbidden link
-            notify_embed = await self._notify_dm_embed(was_deleted=was_deleted, author=ctx.author, date_time=date_and_time, channel=ctx.channel.name, link=parsed_link, matches_link=await self.get_matched_forbidden_link(to_check_link), matches_word=await self.get_matched_forbidden_word(to_check_link))
+            notify_embed = await self._notify_dm_embed(was_deleted=was_deleted,
+                                                       author=ctx.author,
+                                                       date_time=date_and_time,
+                                                       channel=ctx.channel.name,
+                                                       link=parsed_link,
+                                                       matches_link=await self.get_matched_forbidden_link(to_check_link),
+                                                       matches_word=await self.get_matched_forbidden_word(to_check_link))
+
             for user_id in COGS_CONFIG.getlist('save_link', 'member_to_notifiy_bad_link'):
                 user = self.bot.get_user(int(user_id))
                 await user.send(embed=notify_embed, delete_after=delete_answer)
+                log.debug("notified '%s' about the offending link", user.name)
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
@@ -326,15 +364,18 @@ class SaveLink(commands.Cog):
 
             file_format (str, optional): format the list file should have(currently possible: 'json'). Defaults to 'json'.
         """
-
-        if ctx.channel.name in self.allowed_channels:
-            if file_format == 'json':
-                with TemporaryDirectory() as tempdir:
-                    _name = 'forbidden_links.json'
-                    _path = pathmaker(tempdir, _name)
-                    writejson(list(self.forbidden_links), _path, indent=2)
-                    _file = discord.File(_path, filename=_name)
-                    await ctx.send(file=_file, delete_after=60)
+        log.debug("command was triggered in %s", ctx.channel.name)
+        if ctx.channel.name not in self.allowed_channels:
+            log.debug("channel not is 'allowed channel'")
+            return
+        if file_format == 'json':
+            with TemporaryDirectory() as tempdir:
+                _name = 'forbidden_links.json'
+                _path = pathmaker(tempdir, _name)
+                writejson(list(self.forbidden_links), _path, indent=2)
+                _file = discord.File(_path, filename=_name)
+                await ctx.send(file=_file, delete_after=60)
+                log.info("send forbidden link list to '%s'", ctx.author.name)
 
 
 # endregion [Commands]
@@ -530,10 +571,7 @@ class SaveLink(commands.Cog):
             (list): all matches as list, if no matches, returns empty list
         """
 
-        _out = []
-        for link in self.forbidden_links:
-            if url == link:
-                _out.append(link)
+        _out = [link for link in self.forbidden_links if check_link == link]
         return list(set(_out))
 
     async def get_matched_forbidden_word(self, url):
@@ -547,10 +585,7 @@ class SaveLink(commands.Cog):
             (list): all matches as list, if no matches, returns empty list
         """
 
-        _out = []
-        for word in self.forbidden_url_words:
-            if word in url:
-                _out.append(word)
+        _out = [word for word in self.forbidden_url_words if word in url]
         return list(set(_out))
 
 
