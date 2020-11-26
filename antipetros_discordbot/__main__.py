@@ -6,19 +6,28 @@ Main module, starts the Antistasi Discord Bot.
 """
 # endregion [Module_Docstring]
 
-__updated__ = '2020-11-25 19:12:27'
+__updated__ = '2020-11-27 00:26:03'
+
 
 # region [Imports]
+
+# * Standard Library Imports -->
 import os
-from discord.ext import commands
-from dotenv import load_dotenv
-from antipetros_discordbot.utility.exceptions import TokenError
-import configparser
-from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG
-import gidlogger as glog
 import logging
-from antipetros_discordbot.utility.gidtools_functions import writejson, pathmaker
+import configparser
+
+# * Third Party Imports -->
+from dotenv import load_dotenv
+from discord.ext import commands
+
+# * Gid Imports -->
+import gidlogger as glog
+
+# * Local Imports -->
+from antipetros_discordbot.utility.exceptions import TokenError
 from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
+from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG
+
 # endregion[Imports]
 
 # region [Logging]

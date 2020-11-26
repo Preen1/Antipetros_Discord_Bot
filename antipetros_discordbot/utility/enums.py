@@ -1,7 +1,8 @@
 # region [Imports]
 
-from enum import Enum
-from functools import total_ordering
+# * Standard Library Imports -->
+from enum import Enum, Flag, auto
+
 # endregion[Imports]
 
 
@@ -11,8 +12,23 @@ class RequestStatus(Enum):
     NotAuthorized = 401
 
 
-class UnicodeEmoji(Enum):
-    Poop = r"\U001F4A9"
+class WatermarkPosition(Flag):
+    Top = auto()
+    Bottom = auto()
+    Left = auto()
+    Right = auto()
+    Center = auto()
+
+
+WATERMARK_COMBINATIONS = {WatermarkPosition.Left | WatermarkPosition.Top,
+                          WatermarkPosition.Left | WatermarkPosition.Bottom,
+                          WatermarkPosition.Right | WatermarkPosition.Top,
+                          WatermarkPosition.Right | WatermarkPosition.Bottom,
+                          WatermarkPosition.Center | WatermarkPosition.Top,
+                          WatermarkPosition.Center | WatermarkPosition.Bottom,
+                          WatermarkPosition.Center | WatermarkPosition.Left,
+                          WatermarkPosition.Center | WatermarkPosition.Right,
+                          WatermarkPosition.Center | WatermarkPosition.Center}
 
 
 if __name__ == '__main__':

@@ -1,23 +1,22 @@
-import discord
-from discord.ext import commands
-from github import Github, GithubException
-from datetime import datetime, timedelta
-from antipetros_discordbot.utility.gidtools_functions import writejson, loadjson, pathmaker
+# * Standard Library Imports -->
 import os
 import random
-from concurrent.futures import ThreadPoolExecutor
-from collections import namedtuple
-from pprint import pformat
-from io import BytesIO
-from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG
-from antipetros_discordbot.utility.locations import find_path
-from antipetros_discordbot.utility.misc import config_channels_convert
-from antipetros_discordbot.data.fixed_data.faq_data import FAQ_BY_NUMBERS
-from PIL import Image, ImageFont, ImageDraw
-from tempfile import TemporaryDirectory
 import statistics
+from io import BytesIO
 from time import time
-import asyncio
+from asyncio import get_event_loop
+from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
+
+# * Third Party Imports -->
+import discord
+from PIL import Image
+from discord.ext import commands
+
+# * Local Imports -->
+from antipetros_discordbot.data.fixed_data.faq_data import FAQ_BY_NUMBERS
+from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG
+
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -98,19 +97,25 @@ class TestPlayground(commands.Cog):
             out_message = f"**you have rolled a total of:** {str(_result)}\n\n**standard deviantion:** {str(_stdev)}\n**mean:** {str(_mean)}\n**median:** {str(_median)}\n**mode:** {str(x)}\n**variance:** {str(y)}"
         await ctx.send(out_message + f'\n\n**THIS TOOK** {str(round(time()-time_start,3))} SECONDS')
 
+    def map_image_handling(self, base_image, marker_image, color, bytes_out):
+        marker_alpha = marker_image.getchannel('A')
+        marker_image = Image.new('RGBA', marker_image.size, color=color)
+        marker_image.putalpha(marker_alpha)
+        base_image.paste(marker_image, mask=marker_alpha)
+        base_image.save(bytes_out, 'PNG', optimize=True)
+        bytes_out.seek(0)
+        return base_image, bytes_out
+
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     async def map_changed(self, ctx, marker, color):
         if ctx.channel.name in self.allowed_channels:
+            loop = get_event_loop()
             marker_image = self.outpost_overlay.get(marker)
-            marker_alpha = marker_image.getchannel('A')
-            marker_image = Image.new('RGBA', marker_image.size, color=color)
-            marker_image.putalpha(marker_alpha)
-            self.base_map_image.paste(marker_image, mask=marker_alpha)
-
             with BytesIO() as image_binary:
-                self.base_map_image.save(image_binary, 'PNG', optimize=True)
-                image_binary.seek(0)
+                with ThreadPoolExecutor() as pool:
+                    self.base_map_image, image_binary = await loop.run_in_executor(pool, self.map_image_handling, self.base_map_image, marker_image, color, image_binary)
+
                 if self.old_map_message is not None:
                     await self.old_map_message.delete()
                 self.old_map_message = await ctx.send(file=discord.File(fp=image_binary, filename="map.png"))

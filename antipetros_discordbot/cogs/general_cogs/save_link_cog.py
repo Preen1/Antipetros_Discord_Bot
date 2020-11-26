@@ -6,7 +6,7 @@ Deleted links are kept in the bots database and can always be retrieved by fuzzy
 
 Checks against a blacklist of urls and a blacklist of words, to not store malicious links.
 
-cogs_config.ini section: 'save_link'
+cogs_config.ini section: SAVE_LINK_CONFIG_NAME
 
 currently implemented config options:
 
@@ -33,7 +33,7 @@ currently implemented config options:
     - notify_with_link --> boolean if the notification DM should include the bad link
 """
 
-__updated__ = '2020-11-26 18:32:37'
+__updated__ = '2020-11-26 20:52:11'
 # region [Imports]
 
 # * Standard Library Imports -->
@@ -45,13 +45,13 @@ from urllib.parse import urlparse
 # * Third Party Imports -->
 import aiohttp
 import discord
-from discord.ext import commands, tasks
+from discord.ext import tasks, commands
 
+# * Gid Imports -->
 import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.utility.enums import RequestStatus
-from antipetros_discordbot.utility.locations import find_path
 from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
 from antipetros_discordbot.utility.sqldata_storager import LinkDataStorageSQLite
 from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
@@ -70,7 +70,7 @@ log.debug(glog.imported(__name__))
 
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-
+SAVE_LINK_CONFIG_NAME = 'save_link'
 
 # endregion [Constants]
 
@@ -111,12 +111,12 @@ class SaveLink(commands.Cog):
         # composition to make data storage modular, currently set up for an sqlite Database
         self.data_storage_handler = LinkDataStorageSQLite()
 
-        self.allowed_channels = set(COGS_CONFIG.getlist('save_link', 'allowed_channels'))
+        self.allowed_channels = set(COGS_CONFIG.getlist(SAVE_LINK_CONFIG_NAME, 'allowed_channels'))
         self.forbidden_links = set(loadjson(pathmaker(THIS_FILE_DIR, r'..\..\data\data_storage\json_data\forbidden_link_list.json')))  # read previously saved blacklist, because extra_setup method does not run when the cog is only reloaded
         self.forbidden_url_words = set(map(lambda x: str(x).casefold(), loadjson(pathmaker(THIS_FILE_DIR, r'..\..\data\data_storage\json_data\forbidden_url_words.json'))))
         self.link_channel = None  # weird setup because again, the extra setup does not execute when only reloaded.
         try:
-            self.link_channel = self.channel_from_id(COGS_CONFIG.getint('save_link', 'link_channel'))
+            self.link_channel = self.channel_from_id(COGS_CONFIG.getint(SAVE_LINK_CONFIG_NAME, 'link_channel'))
         except AttributeError as error:
             log.error('link_channel had error: %s', str(error))
 
@@ -124,6 +124,7 @@ class SaveLink(commands.Cog):
         self.bad_link_image = (pathmaker(THIS_FILE_DIR, r"..\..\data\fixed_data\bertha.png"), 'bertha.png')
         self.fresh_blacklist_loop.start()
         self.check_link_best_by_loop.start()
+        log.debug(glog.class_initiated(self))
 
 # endregion [Init]
 
@@ -209,7 +210,7 @@ class SaveLink(commands.Cog):
         """
 
         await self._create_forbidden_link_list()
-        self.link_channel = self.channel_from_id(COGS_CONFIG.getint('save_link', 'link_channel'))
+        self.link_channel = self.channel_from_id(COGS_CONFIG.getint(SAVE_LINK_CONFIG_NAME, 'link_channel'))
         log.info(f"{self} Cog ----> finished extra setup")
 
 # endregion [Listener]
@@ -217,7 +218,7 @@ class SaveLink(commands.Cog):
 # region [Commands]
 
     @commands.command()
-    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'delete_all_allowed_roles'))
+    @commands.has_any_role(*COGS_CONFIG.getlist(SAVE_LINK_CONFIG_NAME, 'delete_all_allowed_roles'))
     async def delete_all_links(self, ctx):
         """
         Delete all saved links.
@@ -236,7 +237,7 @@ class SaveLink(commands.Cog):
         log.info("all links were deleted from the DataStorage by request of '%s'", ctx.author.name)
 
     @commands.command()
-    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    @commands.has_any_role(*COGS_CONFIG.getlist(SAVE_LINK_CONFIG_NAME, 'allowed_roles'))
     async def get_link(self, ctx, name):
         """
         Get a link as normal answer message, by link name.
@@ -257,7 +258,7 @@ class SaveLink(commands.Cog):
         log.info("retrieve link '%s'", _link)
 
     @commands.command()
-    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    @commands.has_any_role(*COGS_CONFIG.getlist(SAVE_LINK_CONFIG_NAME, 'allowed_roles'))
     async def get_all_links(self, ctx, in_format='plain'):
         """
         Get a list of all saved links, as a file.
@@ -293,7 +294,7 @@ class SaveLink(commands.Cog):
             await ctx.send(file=_file)
 
     @commands.command()
-    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    @commands.has_any_role(*COGS_CONFIG.getlist(SAVE_LINK_CONFIG_NAME, 'allowed_roles'))
     async def save_link(self, ctx, link: str, link_name: str = None, days_to_hold: int = None):
         """
         Main Command of the SaveLink Cog.
@@ -332,7 +333,7 @@ class SaveLink(commands.Cog):
                 return None
 
             # calculate or retrieve all other needed values
-            days = COGS_CONFIG.getint('save_link', 'default_storage_days') if days_to_hold is None else days_to_hold
+            days = COGS_CONFIG.getint(SAVE_LINK_CONFIG_NAME, 'default_storage_days') if days_to_hold is None else days_to_hold
             delete_date_and_time = date_and_time + timedelta(days=days)
             author = ctx.author
 
@@ -378,13 +379,13 @@ class SaveLink(commands.Cog):
                                                        matches_link=await self.get_matched_forbidden_link(to_check_link),
                                                        matches_word=await self.get_matched_forbidden_word(to_check_link))
 
-            for user_id in COGS_CONFIG.getlist('save_link', 'member_to_notifiy_bad_link'):
+            for user_id in COGS_CONFIG.getlist(SAVE_LINK_CONFIG_NAME, 'member_to_notifiy_bad_link'):
                 user = self.bot.get_user(int(user_id))
                 await user.send(embed=notify_embed, delete_after=delete_answer)
                 log.debug("notified '%s' about the offending link", user.name)
 
     @commands.command()
-    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    @commands.has_any_role(*COGS_CONFIG.getlist(SAVE_LINK_CONFIG_NAME, 'allowed_roles'))
     async def get_forbidden_list(self, ctx, file_format='json'):
         """
         command to get the forbidden link list as an file.
@@ -500,7 +501,7 @@ class SaveLink(commands.Cog):
         embed.add_field(name="Channel", value=f"**{channel}**", inline=False)
         embed.add_field(name="Date", value=date_time.date().isoformat(), inline=True)
         embed.add_field(name="Time", value=f"{date_time.time().isoformat(timespec='seconds')} UTC", inline=True)
-        if COGS_CONFIG.getboolean('save_link', 'notify_with_link') is True:
+        if COGS_CONFIG.getboolean(SAVE_LINK_CONFIG_NAME, 'notify_with_link') is True:
             embed.add_field(name="Offending Link", value=f"***{link}***", inline=False)
             if matches_link != []:
                 print(matches_link)
@@ -524,7 +525,7 @@ class SaveLink(commands.Cog):
             discord.File: discord File containing the image
         """
 
-        # image_path = COGS_CONFIG.get('save_link', 'bad_link_answer_image')
+        # image_path = COGS_CONFIG.get(SAVE_LINK_CONFIG_NAME, 'bad_link_answer_image')
         # if image_path.casefold() == 'none':
         #     return None
         # image_name = os.path.basename(image_path)

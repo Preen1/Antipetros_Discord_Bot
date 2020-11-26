@@ -1,7 +1,14 @@
-from gidtools.gidsql.facade import GidSqliteDatabase
-from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
-from fuzzywuzzy import process as fuzzprocess
+# * Standard Library Imports -->
 from datetime import datetime
+
+# * Third Party Imports -->
+from fuzzywuzzy import process as fuzzprocess
+
+# * Gid Imports -->
+from gidtools.gidsql.facade import GidSqliteDatabase
+
+# * Local Imports -->
+from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
 
 DB_LOC_LINKS = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\sqlite_data\save_link_db.db"
 SCRIPT_LOC_LINKS = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\sqlite_data\sql_procedures\save_link_sql"

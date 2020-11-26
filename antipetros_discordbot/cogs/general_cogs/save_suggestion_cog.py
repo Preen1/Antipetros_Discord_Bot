@@ -1,23 +1,28 @@
+
+__updated__ = '2020-11-26 20:51:28'
+
 # region [Imports]
 
+# * Standard Library Imports -->
+import os
+import re
+import sqlite3 as sqlite
+import unicodedata
+from datetime import datetime
+
+# * Third Party Imports -->
 import discord
 from discord.ext import commands
-from github import Github, GithubException
-from datetime import datetime, timedelta
-from antipetros_discordbot.utility.gidtools_functions import writejson, loadjson, pathmaker
-import os
-from collections import namedtuple
-from pprint import pformat
-from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG
-from antipetros_discordbot.utility.locations import find_path
-from antipetros_discordbot.utility.misc import config_channels_convert
+
+# * Gid Imports -->
 import gidlogger as glog
-from enum import Enum
-import unicodedata
+
+# * Local Imports -->
 from antipetros_discordbot.utility.named_tuples import SUGGESTION_DATA_ITEM
-import re
 from antipetros_discordbot.utility.sqldata_storager import SuggestionDataStorageSQLite
-import sqlite3 as sqlite
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
+from antipetros_discordbot.data.config.config_singleton import COGS_CONFIG
+
 # endregion[Imports]
 
 # region [Logging]
@@ -31,7 +36,7 @@ log.debug(glog.imported(__name__))
 
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-
+SAVE_SUGGESTION_CONFIG_NAME = 'save_suggestions'
 
 # endregion [Constants]
 
@@ -44,11 +49,12 @@ class SaveSuggestion(commands.Cog):
         self.data_storage_handler = SuggestionDataStorageSQLite()
         self.messages_to_watch = self.data_storage_handler.get_all_non_discussed_message_ids()
         self.already_saved_messages = self.data_storage_handler.get_all_message_ids()
-        self.allowed_channels = set(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels'))
-        self.save_emoji = COGS_CONFIG.get('save_suggestions', 'trigger_emoji')
-        self.upvote_emoji = COGS_CONFIG.get('save_suggestions', 'upvote_emoji')
-        self.downvote_emoji = COGS_CONFIG.get('save_suggestions', 'downvote_emoji')
+        self.allowed_channels = set(COGS_CONFIG.getlist(SAVE_SUGGESTION_CONFIG_NAME, 'allowed_channels'))
+        self.save_emoji = COGS_CONFIG.get(SAVE_SUGGESTION_CONFIG_NAME, 'trigger_emoji')
+        self.upvote_emoji = COGS_CONFIG.get(SAVE_SUGGESTION_CONFIG_NAME, 'upvote_emoji')
+        self.downvote_emoji = COGS_CONFIG.get(SAVE_SUGGESTION_CONFIG_NAME, 'downvote_emoji')
         self.categories = self.data_storage_handler.category_emojis
+        log.debug(glog.class_initiated(self))
 
     @commands.Cog.listener(name='on_ready')
     async def extra_cog_setup(self):
@@ -85,7 +91,7 @@ class SaveSuggestion(commands.Cog):
                 return reaction
 
     @commands.Cog.listener()
-    @commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
+    @commands.has_any_role(*COGS_CONFIG.getlist(SAVE_SUGGESTION_CONFIG_NAME, 'allowed_roles'))
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
         if channel.name not in self.allowed_channels:
@@ -103,7 +109,7 @@ class SaveSuggestion(commands.Cog):
         attachments = message.attachments
         now_time = datetime.utcnow()
 
-        if unicodedata.name(payload.emoji.name) == COGS_CONFIG.get('save_suggestions', 'trigger_emoji'):
+        if unicodedata.name(payload.emoji.name) == COGS_CONFIG.get(SAVE_SUGGESTION_CONFIG_NAME, 'trigger_emoji'):
             if message.id in self.already_saved_messages:
                 await channel.send("Suggestion was already saved!")
                 return
@@ -139,7 +145,7 @@ class SaveSuggestion(commands.Cog):
         embed = discord.Embed(title="**Suggestion was Saved!**", description="Your suggestion was saved for the Dev Team.\n\n", color=0xf2ea48)
         embed.set_thumbnail(url="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Media-floppy.svg/2000px-Media-floppy.svg.png")
         embed.add_field(name="Title:", value=f"__{suggestion_item.name}__", inline=False)
-        if COGS_CONFIG.getboolean('save_suggestions', 'add_success_embed_verbose') is True:
+        if COGS_CONFIG.getboolean(SAVE_SUGGESTION_CONFIG_NAME, 'add_success_embed_verbose') is True:
             embed.add_field(name="Author:", value=f"*{suggestion_item.message_author.name}*", inline=True)
             embed.add_field(name="Content:", value=_filtered_content, inline=True)
             embed.add_field(name='Saved Timestamp:', value=suggestion_item.time.isoformat(timespec='seconds'), inline=False)
@@ -150,7 +156,7 @@ class SaveSuggestion(commands.Cog):
         return embed
 
     @ commands.command()
-    @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
+    @ commands.has_any_role(*COGS_CONFIG.getlist(SAVE_SUGGESTION_CONFIG_NAME, 'allowed_roles'))
     async def clear_all(self, ctx):
         if ctx.channel.name in self.allowed_channels:
             writejson({}, self.save_file)
@@ -160,7 +166,7 @@ class SaveSuggestion(commands.Cog):
         await ctx.send(_msg)
 
     @ commands.command()
-    @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
+    @ commands.has_any_role(*COGS_CONFIG.getlist(SAVE_SUGGESTION_CONFIG_NAME, 'allowed_roles'))
     async def retrieve_all(self, ctx):
         _txt = ''
         x = loadjson(self.save_file)
@@ -175,7 +181,7 @@ class SaveSuggestion(commands.Cog):
         await ctx.send(_txt)
 
     @ commands.command()
-    @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
+    @ commands.has_any_role(*COGS_CONFIG.getlist(SAVE_SUGGESTION_CONFIG_NAME, 'allowed_roles'))
     async def request_my_data(self, ctx):
         user = ctx.author
         _json = loadjson(self.save_file)

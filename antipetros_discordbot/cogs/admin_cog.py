@@ -1,17 +1,17 @@
+# * Standard Library Imports -->
+import os
+
+# * Third Party Imports -->
 import discord
 from discord import DiscordException
-from discord.ext import commands
-from github import Github, GithubException
-from datetime import datetime, timedelta
-from antipetros_discordbot.utility.gidtools_functions import writejson, loadjson, pathmaker
-import os
-from collections import namedtuple
-from pprint import pformat
-from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG, CONFIG_DIR
-from urllib.parse import urlparse
-from antipetros_discordbot.utility.misc import config_channels_convert
 from fuzzywuzzy import process as fuzzprocess
+from discord.ext import commands
+
+# * Local Imports -->
 from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
+from antipetros_discordbot.utility.gidtools_functions import pathmaker
+from antipetros_discordbot.data.config.config_singleton import CONFIG_DIR, BASE_CONFIG, COGS_CONFIG
+
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
