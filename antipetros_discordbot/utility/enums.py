@@ -11,5 +11,9 @@ class RequestStatus(Enum):
     NotAuthorized = 401
 
 
+class UnicodeEmoji(Enum):
+    Poop = r"\U001F4A9"
+
+
 if __name__ == '__main__':
     pass

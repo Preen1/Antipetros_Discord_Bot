@@ -33,7 +33,7 @@ currently implemented config options:
     - notify_with_link --> boolean if the notification DM should include the bad link
 """
 
-__updated__ = '2020-11-24 07:33:55'
+__updated__ = '2020-11-26 18:32:37'
 # region [Imports]
 
 # * Standard Library Imports -->
@@ -45,7 +45,7 @@ from urllib.parse import urlparse
 # * Third Party Imports -->
 import aiohttp
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 import gidlogger as glog
 
@@ -62,7 +62,7 @@ from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
+log.debug(glog.imported(__name__))
 
 # endregion[Logging]
 
@@ -122,6 +122,8 @@ class SaveLink(commands.Cog):
 
         # will be removed soon and values will be gathered from config
         self.bad_link_image = (pathmaker(THIS_FILE_DIR, r"..\..\data\fixed_data\bertha.png"), 'bertha.png')
+        self.fresh_blacklist_loop.start()
+        self.check_link_best_by_loop.start()
 
 # endregion [Init]
 
@@ -159,6 +161,36 @@ class SaveLink(commands.Cog):
                     self.forbidden_links = set(map(lambda x: urlparse('https://' + x).netloc.replace('www.', ''), self.forbidden_links))
                     _path = pathmaker(THIS_FILE_DIR, r'..\..\data\data_storage\json_data\forbidden_link_list.json')
                     writejson(list(map(lambda x: urlparse('https://' + x).netloc.replace('www.', ''), self.forbidden_links)), _path)  # converting to list as set is not json serializable
+
+    def cog_unload(self):
+        self.fresh_blacklist_loop.stop()
+        self.fresh_blacklist_loop.stop()
+
+    @tasks.loop(hours=24.0, reconnect=True)
+    async def fresh_blacklist_loop(self):
+        """
+        Background Loop to pull a new Blacklist every 24 hours and create a new blacklist json.
+        """
+        await self._create_forbidden_link_list()
+        log.info("Link Blacklist was refreshed")
+
+    @fresh_blacklist_loop.before_loop
+    async def before_fresh_blacklist_loop(self):
+        await self.bot.wait_until_ready()
+
+    @tasks.loop(hours=1.0, reconnect=True)
+    async def check_link_best_by_loop(self):
+        """
+        Background loop to check if the delete time of an link message has passed, deletes the link message and updated the db to show it was deleted.
+        """
+        for message_id in self.data_storage_handler.link_messages_to_remove:
+            msg = await self.link_channel.fetch_message(message_id)
+            await msg.delete()
+            self.data_storage_handler.update_removed_status(message_id)
+
+    @check_link_best_by_loop.before_loop
+    async def before_check_link_best_by_loop(self):
+        await self.bot.wait_until_ready()
 
 # endregion [Setup]
 
@@ -304,28 +336,27 @@ class SaveLink(commands.Cog):
             delete_date_and_time = date_and_time + timedelta(days=days)
             author = ctx.author
 
-            # create the link item and save it
+            # create the link item
             link_item = LINK_DATA_ITEM(author, link_name, date_and_time, delete_date_and_time, parsed_link)
+
+            # post the link as embed to the specified save link channel
+            link_store_message = await self.link_channel.send(embed=await self._answer_embed(link_item))
+
+            # save to datastorage
             log.info("new link --> author: '%s', link_name: '%s', delete_date_time: '%s', days_until_delete: '%s', parsed_link: '%s'",
                      author.name,
                      link_name,
                      delete_date_and_time.isoformat(timespec='seconds'),
                      str(days),
                      parsed_link)
-            await self.save(link_item)
-
-            # if this is a debug run, delete the answer message after 30 seconds else delete after specified time (86400 is the number of seconds in a day)
-            delete_answer = days * 86400 if self.is_debug is False else 30
-
-            # post the link as embed to the specified save link channel
-            await self.link_channel.send(embed=await self._answer_embed(link_item), delete_after=delete_answer)
+            await self.save(link_item, link_store_message.id)
 
             # post an success message to the channel from where the command was invoked. Delete after 60 seconds.
-            await ctx.send('✅ Link was successfully saved', delete_after=60)
+            await ctx.send('✅ Link was successfully saved')
 
         else:
             log.warning("link '%s' matched against a forbidden link or contained a forbidden word", parsed_link)
-            delete_answer = None if self.is_debug is False else 30
+            delete_answer = None
 
             # send warning for forbidden link infraction
             await ctx.send(embed=await self._bad_link_embed(), file=await self._get_bad_link_image(), delete_after=delete_answer)
@@ -382,6 +413,7 @@ class SaveLink(commands.Cog):
 
 # region [DataStorage]
 
+
     async def link_name_list(self):
         """
         Retrieves all saved link names from the DataStorage.
@@ -394,7 +426,7 @@ class SaveLink(commands.Cog):
 
         return self.data_storage_handler.all_link_names
 
-    async def save(self, link_item: LINK_DATA_ITEM):
+    async def save(self, link_item: LINK_DATA_ITEM, message_id: int):
         """
         Adds new link to the DataStorage
 
@@ -404,7 +436,7 @@ class SaveLink(commands.Cog):
             link_item (LINK_DATA_ITEM): namedtuple to contain link data see 'antipetros_discordbot.utility.named_tuples --> LINK_DATA_ITEM'
         """
 
-        self.data_storage_handler.add_data(link_item)
+        self.data_storage_handler.add_data(link_item, message_id)
 
 # endregion [DataStorage]
 
@@ -481,6 +513,7 @@ class SaveLink(commands.Cog):
 
 
 # endregion [Embeds]
+
 
     async def _get_bad_link_image(self):
         """
@@ -592,6 +625,7 @@ class SaveLink(commands.Cog):
 # endregion [Helper]
 
 # region [DunderMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

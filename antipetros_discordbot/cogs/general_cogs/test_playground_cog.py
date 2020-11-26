@@ -15,8 +15,9 @@ from antipetros_discordbot.utility.misc import config_channels_convert
 from antipetros_discordbot.data.fixed_data.faq_data import FAQ_BY_NUMBERS
 from PIL import Image, ImageFont, ImageDraw
 from tempfile import TemporaryDirectory
-
-
+import statistics
+from time import time
+import asyncio
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -79,11 +80,23 @@ class TestPlayground(commands.Cog):
     async def roll_a_d(self, ctx, sides: int, amount: int = 1):
         _result = 0
         _dice = []
-        for _ in range(amount):
+        time_start = time()
+        for i in range(amount):
             _rolled = random.randint(1, sides)
             _result += _rolled
             _dice.append(_rolled)
-        await ctx.send(f"**you have rolled a total of:** {str(_result)}\n**dice result:** {', '.join(map(str,_dice))}")
+            if i % 1000000 == 0:
+                await ctx.send(f'reached {str("1.000.000")} dice again', delete_after=120)
+
+        _stdev = statistics.stdev(_dice)
+        _mean = statistics.mean(_dice)
+        _median = statistics.median(_dice)
+        x = statistics.mode(_dice)
+        y = statistics.variance(_dice)
+        out_message = f"**you have rolled a total of:** {str(_result)}\n**dice result:** {', '.join(map(str,_dice))}\n\n**standard deviantion:** {str(_stdev)}\n**mean:** {str(_mean)}\n**median:** {str(_median)}\n**mode:** {str(x)}\n**variance:** {str(y)}"
+        if len(out_message) >= 1900:
+            out_message = f"**you have rolled a total of:** {str(_result)}\n\n**standard deviantion:** {str(_stdev)}\n**mean:** {str(_mean)}\n**median:** {str(_median)}\n**mode:** {str(x)}\n**variance:** {str(y)}"
+        await ctx.send(out_message + f'\n\n**THIS TOOK** {str(round(time()-time_start,3))} SECONDS')
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
@@ -111,7 +124,6 @@ class TestPlayground(commands.Cog):
             _msg = _faq_dict.get(faq_number, None)
 
             if _msg is None:
-                print("_msg is none")
                 _msg = "Canot find the requested FAQ"
             else:
                 _msg = "**FAQ you too**\n\n" + _msg

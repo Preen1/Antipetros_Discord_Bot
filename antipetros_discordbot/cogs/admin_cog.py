@@ -19,6 +19,7 @@ class Administration(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.is_debug = BASE_CONFIG.getboolean('general_settings', 'is_debug')
         self.all_configs = [BASE_CONFIG, COGS_CONFIG]
         self.allowed_channels = set(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels'))
         self.allowed_dm_invoker_ids = list(map(int, COGS_CONFIG.getlist('admin', 'allowed_dm_ids')))
@@ -63,7 +64,9 @@ class Administration(commands.Cog):
                     except DiscordException as error:
                         print(str(error))
             reloaded_extensions = '\n'.join(_extensions_list)
-            await ctx.send(f"**successfully reloaded the following extensions:**\n{reloaded_extensions}")
+            _delete_time = 5 if self.is_debug is True else None
+            await ctx.send(f"**successfully reloaded the following extensions:**\n{reloaded_extensions}", delete_after=_delete_time)
+            await ctx.message.delete(delay=float(_delete_time))
 
     @commands.command(name='die_antipetros_die')
     @commands.has_any_role(*COGS_CONFIG.getlist('admin', 'allowed_roles'))
