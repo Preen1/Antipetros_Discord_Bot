@@ -609,3 +609,4 @@ misc/
 
 antipetros_discordbot/data/data_storage/sqlite_data/save_db.db
 *.db
+quick_test.txt
