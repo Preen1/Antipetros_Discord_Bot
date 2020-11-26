@@ -608,3 +608,4 @@ misc/
 # Project Specific ignores
 
 antipetros_discordbot/data/data_storage/sqlite_data/save_db.db
+*.db
