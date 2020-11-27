@@ -125,6 +125,57 @@ class Administration(commands.Cog):
                 cfg.read()
             await ctx.send(f'saved your file as `{os.path.basename(_config_path)}`.\n\n_You may have to reload the Cogs or restart the bot for it to take effect!_')
 
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    async def add_to_blacklist(self, ctx, user_id: int):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        user = await self.bot.fetch_user(user_id)
+        if user is None:
+            await ctx.send(f"Can not find a User with the id '{str(user_id)}'!")
+            return
+        if user.bot is True:
+            await ctx.send(f"the user you are trying to add is a **__BOT__**!\n\nThis can't be done!")
+            return
+        current_blacklist = self.bot.blacklist_user
+        current_blacklist.append(user_id)
+        BASE_CONFIG.set('blacklist', 'user', current_blacklist)
+        BASE_CONFIG.save()
+        await self.bot.get_fresh_user_blacklist()
+        if self.bot.is_debug is True:
+            await user.send(f"***THIS IS JUST A TEST, SORRY FOR THE DM BOTHER***\n\nYou have been put on my __BLACKLIST__, you won't be able to invoke my commands.\n\nIf you think this was done in error or other questions, contact **__{self.bot.contact_user}__** per DM!")
+        else:
+            await user.send(f"You have been put on my __BLACKLIST__, you won't be able to invoke my commands.\n\nIf you think this was done in error or other questions, contact **__{self.bot.contact_user}__** per DM!")
+        await ctx.send(f"User '{user.name}' with the id '{user.id}' was added to my blacklist, he wont be able to invoke my commands!\n\nI have also notified him by DM of this fact!")
+
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    async def remove_from_blacklist(self, ctx, user_id: int):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        user = await self.bot.fetch_user(user_id)
+        if user is None:
+            await ctx.send(f"Can not find a User with the id '{str(user_id)}'!")
+            return
+        current_blacklist = self.bot.blacklist_user
+        if user.id not in current_blacklist:
+            await ctx.send(f"User '{user.name}' with User_id '{user.id}' is currently **__NOT__** in my ***Blacklist***\n and can therefor not be removed from the ***Blacklist***!")
+            return
+
+        for index, item in enumerate(current_blacklist):
+            if item == user_id:
+                to_delete_index = index
+                break
+        current_blacklist.pop(to_delete_index)
+        BASE_CONFIG.set('blacklist', 'user', current_blacklist)
+        BASE_CONFIG.save()
+        await self.bot.get_fresh_user_blacklist()
+        if self.bot.is_debug is True:
+            await user.send("***THIS IS JUST A TEST, SORRY FOR THE DM BOTHER***\n\nYou have been **__REMOVED__** from my Blacklist.\n\nYou can again invoke my commands again!")
+        else:
+            await user.send("You have been **__REMOVED__** from my Blacklist.\n\nYou can again invoke my commands again!")
+        await ctx.send(f"User '{user.name}' with User_id '{user.id}' was removed from my Blacklist.\n\nHe is now able again, to invoke my commands!")
+
 
 def setup(bot):
     bot.add_cog(Administration(bot))

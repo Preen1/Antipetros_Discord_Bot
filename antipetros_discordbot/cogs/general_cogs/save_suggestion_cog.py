@@ -1,5 +1,5 @@
 
-__updated__ = '2020-11-26 20:51:28'
+__updated__ = '2020-11-27 21:01:43'
 
 # region [Imports]
 
@@ -98,7 +98,7 @@ class SaveSuggestion(commands.Cog):
             return
 
         reaction_user = await self.bot.fetch_user(payload.user_id)
-        if reaction_user.bot is True or reaction_user.name in self.bot.blacklist_user:
+        if reaction_user.bot is True or reaction_user.id in self.bot.blacklist_user:
             return
         guild = self.bot.get_guild(payload.guild_id)
         reaction_member = await guild.fetch_member(reaction_user.id)

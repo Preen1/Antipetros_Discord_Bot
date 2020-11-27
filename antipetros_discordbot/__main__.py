@@ -6,7 +6,7 @@ Main module, starts the Antistasi Discord Bot.
 """
 # endregion [Module_Docstring]
 
-__updated__ = '2020-11-27 00:26:03'
+__updated__ = '2020-11-27 20:50:37'
 
 
 # region [Imports]

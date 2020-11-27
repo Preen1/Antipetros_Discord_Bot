@@ -16,6 +16,7 @@ from discord.ext import commands
 # * Local Imports -->
 from antipetros_discordbot.data.fixed_data.faq_data import FAQ_BY_NUMBERS
 from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG
+from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import Bold, Cursive, CodeBlock, LineCode, UnderScore, BlockQuote
 
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -148,6 +149,60 @@ class TestPlayground(commands.Cog):
     #                     print("old_message_was deleted")
     #             self.old_messages[_channel.name] = await _channel.send(f"**this message will always be the last message in the channel**")
     #             self.last_timeStamp = datetime.utcnow()
+
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    async def check_md_helper(self, ctx, *, text):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+
+        _out = []
+        _out.append(f'bold: {Bold(text)}')
+        _out.append(f'cursive: {Cursive(text)}')
+        _out.append(f'underscore: {UnderScore(text)}')
+        _out.append(f'linecode: {LineCode(text)}')
+        _out.append(f'codeblock no language: {CodeBlock(text)}')
+        _out.append(f'codeblock python: {CodeBlock(text, "python")}')
+        _out.append(f'bold_cursive: {Cursive(Bold(text))}')
+        _out.append(f'bold_underscore: {UnderScore(Bold(text))}')
+        _out.append(f'underscore_cursive: {Cursive(UnderScore(text))}')
+        _out.append(f'bold_cursive_underscore: {UnderScore(Cursive(Bold(text)))}')
+        _out.append(f'blockquote: \n{BlockQuote(text)}')
+        await ctx.send('\n\n------------------------\n\n'.join(_out))
+
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    async def check_md_helper_specific(self, ctx, typus, *, text):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        typus = typus.casefold()
+        if typus == 'bold':
+            await ctx.send(f'bold: {Bold(text)}')
+        elif typus == 'cursive':
+            await ctx.send(f'cursive: {Cursive(text)}')
+        elif typus == 'underscore':
+            await ctx.send(f'underscore: {UnderScore(text)}')
+        elif typus == 'linecode':
+            await ctx.send(f'linecode: {LineCode(text)}')
+        elif typus == 'codeblock':
+            if text.split(' ', 1)[0].casefold() in ['python', 'sql', 'xml', 'json', 'csv', 'bash', 'batch']:
+                _language, _text = text.split(' ', 1)
+                codeblock = CodeBlock(_text, _language)
+            else:
+                _language = 'no_language'
+                codeblock = CodeBlock(text)
+            await ctx.send(f'codeblock {_language}: {codeblock}')
+        elif typus in ['cursive_bold', 'bold_cursive']:
+            await ctx.send(f'bold_cursive: {Cursive(Bold(text))}')
+        elif typus in ['underscore_bold', 'bold_underscore']:
+            await ctx.send(f'bold_underscore: {UnderScore(Bold(text))}')
+        elif typus in ['cursive_underscore', 'underscore_cursive']:
+            await ctx.send(f'underscore_cursive: {Cursive(UnderScore(text))}')
+        elif typus == 'blockquote':
+            await ctx.send(f'blockquote: \n{BlockQuote(text)}')
+
+        elif typus == 'full':
+            await ctx.send(f'bold_cursive_underscore: {UnderScore(Cursive(Bold(text)))}')
 
 
 def setup(bot):
