@@ -6,7 +6,7 @@ Deleted links are kept in the bots database and can always be retrieved by fuzzy
 
 Checks against a blacklist of urls and a blacklist of words, to not store malicious links.
 
-cogs_config.ini section: SAVE_LINK_CONFIG_NAME
+cogs_config.ini section: self.config_name
 
 currently implemented config options:
 
@@ -22,8 +22,8 @@ currently implemented config options:
     - 'delete_all_allowed_roles' --> comma-seperated-list of role names that are allowed to clear the link Database, all links will be lost.
     will propably be turned into user id list
 
-    - bad_link_answer_image --> file_path or appdata file name to an image to use when answering to an forbidden link (None means no image)
-    ! not fully implented !
+    - bad_link_image_path/bad_link_image_name --> file_path or appdata file name to an image to use when answering to an forbidden link (None means no image)
+
 
     - default_storage_days --> integer of days to default to if user does not specifiy amount of time to keep link
     (eg: 7)
@@ -33,7 +33,7 @@ currently implemented config options:
     - notify_with_link --> boolean if the notification DM should include the bad link
 """
 
-__updated__ = '2020-11-26 20:52:11'
+__updated__ = '2020-11-29 03:35:33'
 # region [Imports]
 
 # * Standard Library Imports -->
@@ -70,19 +70,12 @@ log.debug(glog.imported(__name__))
 
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-SAVE_LINK_CONFIG_NAME = 'save_link'
+
 
 # endregion [Constants]
 
 # region [TODO]
 
-# TODO: Implement "delete_link" commands
-
-# TODO: Implement background task to pull a fresh blacklist and create a fresh forbidden_link_list every day
-
-# TODO: implement getting bad image path from config, getting bad image name from path and checking if None, sending no image if none
-
-# TODO: refractor channel_from_id into utilities
 
 # TODO: refractor 'get_forbidden_list' to not use temp directory but send as filestream or so
 
@@ -102,26 +95,17 @@ class SaveLink(commands.Cog):
 
     # url to blacklist for forbidden_link_list
     blocklist_hostfile_url = "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn/hosts"
-
+    config_name = 'save_link'
 # region [Init]
 
     def __init__(self, bot):
         self.bot = bot
-        self.is_debug = BASE_CONFIG.getboolean('general_settings', 'is_debug')
-        # composition to make data storage modular, currently set up for an sqlite Database
-        self.data_storage_handler = LinkDataStorageSQLite()
 
-        self.allowed_channels = set(COGS_CONFIG.getlist(SAVE_LINK_CONFIG_NAME, 'allowed_channels'))
+        self.data_storage_handler = LinkDataStorageSQLite()  # composition to make data storage modular, currently set up for an sqlite Database
+
         self.forbidden_links = set(loadjson(pathmaker(THIS_FILE_DIR, r'..\..\data\data_storage\json_data\forbidden_link_list.json')))  # read previously saved blacklist, because extra_setup method does not run when the cog is only reloaded
         self.forbidden_url_words = set(map(lambda x: str(x).casefold(), loadjson(pathmaker(THIS_FILE_DIR, r'..\..\data\data_storage\json_data\forbidden_url_words.json'))))
-        self.link_channel = None  # weird setup because again, the extra setup does not execute when only reloaded.
-        try:
-            self.link_channel = self.channel_from_id(COGS_CONFIG.getint(SAVE_LINK_CONFIG_NAME, 'link_channel'))
-        except AttributeError as error:
-            log.error('link_channel had error: %s', str(error))
 
-        # will be removed soon and values will be gathered from config
-        self.bad_link_image = (pathmaker(THIS_FILE_DIR, r"..\..\data\fixed_data\bertha.png"), 'bertha.png')
         self.fresh_blacklist_loop.start()
         self.check_link_best_by_loop.start()
         log.debug(glog.class_initiated(self))
@@ -139,7 +123,7 @@ class SaveLink(commands.Cog):
         """
 
         _out = []
-        if self.is_debug is True:
+        if self.bot.is_debug is True:
             raw_content += '\n\n0 www.stackoverflow.com'  # added for Testing
         for line in raw_content.splitlines():
             if line.startswith('0') and line not in ['', '0.0.0.0 0.0.0.0']:
@@ -195,6 +179,24 @@ class SaveLink(commands.Cog):
 
 # endregion [Setup]
 
+# region [Properties]
+
+    @property
+    def link_channel(self):
+        return self.bot.get_channel(COGS_CONFIG.getint(self.config_name, 'link_channel'))
+
+    @property
+    def allowed_channels(self):
+        return set(COGS_CONFIG.getlist(self.config_name, 'allowed_channels'))
+
+    @property
+    def bad_link_image(self):
+        path = COGS_CONFIG.get(self.config_name, 'bad_link_image_path')
+        name = COGS_CONFIG.get(self.config_name, 'bad_link_image_name')
+        return name, path
+
+# endregion [Properties]
+
 # region [Listener]
 
     @commands.Cog.listener(name='on_ready')
@@ -210,7 +212,6 @@ class SaveLink(commands.Cog):
         """
 
         await self._create_forbidden_link_list()
-        self.link_channel = self.channel_from_id(COGS_CONFIG.getint(SAVE_LINK_CONFIG_NAME, 'link_channel'))
         log.info(f"{self} Cog ----> finished extra setup")
 
 # endregion [Listener]
@@ -218,7 +219,7 @@ class SaveLink(commands.Cog):
 # region [Commands]
 
     @commands.command()
-    @commands.has_any_role(*COGS_CONFIG.getlist(SAVE_LINK_CONFIG_NAME, 'delete_all_allowed_roles'))
+    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'delete_all_allowed_roles'))
     async def delete_all_links(self, ctx):
         """
         Delete all saved links.
@@ -237,7 +238,7 @@ class SaveLink(commands.Cog):
         log.info("all links were deleted from the DataStorage by request of '%s'", ctx.author.name)
 
     @commands.command()
-    @commands.has_any_role(*COGS_CONFIG.getlist(SAVE_LINK_CONFIG_NAME, 'allowed_roles'))
+    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
     async def get_link(self, ctx, name):
         """
         Get a link as normal answer message, by link name.
@@ -258,7 +259,7 @@ class SaveLink(commands.Cog):
         log.info("retrieve link '%s'", _link)
 
     @commands.command()
-    @commands.has_any_role(*COGS_CONFIG.getlist(SAVE_LINK_CONFIG_NAME, 'allowed_roles'))
+    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
     async def get_all_links(self, ctx, in_format='plain'):
         """
         Get a list of all saved links, as a file.
@@ -294,7 +295,7 @@ class SaveLink(commands.Cog):
             await ctx.send(file=_file)
 
     @commands.command()
-    @commands.has_any_role(*COGS_CONFIG.getlist(SAVE_LINK_CONFIG_NAME, 'allowed_roles'))
+    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
     async def save_link(self, ctx, link: str, link_name: str = None, days_to_hold: int = None):
         """
         Main Command of the SaveLink Cog.
@@ -333,7 +334,7 @@ class SaveLink(commands.Cog):
                 return None
 
             # calculate or retrieve all other needed values
-            days = COGS_CONFIG.getint(SAVE_LINK_CONFIG_NAME, 'default_storage_days') if days_to_hold is None else days_to_hold
+            days = COGS_CONFIG.getint(self.config_name, 'default_storage_days') if days_to_hold is None else days_to_hold
             delete_date_and_time = date_and_time + timedelta(days=days)
             author = ctx.author
 
@@ -379,13 +380,13 @@ class SaveLink(commands.Cog):
                                                        matches_link=await self.get_matched_forbidden_link(to_check_link),
                                                        matches_word=await self.get_matched_forbidden_word(to_check_link))
 
-            for user_id in COGS_CONFIG.getlist(SAVE_LINK_CONFIG_NAME, 'member_to_notifiy_bad_link'):
+            for user_id in COGS_CONFIG.getlist(self.config_name, 'member_to_notifiy_bad_link'):
                 user = self.bot.get_user(int(user_id))
                 await user.send(embed=notify_embed, delete_after=delete_answer)
                 log.debug("notified '%s' about the offending link", user.name)
 
     @commands.command()
-    @commands.has_any_role(*COGS_CONFIG.getlist(SAVE_LINK_CONFIG_NAME, 'allowed_roles'))
+    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
     async def get_forbidden_list(self, ctx, file_format='json'):
         """
         command to get the forbidden link list as an file.
@@ -398,7 +399,7 @@ class SaveLink(commands.Cog):
         """
         log.debug("command was triggered in %s", ctx.channel.name)
         if ctx.channel.name not in self.allowed_channels:
-            log.debug("channel not is 'allowed channel'")
+            log.debug("command called from outside 'allowed channels', channel: '%s'", ctx.channel.name)
             return
         if file_format == 'json':
             with TemporaryDirectory() as tempdir:
@@ -409,11 +410,38 @@ class SaveLink(commands.Cog):
                 await ctx.send(file=_file, delete_after=60)
                 log.info("send forbidden link list to '%s'", ctx.author.name)
 
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    async def delete_link(self, ctx, name, scope='channel'):
+        # TODO: Docstring
+        log.debug("command was triggered in %s", ctx.channel.name)
+        if ctx.channel.name not in self.allowed_channels:
+            log.debug("command called from outside 'allowed channels', channel: '%s'", ctx.channel.name)
+            return
+        log.info("Link with Link name '%s' was requested to be deleted by '%s'", name, ctx.author.name)
+        link_name, link_message_id, link_status = self.data_storage_handler.get_link_for_delete(name)
+        if link_message_id is None:
+            await ctx.send(f"I was not able to find an saved link with the name: '{name}'")
+            log.warning("No saved link found with name: '%s'", name)
+            return
+        if scope == 'channel' and link_status in [1, True]:
+            await ctx.send(f"Link '{link_name}' was already deleted from the channel, it is still in my Database")
+            return
+        answer = f'link: **{link_name}**\n\n'
+        if scope == 'full':
+            self.data_storage_handler.delete_link(link_name)
+            answer += "> was deleted from my Database\n\n"
+        if link_status != 1:
+            message = await self.link_channel.fetch_message(link_message_id)
+            if scope != 'full':
+                self.data_storage_handler.update_removed_status(link_message_id)
+                await message.delete()
+                answer += "> was deleted from the channel\n\n"
+        await ctx.send(answer)
 
 # endregion [Commands]
 
 # region [DataStorage]
-
 
     async def link_name_list(self):
         """
@@ -438,6 +466,7 @@ class SaveLink(commands.Cog):
         """
 
         self.data_storage_handler.add_data(link_item, message_id)
+
 
 # endregion [DataStorage]
 
@@ -490,7 +519,7 @@ class SaveLink(commands.Cog):
         Returns:
             discord.Embed: notify dm embed
         """
-
+        # TODO: Add logging
         _description = ('The message has been successfully deleted and warning was posted!' if was_deleted else "I was not able to delete the message, but posted the warning")
 
         embed = discord.Embed(title='ATTEMPT AT SAVING FORBIDDEN LINK', description=_description, color=0xdf0005)
@@ -501,13 +530,11 @@ class SaveLink(commands.Cog):
         embed.add_field(name="Channel", value=f"**{channel}**", inline=False)
         embed.add_field(name="Date", value=date_time.date().isoformat(), inline=True)
         embed.add_field(name="Time", value=f"{date_time.time().isoformat(timespec='seconds')} UTC", inline=True)
-        if COGS_CONFIG.getboolean(SAVE_LINK_CONFIG_NAME, 'notify_with_link') is True:
+        if COGS_CONFIG.getboolean(self.config_name, 'notify_with_link') is True:
             embed.add_field(name="Offending Link", value=f"***{link}***", inline=False)
             if matches_link != []:
-                print(matches_link)
                 embed.add_field(name="forbidden link matches", value='\n'.join(matches_link), inline=False)
             if matches_word != []:
-                print(matches_word)
                 embed.add_field(name="forbidden word matches", value='\n'.join(matches_word), inline=False)
         embed.set_footer(text="You have been notified, because your discord user id has been registered in my config, to be notified in such events.")
         return embed
@@ -515,6 +542,8 @@ class SaveLink(commands.Cog):
 
 # endregion [Embeds]
 
+
+# region [Helper]
 
     async def _get_bad_link_image(self):
         """
@@ -525,30 +554,17 @@ class SaveLink(commands.Cog):
             discord.File: discord File containing the image
         """
 
-        # image_path = COGS_CONFIG.get(SAVE_LINK_CONFIG_NAME, 'bad_link_answer_image')
+        # image_path = COGS_CONFIG.get(self.config_name, 'bad_link_answer_image')
         # if image_path.casefold() == 'none':
         #     return None
         # image_name = os.path.basename(image_path)
         # return discord.File(image_path, image_name)
-        return discord.File(self.bad_link_image[0], self.bad_link_image[1])
-
-# region [Helper]
-
-    def channel_from_id(self, _id):
-        """
-        helper to get an channel from an channel id.
-        | Will be refractored into utilities |
-
-        Args:
-            _id (int): channel id (can be found by right clicking the channel after enabling, dev mode in discord)
-
-        Returns:
-            channel_object: the channel as discord object
-        """
-
-        _channel = self.bot.get_channel(_id)
-        print("save_link_channel is " + str(_channel.name))
-        return _channel
+        name, path = self.bad_link_image
+        if path == '' or path is None:
+            return None
+        if name == '' or name is None:
+            name = os.path.basename(path)
+        return discord.File(path, filename=name)
 
     async def _make_check_link(self, url):
         """

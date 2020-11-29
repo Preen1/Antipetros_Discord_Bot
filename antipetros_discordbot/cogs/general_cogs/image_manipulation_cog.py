@@ -1,5 +1,5 @@
 
-__updated__ = '2020-11-27 00:25:16'
+__updated__ = '2020-11-28 02:53:59'
 
 # region [Imports]
 
@@ -44,7 +44,7 @@ class ImageManipulator(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.stamp_location = pathmaker(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\images")
+        self.stamp_location = pathmaker(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\images\stamps")
         self.stamps = {}
         self.allowed_channels = set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels'))
         self.target_stamp_fraction = COGS_CONFIG.getfloat(IMAGE_MANIPULATION_CONFIG_NAME, 'stamp_fraction')
@@ -217,9 +217,6 @@ class ImageManipulator(commands.Cog):
     @commands.Cog.listener(name='on_ready')
     async def extra_cog_setup(self):
         log.info(f"{self} Cog ----> finished extra setup")
-
-    def channel_from_id(self, _id):
-        return self.bot.get_channel(_id)
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

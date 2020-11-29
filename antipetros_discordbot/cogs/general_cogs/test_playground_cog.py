@@ -7,7 +7,7 @@ from time import time
 from asyncio import get_event_loop
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
-
+import random
 # * Third Party Imports -->
 import discord
 from PIL import Image
@@ -45,6 +45,11 @@ class TestPlayground(commands.Cog):
         self.old_map_message = None
         self.old_messages = {}
         self.last_timeStamp = datetime.utcfromtimestamp(0)
+        self.carthage_list = ["https://1.bp.blogspot.com/-OXLXIP3dgE0/XUiSIA61h-I/AAAAAAAACd4/NVCH6YmxhnkXaZ-CS3ssq4wH-ON-Hn6-gCLcBGAs/s1600/1543710269_2777777_0.jpg",
+                              "https://pics.conservativememes.com/salt-the-earthsonot-hing-would-ever-grow-again-a-2-38061179.png",
+                              "https://i.redd.it/h3bi3p5jurwz.jpg",
+                              "https://pbs.twimg.com/media/DSrDQVFVAAAODM1.jpg",
+                              "https://memegenerator.net/img/instances/58080047/carthago-delenda-est.jpg"]
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
@@ -125,7 +130,6 @@ class TestPlayground(commands.Cog):
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     async def get_faq_by_number(self, ctx, faq_number: int):
         if ctx.channel.name in self.allowed_channels:
-            print('is correct channel')
             _faq_dict = FAQ_BY_NUMBERS
             _msg = _faq_dict.get(faq_number, None)
 
@@ -203,6 +207,26 @@ class TestPlayground(commands.Cog):
 
         elif typus == 'full':
             await ctx.send(f'bold_cursive_underscore: {UnderScore(Cursive(Bold(text)))}')
+
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    async def furthermore_do_you_want_to_say_something(self, ctx):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        await ctx.send(random.choice(self.carthage_list))
+
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    async def big_message(self, ctx, amount: int):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        content = []
+        for _ in range(amount // 2):
+            content.append(random.randint(0, 9))
+        content = map(str, content)
+        content = ' '.join(content)
+        print(content)
+        await self.bot.split_to_messages(ctx, content, ' ')
 
 
 def setup(bot):

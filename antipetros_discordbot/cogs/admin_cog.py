@@ -1,6 +1,7 @@
+
 # * Standard Library Imports -->
 import os
-
+from datetime import datetime
 # * Third Party Imports -->
 import discord
 from discord import DiscordException
@@ -11,8 +12,17 @@ from discord.ext import commands
 from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
 from antipetros_discordbot.utility.gidtools_functions import pathmaker
 from antipetros_discordbot.data.config.config_singleton import CONFIG_DIR, BASE_CONFIG, COGS_CONFIG
+from antipetros_discordbot.utility.misc import seconds_to_pretty
+import gidlogger as glog
 
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+# region [Logging]
+
+log = glog.aux_logger(__name__)
+log.debug(glog.imported(__name__))
+
+# endregion[Logging]
 
 
 class Administration(commands.Cog):
@@ -27,7 +37,7 @@ class Administration(commands.Cog):
 
     @commands.Cog.listener(name='on_ready')
     async def extra_cog_setup(self):
-        print(f"\n{'-' * 30}\n{self.__class__.__name__} Cog ----> nothing to set up\n{'-' * 30}")
+        log.info(f"{self} Cog ----> nothing to set up")
 
     async def get_available_configs(self):  # sourcery skip: dict-comprehension
         found_configs = {}
@@ -51,22 +61,26 @@ class Administration(commands.Cog):
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('admin', 'allowed_roles'))
     async def reload_all_ext(self, ctx):
-        if ctx.channel.name in self.allowed_channels:
-            _extensions_list = []
-            BASE_CONFIG.read()
-            COGS_CONFIG.read()
-            _base_location = BASE_CONFIG.get('general_settings', 'cogs_location')
-            for _extension in BASE_CONFIG.options('extensions'):
-                if BASE_CONFIG.getboolean('extensions', _extension) is True:
-                    try:
-                        self.bot.reload_extension(_base_location + '.' + _extension)
-                        _extensions_list.append(_extension)
-                    except DiscordException as error:
-                        print(str(error))
-            reloaded_extensions = '\n'.join(_extensions_list)
-            _delete_time = 5 if self.is_debug is True else None
-            await ctx.send(f"**successfully reloaded the following extensions:**\n{reloaded_extensions}", delete_after=_delete_time)
-            await ctx.message.delete(delay=float(_delete_time))
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        _extensions_list = []
+        BASE_CONFIG.read()
+        COGS_CONFIG.read()
+        reloaded_extensions = ''
+        _base_location = BASE_CONFIG.get('general_settings', 'cogs_location')
+        for _extension in BASE_CONFIG.options('extensions'):
+            if BASE_CONFIG.getboolean('extensions', _extension) is True:
+                _location = _base_location + '.' + _extension
+                try:
+                    self.bot.unload_extension(_location)
+                    self.bot.load_extension(_location)
+                    reloaded_extensions += f"> __'{_extension}'__ was **SUCCESSFULLY** reloaded!\n\n"
+                except DiscordException as error:
+                    log.error(error)
+
+        _delete_time = 5 if self.is_debug is True else 30
+        await ctx.send(f"**successfully reloaded the following extensions:**\n{reloaded_extensions}", delete_after=_delete_time)
+        await ctx.message.delete(delay=float(_delete_time - (_delete_time // 2)))
 
     @commands.command(name='die_antipetros_die')
     @commands.has_any_role(*COGS_CONFIG.getlist('admin', 'allowed_roles'))
@@ -83,7 +97,7 @@ class Administration(commands.Cog):
             _embed = discord.Embed(title="Anti Petros Report")
             await add_to_embed_listfield(_embed, 'Available Configs', available_configs.keys(), prefix='-')
             await ctx.send(embed=_embed)
-            print('config list send to ' + ctx.author.name)
+            log.info("config list send to '%s'", ctx.author.name)
 
     @commands.command(name='send_config')
     @commands.dm_only()
@@ -105,7 +119,7 @@ class Administration(commands.Cog):
                     _msg = f"Here is the file for the requested config `{req_config}`"
                     _file = await self.config_file_to_discord_file(req_config)
                     await ctx.send(_msg, file=_file)
-                print(f'requested configs ({", ".join(requested_configs)}) send to ' + ctx.author.name)
+                log.info("requested configs (%s) send to %s", ", ".join(requested_configs), ctx.author.name)
 
     @commands.command(name='overwrite_config')
     @commands.dm_only()
@@ -135,13 +149,12 @@ class Administration(commands.Cog):
             await ctx.send(f"Can not find a User with the id '{str(user_id)}'!")
             return
         if user.bot is True:
-            await ctx.send(f"the user you are trying to add is a **__BOT__**!\n\nThis can't be done!")
+            await ctx.send("the user you are trying to add is a **__BOT__**!\n\nThis can't be done!")
             return
         current_blacklist = self.bot.blacklist_user
         current_blacklist.append(user_id)
         BASE_CONFIG.set('blacklist', 'user', current_blacklist)
         BASE_CONFIG.save()
-        await self.bot.get_fresh_user_blacklist()
         if self.bot.is_debug is True:
             await user.send(f"***THIS IS JUST A TEST, SORRY FOR THE DM BOTHER***\n\nYou have been put on my __BLACKLIST__, you won't be able to invoke my commands.\n\nIf you think this was done in error or other questions, contact **__{self.bot.contact_user}__** per DM!")
         else:
@@ -169,12 +182,22 @@ class Administration(commands.Cog):
         current_blacklist.pop(to_delete_index)
         BASE_CONFIG.set('blacklist', 'user', current_blacklist)
         BASE_CONFIG.save()
-        await self.bot.get_fresh_user_blacklist()
         if self.bot.is_debug is True:
             await user.send("***THIS IS JUST A TEST, SORRY FOR THE DM BOTHER***\n\nYou have been **__REMOVED__** from my Blacklist.\n\nYou can again invoke my commands again!")
         else:
             await user.send("You have been **__REMOVED__** from my Blacklist.\n\nYou can again invoke my commands again!")
         await ctx.send(f"User '{user.name}' with User_id '{user.id}' was removed from my Blacklist.\n\nHe is now able again, to invoke my commands!")
+
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    async def tell_uptime(self, ctx):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        now_time = datetime.utcnow()
+        delta_time = now_time - self.bot.start_time
+        seconds = round(delta_time.total_seconds())
+        await ctx.send(f"__Uptime__ -->\n\t\t| {str(seconds_to_pretty(seconds))}")
+        log.info(f"reported uptime to '{ctx.author.name}'")
 
 
 def setup(bot):

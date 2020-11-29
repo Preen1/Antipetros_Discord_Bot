@@ -1,11 +1,14 @@
+
 # * Standard Library Imports -->
 from datetime import datetime
+import base64
+import lzma
 
 # * Third Party Imports -->
 from fuzzywuzzy import process as fuzzprocess
 
 # * Gid Imports -->
-from gidtools.gidsql.facade import GidSqliteDatabase
+from gidtools.gidsql.facade import GidSqliteDatabase, Fetch
 
 # * Local Imports -->
 from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
@@ -21,11 +24,13 @@ class LinkDataStorageSQLite:
     def __init__(self):
         self.db = GidSqliteDatabase(DB_LOC_LINKS, SCRIPT_LOC_LINKS)
         self.db.startup_db()
+        self.db.vacuum()
 
     def add_data(self, item, message_id):
         if isinstance(item, LINK_DATA_ITEM):
             self.db.writer.write(self.db.scripter['insert_link_author'], (item.author.name, item.author.display_name, item.author.id, any(str(_role) == 'Member' for _role in item.author.roles)))
             self.db.writer.write(self.db.scripter['insert_saved_link'], (item.link_name, item.link, item.date_time, item.delete_date_time, item.author.id, message_id))
+            self.db.vacuum()
 
     @property
     def link_messages_to_remove(self):
@@ -44,6 +49,18 @@ class LinkDataStorageSQLite:
 
     def delete_all(self):
         self.db.startup_db(overwrite=True)
+
+    def delete_link(self, name):
+        self.db.write('delete_link', (name,))
+
+    def get_link_for_delete(self, name):
+        _name = fuzzprocess.extractOne(name, self.all_link_names)
+        if _name is None:
+            return None, None, None
+        _name = _name[0]
+        result = self.db.query(self.db.scripter['get_link_delete_info'], (_name,), fetch=Fetch.One)
+        print(result[0], result[1], result[2])
+        return result[0], result[1], result[2]
 
     def get_link(self, name):
         _name = fuzzprocess.extractOne(name, self.all_link_names)
@@ -72,6 +89,7 @@ class SuggestionDataStorageSQLite:
     def __init__(self):
         self.db = GidSqliteDatabase(DB_LOC_SUGGESTIONS, SCRIPT_LOC_SUGGESTIONS)
         self.db.startup_db()
+        self.db.vacuum()
 
     @property
     def category_emojis(self):
@@ -121,8 +139,9 @@ class SuggestionDataStorageSQLite:
                          suggestion_item.message.content)
 
         else:
-            extra_data = suggestion_item.extra_data
-            self.db.write('insert_extra_data', (extra_data[0], extra_data[1]))
+            extra_data_name, extra_data_path = suggestion_item.extra_data
+
+            self.db.write('insert_extra_data', (extra_data_name, extra_data_path))
             sql_phrase = 'insert_suggestion_with_data'
             arguments = (suggestion_item.name,
                          suggestion_item.message.id,
@@ -131,5 +150,6 @@ class SuggestionDataStorageSQLite:
                          suggestion_item.message.created_at,
                          suggestion_item.time,
                          suggestion_item.message.content,
-                         extra_data[0])
+                         extra_data_name)
         self.db.write(sql_phrase, arguments)
+        self.db.vacuum()
