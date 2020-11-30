@@ -1,5 +1,5 @@
 
-__updated__ = '2020-11-29 03:38:55'
+__updated__ = '2020-11-30 21:15:30'
 
 # region [Imports]
 
@@ -43,7 +43,6 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # region [TODO]
 
-# TODO: make it so that changing an suggestion category removes all other category emojis
 
 # TODO: create get_my_data and remove_my_suggestion and delete_all_my_data method for the user
 
@@ -58,9 +57,7 @@ class SaveSuggestion(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-
         self.data_storage_handler = SuggestionDataStorageSQLite()
-
         log.debug(glog.class_initiated(self))
 
 # endregion [Init]
@@ -72,18 +69,26 @@ class SaveSuggestion(commands.Cog):
 
 # region [Properties]
 
+
     @property
     def command_emojis(self):
+        if self.bot.is_debug:
+            COGS_CONFIG.read()
         return {'save': COGS_CONFIG.get(self.config_name, 'save_emoji'),
                 'upvote': COGS_CONFIG.get(self.config_name, 'upvote_emoji'),
                 'downvote': COGS_CONFIG.get(self.config_name, 'downvote_emoji')}
 
     @property
     def categories(self):
-        return self.data_storage_handler.category_emojis
+        _out = self.data_storage_handler.category_emojis
+        if self.bot.is_debug:
+            log.debug(_out)
+        return _out
 
     @property
     def allowed_channels(self):
+        if self.bot.is_debug:
+            COGS_CONFIG.read()
         return set(COGS_CONFIG.getlist(self.config_name, 'allowed_channels'))
 
     @property
@@ -102,57 +107,74 @@ class SaveSuggestion(commands.Cog):
     async def extra_cog_setup(self):
         log.info(f"{self} Cog ----> nothing to set up")
 
-    @commands.Cog.listener()
-    @commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
+    async def new_suggestion(self, channel, message, guild_id, reaction_user):
+        if message.id in self.saved_messages:
+            await channel.send(embed=await self.make_already_saved_embed())
+            return
+
+        message_member = await self.bot.retrieve_member(guild_id, message.author.id)
+        reaction_member = await self.bot.retrieve_member(guild_id, reaction_user.id)
+        now_time = datetime.utcnow()
+        name = await self.collect_title(message.content)
+        extra_data = (message.attachments[0].filename, await message.attachments[0].read()) if len(message.attachments) != 0 else None
+
+        suggestion_item = SUGGESTION_DATA_ITEM(name, message_member, reaction_member, message, now_time)
+
+        was_saved, suggestion_item = await self.add_suggestion(suggestion_item, extra_data)
+        log.info("saved new suggestion, suggestion name: '%s', suggestion author: '%s', saved by: '%s', suggestion has extra data: '%s'",
+                 name,
+                 message_member.name,
+                 reaction_member.name,
+                 'yes' if extra_data is not None else 'no')
+
+        if was_saved is True:
+            await channel.send(embed=await self.make_add_success_embed(suggestion_item))
+
+    async def change_category(self, channel, message, emoji_name):
+        category = self.categories.get(emoji_name)
+        if category:
+            success = await self.set_category(category, message.id)
+            if success:
+                await channel.send(embed=await self.make_changed_category_embed(message, category))
+                log.info("updated category for suggestion (id: %s) to category '%s'", message.id, category)
+                for reaction_emoji in self.categories:
+                    if reaction_emoji is not None and reaction_emoji != emoji_name:
+                        other_reaction = await self.specifc_reaction_from_message(message, reaction_emoji)
+                        if other_reaction is not None:
+                            await other_reaction.clear()
+
+    async def change_votes(self, message, emoji_name):
+        reaction = await self.specifc_reaction_from_message(message, emoji_name)
+        _count = reaction.count
+        self.data_storage_handler.update_votes(emoji_name, _count, message.id)
+        log.info("updated votecount for suggestion (id: %s) for type: '%s' to count: %s", message.id, emoji_name, _count)
+
+    @ commands.Cog.listener()
+    @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
         if channel.name not in self.allowed_channels:
             return
-
         reaction_user = await self.bot.fetch_user(payload.user_id)
         if reaction_user.bot is True or reaction_user.id in self.bot.blacklist_user:
             return
-        guild = self.bot.get_guild(payload.guild_id)
-        reaction_member = await guild.fetch_member(reaction_user.id)
-
         message = await channel.fetch_message(payload.message_id)
-        message_author = message.author
-        message_member = await guild.fetch_member(message_author.id)
-        attachments = message.attachments
-        now_time = datetime.utcnow()
+        emoji_name = unicodedata.name(payload.emoji.name)
 
-        if unicodedata.name(payload.emoji.name) == self.command_emojis['save']:
-            if message.id in self.saved_messages:
-                await channel.send("Suggestion was already saved!")
-                return
-            name = await self.collect_title(message.content)
-            extra_data = (attachments[0].filename, await attachments[0].read()) if len(attachments) != 0 else None
-            suggestion_item = SUGGESTION_DATA_ITEM(name, message_member, reaction_member, message, now_time)
-            was_saved, suggestion_item = await self.add_suggestion(suggestion_item, extra_data)
-            log.info("saved new suggestion, suggestion name: '%s', suggestion author: '%s', saved by: '%s', suggestion has extra data: '%s'",
-                     name,
-                     message_member.name,
-                     reaction_member.name,
-                     'yes' if extra_data is not None else 'no')
-            if was_saved is True:
-                await channel.send(embed=await self.make_add_success_embed(suggestion_item))
-        elif unicodedata.name(payload.emoji.name) in self.categories and message.id in self.saved_messages:
-            category = self.categories.get(unicodedata.name(payload.emoji.name), None)
-            if category:
-                success = await self.set_category(category, message.id)
-                if success:
-                    await channel.send(embed=await self.make_changed_category_embed(message, category))
-                    log.info("updated category for suggestion (id: %s) to category '%s'", message.id, category)
-        elif unicodedata.name(payload.emoji.name) in [self.command_emojis['upvote'], self.command_emojis['downvote']] and message.id in self.saved_messages:
-            reaction = await self.specifc_reaction_from_message(message, unicodedata.name(payload.emoji.name))
-            _count = reaction.count
-            self.data_storage_handler.update_votes(unicodedata.name(payload.emoji.name), _count, message.id)
-            log.info("updated votecount for suggestion (id: %s) for type: '%s' to count: %s", message.id, unicodedata.name(payload.emoji.name), _count)
+        if emoji_name == self.command_emojis['save']:
+            await self.new_suggestion(channel, message, payload.guild_id, reaction_user)
+
+        elif emoji_name in self.categories and message.id in self.saved_messages:
+            await self.change_category(channel, message, emoji_name)
+
+        elif emoji_name in [self.command_emojis['upvote'], self.command_emojis['downvote']] and message.id in self.saved_messages:
+            await self.change_votes(message, emoji_name)
 
 
 # endregion [Listener]
 
 # region [Commands]
+
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
@@ -223,6 +245,7 @@ class SaveSuggestion(commands.Cog):
 
 # region [Embeds]
 
+
     async def make_add_success_embed(self, suggestion_item: SUGGESTION_DATA_ITEM):
         _filtered_content = []
         if suggestion_item.name is not None:
@@ -254,6 +277,12 @@ class SaveSuggestion(commands.Cog):
         embed.add_field(name="Suggestion:", value=message.jump_url, inline=False)
         return embed
 
+    async def make_already_saved_embed(self):
+        embed = discord.Embed(title="**This Suggestion was already saved!**", description="I did not save the Suggestion as I have it already saved", color=0xe04d7e)
+        embed.set_thumbnail(url="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Dialog-error.svg/2000px-Dialog-error.svg.png")
+        return embed
+
+
 # endregion [Embeds]
 
 # region [Helper]
@@ -276,7 +305,6 @@ class SaveSuggestion(commands.Cog):
 # endregion [Helper]
 
 # region [DunderMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

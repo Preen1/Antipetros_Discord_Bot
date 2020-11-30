@@ -33,7 +33,7 @@ currently implemented config options:
     - notify_with_link --> boolean if the notification DM should include the bad link
 """
 
-__updated__ = '2020-11-29 03:35:33'
+__updated__ = '2020-11-30 21:16:45'
 # region [Imports]
 
 # * Standard Library Imports -->
@@ -81,6 +81,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # TODO: need help figuring out how to best check bad link or how to format/normalize it
 
+# TODO: Add Method to add forbidden url words and forbidden links
 
 # endregion [TODO]
 
@@ -112,7 +113,9 @@ class SaveLink(commands.Cog):
 
 # endregion [Init]
 
+
 # region [Setup]
+
 
     async def _process_raw_blocklist_content(self, raw_content):
         """
@@ -472,6 +475,7 @@ class SaveLink(commands.Cog):
 
 # region [Embeds]
 
+
     async def _answer_embed(self, link_item):
         """
         creates the stored link embed for an saved link.
@@ -544,6 +548,7 @@ class SaveLink(commands.Cog):
 
 
 # region [Helper]
+
 
     async def _get_bad_link_image(self):
         """
@@ -642,7 +647,6 @@ class SaveLink(commands.Cog):
 # endregion [Helper]
 
 # region [DunderMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

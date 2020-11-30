@@ -6,7 +6,7 @@ Main module, starts the Antistasi Discord Bot.
 """
 # endregion [Module_Docstring]
 
-__updated__ = '2020-11-29 03:04:39'
+__updated__ = '2020-11-30 20:31:16'
 
 
 # region [Imports]
@@ -152,14 +152,6 @@ def main():
         channel = ANTI_PETROS_BOT.get_channel(BASE_CONFIG.getint('startup_message', 'channel'))
         if BASE_CONFIG.getboolean('startup_message', 'use_startup_message') is True:
             await channel.send(BASE_CONFIG.get('startup_message', 'message'))
-        # _out = {}
-        # for com_name, com in ANTI_PETROS_BOT.all_commands.items():
-
-        #     _out[com_name] = {'enabled': com.enabled, 'brief_help': com.brief, 'cog': com.cog_name, 'description': com.description, 'hidden': com.hidden,
-        #                       'signature': com.signature, 'qualified_name': com.qualified_name, 'usage': com.usage, 'help': com.help, 'aliases': com.aliases}
-        # writejson(_out, 'commands.json')
-        # _out2 = [emoji.name for emoji in ANTI_PETROS_BOT.emojis]
-        # writejson(_out2, 'emojis.json')
 
     ANTI_PETROS_BOT.run(get_token(), bot=True, reconnect=True)
 
