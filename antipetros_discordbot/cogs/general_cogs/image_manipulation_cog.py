@@ -1,5 +1,5 @@
 
-__updated__ = '2020-11-30 20:28:34'
+__updated__ = '2020-12-01 05:20:34'
 
 # region [Imports]
 
@@ -8,7 +8,8 @@ import os
 from io import BytesIO
 from tempfile import TemporaryDirectory
 from pathlib import Path
-
+from asyncio import get_running_loop
+from concurrent.futures import ThreadPoolExecutor
 # * Third Party Imports -->
 import discord
 from PIL import Image, ImageEnhance
@@ -43,6 +44,7 @@ IMAGE_MANIPULATION_CONFIG_NAME = 'image_manipulation'
 class ImageManipulator(commands.Cog):
     allowed_stamp_formats = set(loadjson(pathmaker(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\json_data\image_file_extensions.json")))
     stamp_positions = {'top': WatermarkPosition.Top, 'bottom': WatermarkPosition.Bottom, 'left': WatermarkPosition.Left, 'right': WatermarkPosition.Right, 'center': WatermarkPosition.Center}
+    executor = ThreadPoolExecutor(3)
 
     def __init__(self, bot):
         self.bot = bot
@@ -57,6 +59,7 @@ class ImageManipulator(commands.Cog):
                                     WatermarkPosition.Center | WatermarkPosition.Center: self._to_center_center,
                                     WatermarkPosition.Center | WatermarkPosition.Bottom: self._to_bottom_center,
                                     WatermarkPosition.Center | WatermarkPosition.Top: self._to_top_center}
+
         self.get_stamps()
 
     @property
@@ -95,6 +98,10 @@ class ImageManipulator(commands.Cog):
             COGS_CONFIG.read()
         return self.stamps.get(COGS_CONFIG.get(IMAGE_MANIPULATION_CONFIG_NAME, 'avatar_stamp')).copy()
 
+    @property
+    def loop(self):
+        return get_running_loop()
+
     def get_stamps(self):
         self.stamps = {}
         for file in os.scandir(self.stamp_location):
@@ -106,7 +113,7 @@ class ImageManipulator(commands.Cog):
                 image.putalpha(alpha)
                 self.stamps[name] = image
 
-    async def _stamp_resize(self, input_image, stamp_image, factor):
+    def _stamp_resize(self, input_image, stamp_image, factor):
         input_image_width, input_image_height = input_image.size
         input_image_width_fractioned = input_image_width * factor
         input_image_height_fractioned = input_image_height * factor
@@ -115,73 +122,73 @@ class ImageManipulator(commands.Cog):
         transform_factor = (transform_factor_width + transform_factor_height) / 2
         return stamp_image.resize((round(stamp_image.size[0] * transform_factor), round(stamp_image.size[1] * transform_factor)), resample=Image.LANCZOS)
 
-    async def _to_bottom_right(self, input_image, stamp_image, factor):
+    def _to_bottom_right(self, input_image, stamp_image, factor):
         input_image_width, input_image_height = input_image.size
-        _resized_stamp = await self._stamp_resize(input_image, stamp_image, factor)
+        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
         input_image.paste(_resized_stamp,
                           (input_image_width - _resized_stamp.size[0] - self.stamp_margin, input_image_height - _resized_stamp.size[1] - self.stamp_margin),
                           _resized_stamp)
         return input_image
 
-    async def _to_top_right(self, input_image, stamp_image, factor):
+    def _to_top_right(self, input_image, stamp_image, factor):
         input_image_width, input_image_height = input_image.size
-        _resized_stamp = await self._stamp_resize(input_image, stamp_image, factor)
+        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
         input_image.paste(_resized_stamp,
                           (input_image_width - _resized_stamp.size[0] - self.stamp_margin, 0 + self.stamp_margin),
                           _resized_stamp)
         return input_image
 
-    async def _to_center_right(self, input_image, stamp_image, factor):
+    def _to_center_right(self, input_image, stamp_image, factor):
         input_image_width, input_image_height = input_image.size
-        _resized_stamp = await self._stamp_resize(input_image, stamp_image, factor)
+        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
         input_image.paste(_resized_stamp,
                           (input_image_width - _resized_stamp.size[0] - self.stamp_margin, round((input_image_height / 2) - (_resized_stamp.size[1] / 2))),
                           _resized_stamp)
         return input_image
 
-    async def _to_bottom_left(self, input_image, stamp_image, factor):
+    def _to_bottom_left(self, input_image, stamp_image, factor):
         input_image_width, input_image_height = input_image.size
-        _resized_stamp = await self._stamp_resize(input_image, stamp_image, factor)
+        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
         input_image.paste(_resized_stamp,
                           (0 + self.stamp_margin, input_image_height - _resized_stamp.size[1] - self.stamp_margin),
                           _resized_stamp)
         return input_image
 
-    async def _to_top_left(self, input_image, stamp_image, factor):
+    def _to_top_left(self, input_image, stamp_image, factor):
 
-        _resized_stamp = await self._stamp_resize(input_image, stamp_image, factor)
+        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
         input_image.paste(_resized_stamp,
                           (0 + self.stamp_margin, 0 + self.stamp_margin),
                           _resized_stamp)
         return input_image
 
-    async def _to_center_left(self, input_image, stamp_image, factor):
+    def _to_center_left(self, input_image, stamp_image, factor):
         input_image_width, input_image_height = input_image.size
-        _resized_stamp = await self._stamp_resize(input_image, stamp_image, factor)
+        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
         input_image.paste(_resized_stamp,
                           (0 + self.stamp_margin, round((input_image_height / 2) - (_resized_stamp.size[1] / 2))),
                           _resized_stamp)
         return input_image
 
-    async def _to_center_center(self, input_image, stamp_image, factor):
+    def _to_center_center(self, input_image, stamp_image, factor):
         input_image_width, input_image_height = input_image.size
-        _resized_stamp = await self._stamp_resize(input_image, stamp_image, factor)
+        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
         input_image.paste(_resized_stamp,
                           (round((input_image_width / 2) - (_resized_stamp.size[0] / 2)), round((input_image_height / 2) - (_resized_stamp.size[1] / 2))),
                           _resized_stamp)
         return input_image
 
-    async def _to_top_center(self, input_image, stamp_image, factor):
+    def _to_top_center(self, input_image, stamp_image, factor):
         input_image_width, input_image_height = input_image.size
-        _resized_stamp = await self._stamp_resize(input_image, stamp_image, factor)
+        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
         input_image.paste(_resized_stamp,
                           (round((input_image_width / 2) - (_resized_stamp.size[0] / 2)), 0 + self.stamp_margin),
                           _resized_stamp)
         return input_image
 
-    async def _to_bottom_center(self, input_image, stamp_image, factor):
+    def _to_bottom_center(self, input_image, stamp_image, factor):
         input_image_width, input_image_height = input_image.size
-        _resized_stamp = await self._stamp_resize(input_image, stamp_image, factor)
+        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
         input_image.paste(_resized_stamp,
                           (round((input_image_width / 2) - (_resized_stamp.size[0] / 2)), input_image_height - _resized_stamp.size[1] - self.stamp_margin),
                           _resized_stamp)
@@ -220,10 +227,14 @@ class ImageManipulator(commands.Cog):
                     temp_file = Path(pathmaker(temp_dir, 'temp_file.png'))
                     log.debug("Tempfile '%s' created", temp_file)
                     await _file.save(temp_file)
-                    in_image = Image.open(temp_file).copy()
+                    in_image = await self.loop.run_in_executor(self.executor, Image.open, temp_file)
+                    in_image = await self.loop.run_in_executor(self.executor, in_image.copy)
                 factor = self.target_stamp_fraction if factor is None else factor
-                in_image = await self.stamp_pos_functions.get(first_pos | second_pos)(in_image, _stamp, factor)
+                pos_function = self.stamp_pos_functions.get(first_pos | second_pos)
+
+                in_image = await self.loop.run_in_executor(self.executor, pos_function, in_image, _stamp, factor)
                 name = 'antistasified_' + os.path.splitext(_file.filename)[0]
+
                 await self._send_image(ctx, in_image, name, f"__**{name}**__")
 
     @commands.command()
@@ -257,23 +268,28 @@ class ImageManipulator(commands.Cog):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_avatar_roles'))
-    async def member_avatar(self, ctx):
+    async def member_avatar(self, ctx, target_id: int = None):
         if ctx.channel.name not in self.allowed_channels:
             return
-        avatar_image = await self.get_avatar_from_context(ctx)
+        if target_id is None:
+            avatar_image = await self.get_avatar_from_user(ctx.author)
+        else:
+            guild_id = ctx.guild.id
+            user = await self.bot.retrieve_member(guild_id, target_id)
+            avatar_image = await self.get_avatar_from_user(user)
         stamp = self.avatar_stamp
-        modified_avatar = await self._to_bottom_right(avatar_image, stamp, self.avatar_stamp_fraction)
+        modified_avatar = await self.loop.run_in_executor(self.executor, self._to_bottom_right, avatar_image, stamp, self.avatar_stamp_fraction)
         name = f"{ctx.author.name}_Member_avatar"
         await self._send_image(ctx, modified_avatar, name, f"**Your New Avatar {ctx.author.name}**")
 
-    async def get_avatar_from_context(self, ctx):
-        user = ctx.author
+    async def get_avatar_from_user(self, user):
         avatar = user.avatar_url
         with TemporaryDirectory(prefix='temp') as temp_dir:
             temp_file = Path(pathmaker(temp_dir, 'temp_file.png'))
             log.debug("Tempfile '%s' created", temp_file)
             await avatar.save(temp_file)
-            avatar_image = Image.open(temp_file).copy()
+            avatar_image = await self.loop.run_in_executor(self.executor, Image.open, temp_file)
+            avatar_image = await self.loop.run_in_executor(self.executor, avatar_image.copy)
         return avatar_image
 
     @commands.Cog.listener(name='on_ready')
@@ -289,3 +305,7 @@ class ImageManipulator(commands.Cog):
 
 def setup(bot):
     bot.add_cog(ImageManipulator(bot))
+
+
+if __name__ == '__main__':
+    pass

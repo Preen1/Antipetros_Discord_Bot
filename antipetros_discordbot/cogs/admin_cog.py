@@ -199,6 +199,15 @@ class Administration(commands.Cog):
         await ctx.send(f"__Uptime__ -->\n\t\t| {str(seconds_to_pretty(seconds))}")
         log.info(f"reported uptime to '{ctx.author.name}'")
 
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    async def delete_msg(self, ctx, msg_id: int):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        channel = ctx.channel
+        message = await channel.fetch_message(msg_id)
+        await message.delete()
+
 
 def setup(bot):
     bot.add_cog(Administration(bot))
