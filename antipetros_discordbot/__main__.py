@@ -6,7 +6,7 @@ Main module, starts the Antistasi Discord Bot.
 """
 # endregion [Module_Docstring]
 
-__updated__ = '2020-12-02 06:56:54'
+__updated__ = '2020-12-02 08:14:39'
 
 
 # region [Imports]
@@ -52,6 +52,9 @@ if BASE_CONFIG.getboolean('logging', 'use_logging') is False:
 ADMIN_COG = "antipetros_discordbot.cogs.admin_cog"
 
 # endregion [Constants]
+
+# TODO: maybe put these functions into the Bot class or make an bot builder class
+
 
 # region [Helper_Functions]
 

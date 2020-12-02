@@ -6,7 +6,8 @@
 
 - create nice looking help command
 - better docstrings and docstring all commands at least
-
+- create all needed check methods
+-
 ### Unimportant
 
 - assign good names to the cogs as argument in the init.
@@ -15,9 +16,12 @@
 
 ## Bugs
 
-<!-- ### Important
+### Important
 
-### Unimportant
+- check everything for blocking functions and move big ones into threads (run in executor)
+
+
+<!-- ### Unimportant
 
 ### Maybe -->
 

@@ -16,7 +16,7 @@ from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG
 from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
 # endregion[Imports]
 
-__updated__ = '2020-12-02 06:57:47'
+__updated__ = '2020-12-02 08:13:32'
 
 # region [AppUserData]
 
@@ -32,6 +32,10 @@ log.info(glog.imported(__name__))
 # region [Constants]
 
 # endregion[Constants]
+
+# TODO: create regions for this file
+# TODO: Document and Docstrings
+# TODO: Create run in thread method and executor classattr
 
 
 class AntiPetrosBot(commands.Bot):

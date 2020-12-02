@@ -19,3 +19,4 @@ discord_flags
 fpdf2
 url-normalize
 async-property
+watchgod

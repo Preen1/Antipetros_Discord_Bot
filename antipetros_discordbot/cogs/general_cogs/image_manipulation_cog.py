@@ -40,6 +40,9 @@ IMAGE_MANIPULATION_CONFIG_NAME = 'image_manipulation'
 
 # endregion [Constants]
 
+# TODO: create regions for this file
+# TODO: Document and Docstrings
+
 
 class ImageManipulator(commands.Cog):
     allowed_stamp_formats = set(loadjson(pathmaker(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\json_data\image_file_extensions.json")))

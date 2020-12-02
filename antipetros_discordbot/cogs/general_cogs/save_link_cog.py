@@ -33,7 +33,7 @@ currently implemented config options:
     - notify_with_link --> boolean if the notification DM should include the bad link
 """
 
-__updated__ = '2020-12-02 06:59:09'
+__updated__ = '2020-12-02 08:12:55'
 # region [Imports]
 
 # * Standard Library Imports -->
@@ -83,6 +83,8 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # TODO: need help figuring out how to best check bad link or how to format/normalize it
 
 # TODO: Add Method to add forbidden url words and forbidden links
+
+# TODO: check if everything is documented
 
 # endregion [TODO]
 

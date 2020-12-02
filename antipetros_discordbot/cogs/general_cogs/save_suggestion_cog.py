@@ -1,5 +1,5 @@
 
-__updated__ = '2020-12-02 02:15:12'
+__updated__ = '2020-12-02 08:12:38'
 
 # region [Imports]
 
@@ -48,6 +48,8 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # TODO: create get_my_data and remove_my_suggestion and delete_all_my_data method for the user
 
 # TODO: create report generator in different formats, at least json and Html, probably also as embeds and Markdown
+# TODO: create regions for this file
+# TODO: Document and Docstrings
 
 # endregion[TODO]
 

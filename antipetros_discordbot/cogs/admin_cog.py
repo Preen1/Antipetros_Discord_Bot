@@ -24,6 +24,9 @@ log.debug(glog.imported(__name__))
 
 # endregion[Logging]
 
+# TODO: create regions for this file
+# TODO: Document and Docstrings
+
 
 class Administration(commands.Cog):
 

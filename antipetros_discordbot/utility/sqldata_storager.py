@@ -26,6 +26,11 @@ SCRIPT_LOC_SUGGESTIONS = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Ant
 ARCHIVE_LOCATION = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\archive"
 
 
+# TODO: create regions for this file
+# TODO: update save link Storage to newer syntax (composite access)
+# TODO: Document and Docstrings
+# TODO: refractor to subfolder
+
 class LinkDataStorageSQLite:
     def __init__(self):
         self.db = GidSqliteDatabase(DB_LOC_LINKS, SCRIPT_LOC_LINKS)
