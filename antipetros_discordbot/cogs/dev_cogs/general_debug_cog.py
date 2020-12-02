@@ -1,5 +1,5 @@
 
-__updated__ = '2020-12-02 06:56:21'
+__updated__ = '2020-12-02 17:38:40'
 # region [Imports]
 
 # * Standard Library Imports -->
@@ -13,7 +13,7 @@ from pprint import pprint, pformat
 import aiohttp
 import discord
 from discord.ext import tasks, commands
-
+import discord
 # * Gid Imports -->
 import gidlogger as glog
 
@@ -102,6 +102,65 @@ class GeneralDebug(commands.Cog):
         for name, result in to_log:
             _out += f"{name}: {str(result)}, "
         log.debug(_out)
+
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('general_debug', 'allowed_roles'))
+    async def last_message(self, ctx, channel_name):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        try:
+            channel = await self.bot.channel_from_name(channel_name)
+            last_message_id = channel.last_message_id
+            msg = await self.bot.bot_member.fetch_message(last_message_id)
+
+            await ctx.send(f"**Message Content:**\n\n```\n{msg.content}\n```")
+        except Exception as error:
+            await ctx.send(f"**__Encountered this Exception:__**\n\n```python\n{str(error)}\n```")
+            raise
+
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('general_debug', 'allowed_roles'))
+    async def message_by_id(self, ctx, channel_name, msg_id: int):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        try:
+            channel = await self.bot.channel_from_name(channel_name)
+            msg = await channel.fetch_message(msg_id)
+            await ctx.send(f"**Message Content:**\n\n```\n{msg.content}\n```")
+        except Exception as error:
+            await ctx.send(f"**__Encountered this Exception:__**\n\n```python\n{str(error)}\n```")
+            raise
+
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('general_debug', 'allowed_roles'))
+    async def all_info_from_command_trigger(self, ctx, *arguments):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        invoke_member = await self.bot.retrieve_antistasi_member(ctx.author.id)
+        invoke_member_activity = invoke_member.activity
+
+        invoke_member_activity = 'No activity' if invoke_member_activity is None else invoke_member_activity.name
+        if invoke_member_activity.casefold() == 'spotify':
+            invoke_member_activity = f"{invoke_member.activity.title} by {invoke_member.activity.artist} with a duration of {str(invoke_member.activity.duration)}"
+        info = [('prefix', ctx.prefix),
+                ('command', ctx.command),
+                ('command_failed', ctx.command_failed),
+                ('from cog', ctx.cog),
+                ('guild', ctx.guild.name),
+                ('channel', ctx.channel.name),
+                ('args', ctx.args),
+                ('kwargs', ctx.kwargs),
+                ('message_content', ctx.message.content),
+                ('caller_name', ctx.author.name),
+                ('caller_roles', list(map(lambda x: x.name, invoke_member.roles))),
+                ('caller_top_role', invoke_member.top_role.name),
+                ('caller_activity', invoke_member_activity),
+                ('created_at', ctx.message.created_at.isoformat())]
+
+        embed = discord.Embed(title="Command Call Info")
+        for _name, _value in info:
+            embed.add_field(name=f"__{_name.title()}:__", value=f"`{str(_value)}`", inline=False)
+        await ctx.send(embed=embed)
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

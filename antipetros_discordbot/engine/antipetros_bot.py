@@ -16,7 +16,7 @@ from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG
 from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
 # endregion[Imports]
 
-__updated__ = '2020-12-02 08:13:32'
+__updated__ = '2020-12-02 17:50:04'
 
 # region [AppUserData]
 
@@ -92,6 +92,9 @@ class AntiPetrosBot(commands.Bot):
     def contact_user(self):
         return BASE_CONFIG.get('blacklist', 'contact_user')
 
+    async def retrieve_antistasi_member(self, user_id):
+        return await self.antistasi_guild.fetch_member(user_id)
+
     async def retrieve_member(self, guild_id, user_id):
         guild = self.get_guild(guild_id)
         return await guild.fetch_member(user_id)
@@ -113,7 +116,14 @@ class AntiPetrosBot(commands.Bot):
     async def channel_from_name(self, channel_name):
         for channel in self.antistasi_guild.channels:
             if channel.name.casefold() == channel_name.casefold():
-                return self.fetch_channel(channel.id)
+                return channel
+
+    async def member_by_name(self, member_name):
+        member_name = member_name.casefold()
+        for member in self.antistasi_guild.members:
+            print(member.name)
+            if member.name.casefold() == member_name:
+                return member
 
 
 # region[Main_Exec]

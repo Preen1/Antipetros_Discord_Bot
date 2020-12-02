@@ -8,6 +8,7 @@ from asyncio import get_event_loop
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 import random
+import asyncio
 # * Third Party Imports -->
 import discord
 from PIL import Image
@@ -237,6 +238,56 @@ class TestPlayground(commands.Cog):
         content = ' '.join(content)
         print(content)
         await self.bot.split_to_messages(ctx, content, ' ')
+
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    async def request_server_restart(self, ctx):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        if ctx.prefix != "<@&752957930902651062> ":
+            return
+        roles = await self.bot.antistasi_guild.fetch_roles()
+        for role in roles:
+            if role.name.casefold() == 'Dev Helper'.casefold():
+                for _member in role.members:
+                    print(_member.name)
+        servers = ["COMMUNITY_SERVER_1", "TEST_SERVER_1", "TEST_SERVER_2"]
+        await ctx.send(f"please specify the server name in the next 20 seconds | OPTIONS: {', '.join(servers)}")
+        user = ctx.author
+        channel = ctx.channel
+
+        def check(m):
+            return m.author.name == user.name and m.channel.name == channel.name
+        try:
+            msg = await self.bot.wait_for('message', check=check, timeout=20.0)
+            if any(server.casefold() in msg.content.casefold() for server in servers):
+                for server in servers:
+                    if server.casefold() in msg.content.casefold():
+                        _server = server
+            else:
+                await ctx.send('No valid answer received, aborting request, you can always try again')
+                return
+            await ctx.send("Did the commander save and is everyone ready for a restart? answer time: 20 seconds | OPTIONS: YES, NO")
+            try:
+                msg_2 = await self.bot.wait_for('message', check=check, timeout=20.0)
+                if msg_2.content.casefold() == 'yes':
+                    is_saved = 'yes'
+                elif msg_2.content.casefold() == 'no':
+                    is_saved = 'no'
+                else:
+                    await ctx.send('No valid answer received, aborting request, you can always try again')
+                    return
+                await ctx.send("notifying admin now")
+                member = await self.bot.retrieve_antistasi_member(576522029470056450)
+                await member.send(f"This is a notification from {ctx.author.name}!\nHe requests a server restart for server {_server}, saved and ready: {is_saved}")
+                await ctx.send(f"I have notified {member.name} per DM!")
+            except asyncio.TimeoutError:
+                await ctx.send('No answer received, aborting request, you can always try again')
+                return
+
+        except asyncio.TimeoutError:
+            await ctx.send('No answer received, aborting request, you can always try again')
+            return
 
 
 def setup(bot):
