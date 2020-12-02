@@ -33,7 +33,7 @@ currently implemented config options:
     - notify_with_link --> boolean if the notification DM should include the bad link
 """
 
-__updated__ = '2020-12-02 08:12:55'
+__updated__ = '2020-12-02 20:15:43'
 # region [Imports]
 
 # * Standard Library Imports -->
@@ -89,7 +89,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion [TODO]
 
 
-class SaveLink(commands.Cog):
+class SaveLink(commands.Cog, command_attrs={'hidden': True}):
     """
     Actual Cog Class for SaveLink features.
 
@@ -252,7 +252,7 @@ class SaveLink(commands.Cog):
         else:
             await self._clear_links(ctx, 'yes')
 
-    @commands.command()
+    @commands.command(hidden=False)
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
     async def get_link(self, ctx, name):
         """
@@ -273,7 +273,7 @@ class SaveLink(commands.Cog):
         await ctx.send(_link)
         log.info("retrieve link '%s'", _link)
 
-    @commands.command()
+    @commands.command(hidden=False)
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
     async def get_all_links(self, ctx, in_format='plain'):
         """
@@ -309,7 +309,7 @@ class SaveLink(commands.Cog):
             _file = discord.File(_path, _name)
             await ctx.send(file=_file)
 
-    @commands.command()
+    @commands.command(hidden=False)
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
     async def save_link(self, ctx, link: str, link_name: str = None, days_to_hold: int = None):
         """
@@ -400,7 +400,7 @@ class SaveLink(commands.Cog):
                 await user.send(embed=notify_embed, delete_after=delete_answer)
                 log.debug("notified '%s' about the offending link", user.name)
 
-    @commands.command()
+    @commands.command(hidden=False)
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
     async def get_forbidden_list(self, ctx, file_format='json'):
         """

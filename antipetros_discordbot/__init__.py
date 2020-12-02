@@ -33,3 +33,9 @@ def last_updated(as_datetime=False):
     if as_datetime is True:
         return latest_time
     return latest_time.strftime("%Y-%m-%d %H:%M:%S")
+
+
+__stmt = "Last Updated: " + str(last_updated())
+print('~' * (52 + len(__stmt)))
+print('~' * 25 + ' ' + __stmt + ' ' + '~' * 25)
+print('~' * (52 + len(__stmt)))

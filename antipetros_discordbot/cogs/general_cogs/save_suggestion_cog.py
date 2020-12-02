@@ -1,5 +1,5 @@
 
-__updated__ = '2020-12-02 08:12:38'
+__updated__ = '2020-12-02 20:15:44'
 
 # region [Imports]
 
@@ -53,7 +53,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[TODO]
 
-class SaveSuggestion(commands.Cog):
+class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
     suggestion_name_regex = re.compile(r"(?P<name>(?<=#).*)")
     config_name = 'save_suggestions'
     executor = ThreadPoolExecutor(3)
@@ -72,7 +72,6 @@ class SaveSuggestion(commands.Cog):
 # endregion [Setup]
 
 # region [Properties]
-
 
     @property
     def command_emojis(self):
@@ -183,7 +182,6 @@ class SaveSuggestion(commands.Cog):
 
 # region [Commands]
 
-
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
     async def clear_all_suggestions(self, ctx, sure=False):
@@ -272,7 +270,6 @@ class SaveSuggestion(commands.Cog):
 
 # region [Embeds]
 
-
     async def make_add_success_embed(self, suggestion_item: SUGGESTION_DATA_ITEM):
         _filtered_content = []
         if suggestion_item.name is not None:
@@ -314,6 +311,7 @@ class SaveSuggestion(commands.Cog):
 
 # region [Helper]
 
+
     async def collect_title(self, content):
         name_result = self.suggestion_name_regex.search(content)
         if name_result:
@@ -332,6 +330,7 @@ class SaveSuggestion(commands.Cog):
 # endregion [Helper]
 
 # region [DunderMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"
