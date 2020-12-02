@@ -3,6 +3,8 @@
 from datetime import datetime
 import base64
 import lzma
+import shutil
+import os
 
 # * Third Party Imports -->
 from fuzzywuzzy import process as fuzzprocess
@@ -12,12 +14,16 @@ from gidtools.gidsql.facade import GidSqliteDatabase, Fetch
 
 # * Local Imports -->
 from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
+from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG
+from antipetros_discordbot.utility.gidtools_functions import timenamemaker, limit_amount_files_absolute, pathmaker
 
 DB_LOC_LINKS = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\sqlite_data\save_link_db.db"
 SCRIPT_LOC_LINKS = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\sqlite_data\sql_procedures\save_link_sql"
 
 DB_LOC_SUGGESTIONS = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\sqlite_data\save_suggestion.db"
 SCRIPT_LOC_SUGGESTIONS = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\sqlite_data\sql_procedures\save_suggestion_sql"
+
+ARCHIVE_LOCATION = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\archive"
 
 
 class LinkDataStorageSQLite:
@@ -30,7 +36,6 @@ class LinkDataStorageSQLite:
         if isinstance(item, LINK_DATA_ITEM):
             self.db.writer.write(self.db.scripter['insert_link_author'], (item.author.name, item.author.display_name, item.author.id, any(str(_role) == 'Member' for _role in item.author.roles)))
             self.db.writer.write(self.db.scripter['insert_saved_link'], (item.link_name, item.link, item.date_time, item.delete_date_time, item.author.id, message_id))
-            self.db.vacuum()
 
     @property
     def link_messages_to_remove(self):
@@ -47,11 +52,29 @@ class LinkDataStorageSQLite:
     def update_removed_status(self, message_id):
         self.db.write('update_removed', (message_id,))
 
-    def delete_all(self):
-        self.db.startup_db(overwrite=True)
+    def clear(self):
+        BASE_CONFIG.read()
+        use_backup = BASE_CONFIG.getboolean('databases', 'backup_db')
+        amount_backups = BASE_CONFIG.getint('databases', 'amount_backups_to_keep')
+        location = self.db.path
+        if use_backup:
+            new_name = os.path.basename(timenamemaker(location))
+            new_location = pathmaker(ARCHIVE_LOCATION, new_name)
+            shutil.move(location, new_location)
+            basename = os.path.basename(location).split('.')[0]
+            limit_amount_files_absolute(basename, ARCHIVE_LOCATION, amount_backups)
+        else:
+            os.remove(location)
+
+        self.db.startup_db()
 
     def delete_link(self, name):
         self.db.write('delete_link', (name,))
+        self.db.vacuum()
+
+    def get_all_posted_links(self):
+        for item in self.db.query('get_all_link_delete_info'):
+            yield item[0]
 
     def get_link_for_delete(self, name):
         _name = fuzzprocess.extractOne(name, self.all_link_names)
@@ -153,3 +176,19 @@ class SuggestionDataStorageSQLite:
                          extra_data_name)
         self.db.write(sql_phrase, arguments)
         self.db.vacuum()
+
+    def clear(self):
+        BASE_CONFIG.read()
+        use_backup = BASE_CONFIG.getboolean('databases', 'backup_db')
+        amount_backups = BASE_CONFIG.getint('databases', 'amount_backups_to_keep')
+        location = self.db.path
+        if use_backup:
+            new_name = os.path.basename(timenamemaker(location))
+            new_location = pathmaker(ARCHIVE_LOCATION, new_name)
+            shutil.move(location, new_location)
+            basename = os.path.basename(location).split('.')[0]
+            limit_amount_files_absolute(basename, ARCHIVE_LOCATION, amount_backups)
+        else:
+            os.remove(location)
+
+        self.db.startup_db()

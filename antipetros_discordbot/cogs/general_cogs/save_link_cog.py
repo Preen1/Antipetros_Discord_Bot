@@ -33,7 +33,7 @@ currently implemented config options:
     - notify_with_link --> boolean if the notification DM should include the bad link
 """
 
-__updated__ = '2020-11-30 21:16:45'
+__updated__ = '2020-12-02 06:59:09'
 # region [Imports]
 
 # * Standard Library Imports -->
@@ -41,7 +41,8 @@ import os
 from datetime import datetime, timedelta
 from tempfile import TemporaryDirectory
 from urllib.parse import urlparse
-
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 # * Third Party Imports -->
 import aiohttp
 import discord
@@ -97,6 +98,7 @@ class SaveLink(commands.Cog):
     # url to blacklist for forbidden_link_list
     blocklist_hostfile_url = "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn/hosts"
     config_name = 'save_link'
+    executor = ThreadPoolExecutor(3)
 # region [Init]
 
     def __init__(self, bot):
@@ -115,7 +117,6 @@ class SaveLink(commands.Cog):
 
 
 # region [Setup]
-
 
     async def _process_raw_blocklist_content(self, raw_content):
         """
@@ -180,9 +181,11 @@ class SaveLink(commands.Cog):
     async def before_check_link_best_by_loop(self):
         await self.bot.wait_until_ready()
 
+
 # endregion [Setup]
 
 # region [Properties]
+
 
     @property
     def link_channel(self):
@@ -198,9 +201,15 @@ class SaveLink(commands.Cog):
         name = COGS_CONFIG.get(self.config_name, 'bad_link_image_name')
         return name, path
 
+    @property
+    def loop(self):
+        return asyncio.get_running_loop()
+
+
 # endregion [Properties]
 
 # region [Listener]
+
 
     @commands.Cog.listener(name='on_ready')
     async def _extra_cog_setup(self):
@@ -223,22 +232,23 @@ class SaveLink(commands.Cog):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'delete_all_allowed_roles'))
-    async def delete_all_links(self, ctx):
-        """
-        Delete all saved links.
-
-        Implementation is hhandled by DataStorage, but usually involves deleting the storage file (eg: sqlite, deletes db and reinitializes it)
-
-        Args:
-            ctx (discord.context): mandatory command argument
-        """
-        log.debug("command was triggered in %s", ctx.channel.name)
+    async def clear_all_links(self, ctx, sure=False):
         if ctx.channel.name not in self.allowed_channels:
-            log.debug("channel not is 'allowed channel'")
             return
-        self.data_storage_handler.delete_all()
-        await ctx.send("cleared all saved links")
-        log.info("all links were deleted from the DataStorage by request of '%s'", ctx.author.name)
+        if sure is False:
+            await ctx.send("Do you really want to delete all saved links?\n\nANSWER **YES** in the next __30 SECONDS__")
+            user = ctx.author
+            channel = ctx.channel
+
+            def check(m):
+                return m.author.name == user.name and m.channel.name == channel.name
+            try:
+                msg = await self.bot.wait_for('message', check=check, timeout=30.0)
+                await self._clear_links(ctx, msg.content)
+            except asyncio.TimeoutError:
+                await ctx.send('No answer received, canceling request to delete Database, nothing was deleted')
+        else:
+            await self._clear_links(ctx, 'yes')
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
@@ -475,7 +485,6 @@ class SaveLink(commands.Cog):
 
 # region [Embeds]
 
-
     async def _answer_embed(self, link_item):
         """
         creates the stored link embed for an saved link.
@@ -548,7 +557,6 @@ class SaveLink(commands.Cog):
 
 
 # region [Helper]
-
 
     async def _get_bad_link_image(self):
         """
@@ -643,10 +651,24 @@ class SaveLink(commands.Cog):
         _out = [word for word in self.forbidden_url_words if word in url]
         return list(set(_out))
 
+    async def _clear_links(self, ctx, answer):
+        if answer.casefold() == 'yes':
+            await ctx.send('deleting posted links')
+            for link_id in self.data_storage_handler.get_all_posted_links():
+                msg = await self.link_channel.fetch_message(link_id)
+                await msg.delete()
+            await ctx.send('deleting Database')
+            await self.loop.run_in_executor(self.executor, self.data_storage_handler.clear)
+            await ctx.send('Database was cleared, ready for input again')
+
+        elif answer.casefold() == 'no':
+            await ctx.send('canceling request to delete Database, nothing was deleted')
+
 
 # endregion [Helper]
 
 # region [DunderMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

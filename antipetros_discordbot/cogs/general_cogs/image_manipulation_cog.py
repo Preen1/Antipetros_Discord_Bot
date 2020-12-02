@@ -1,5 +1,5 @@
 
-__updated__ = '2020-12-01 05:20:34'
+__updated__ = '2020-12-01 10:14:09'
 
 # region [Imports]
 
@@ -279,6 +279,7 @@ class ImageManipulator(commands.Cog):
             avatar_image = await self.get_avatar_from_user(user)
         stamp = self.avatar_stamp
         modified_avatar = await self.loop.run_in_executor(self.executor, self._to_bottom_right, avatar_image, stamp, self.avatar_stamp_fraction)
+
         name = f"{ctx.author.name}_Member_avatar"
         await self._send_image(ctx, modified_avatar, name, f"**Your New Avatar {ctx.author.name}**")
 

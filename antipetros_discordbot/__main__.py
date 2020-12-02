@@ -6,7 +6,7 @@ Main module, starts the Antistasi Discord Bot.
 """
 # endregion [Module_Docstring]
 
-__updated__ = '2020-12-01 04:47:33'
+__updated__ = '2020-12-02 06:56:54'
 
 
 # region [Imports]
@@ -15,19 +15,21 @@ __updated__ = '2020-12-01 04:47:33'
 import os
 import logging
 import configparser
-
+from pprint import pprint, pformat
+import inspect
+import asyncio
 # * Third Party Imports -->
 from dotenv import load_dotenv
 from discord.ext import commands
-
+from watchgod import awatch
 # * Gid Imports -->
 import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.utility.exceptions import TokenError
 from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG
-
+from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, CONFIG_DIR, COGS_CONFIG
+from antipetros_discordbot.utility.gidtools_functions import writejson
 # endregion[Imports]
 
 # region [Logging]
@@ -54,23 +56,6 @@ ADMIN_COG = "antipetros_discordbot.cogs.admin_cog"
 # region [Helper_Functions]
 
 
-def dynamic_command_prefix():
-    """
-    loads command prefix settings from the Base Config, if not found sets it to '$$'
-
-    Returns:
-        either string or if 'invoke_by_mention' is set to True, retrurns 'commands.when_mentioned_or' callable
-    """
-    try:
-        prefix = BASE_CONFIG.get('general_settings', 'command_prefix')
-    except configparser.NoOptionError as error:
-        log.error(error)
-        prefix = '$$'
-    if BASE_CONFIG.getboolean('general_settings', 'invoke_by_mention') is True:
-        prefix = commands.when_mentioned_or(prefix)
-    return prefix
-
-
 def get_help_command():
     """
     loads help command from config, if not found sets it to 'antipetros_help"
@@ -79,7 +64,7 @@ def get_help_command():
         str: help_command
     """
     try:
-        _out = BASE_CONFIG.get('general_settings', 'help_command')
+        _out = BASE_CONFIG.get('prefix', 'help_command')
     except configparser.NoOptionError as error:
         log.error(error)
         _out = 'antipetros_help'
@@ -130,6 +115,11 @@ def get_initial_extensions():
 # region [Main_function]
 
 
+async def debug_function(bot):
+    log.debug("debug function triggered")
+    log.warning('nothing set in debug function')
+
+
 def main():
     """
     Starts the Antistasi Discord Bot 'AntiPetros'.
@@ -137,7 +127,7 @@ def main():
     creates the bot, loads the extensions and starts the bot with the Token.
     """
 
-    ANTI_PETROS_BOT = AntiPetrosBot(command_prefix=dynamic_command_prefix(), HELP_COMMAND=get_help_command(), self_bot=False)
+    ANTI_PETROS_BOT = AntiPetrosBot(command_prefix='$$', HELP_COMMAND=get_help_command(), self_bot=False)
 
     ANTI_PETROS_BOT.load_extension(ADMIN_COG)
     for extension in get_initial_extensions():
@@ -149,9 +139,18 @@ def main():
         log.info('trying to log on as %s!', ANTI_PETROS_BOT.user.name)
 
         log.info('%s has connected to Discord!', ANTI_PETROS_BOT.user.name)
+
         channel = ANTI_PETROS_BOT.get_channel(BASE_CONFIG.getint('startup_message', 'channel'))
         if BASE_CONFIG.getboolean('startup_message', 'use_startup_message') is True:
-            await channel.send(BASE_CONFIG.get('startup_message', 'message'))
+            delete_time = 15 if ANTI_PETROS_BOT.is_debug is True else 60
+            await channel.send(BASE_CONFIG.get('startup_message', 'message'), delete_after=delete_time)
+        await asyncio.sleep(5)
+        if ANTI_PETROS_BOT.is_debug:
+            await debug_function(ANTI_PETROS_BOT)
+        async for change in awatch(CONFIG_DIR):
+            log.debug(change)
+            BASE_CONFIG.read()
+            COGS_CONFIG.read()
 
     ANTI_PETROS_BOT.run(get_token(), bot=True, reconnect=True)
 

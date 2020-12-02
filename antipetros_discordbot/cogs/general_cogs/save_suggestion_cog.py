@@ -1,5 +1,5 @@
 
-__updated__ = '2020-11-30 21:15:30'
+__updated__ = '2020-12-02 02:15:12'
 
 # region [Imports]
 
@@ -9,7 +9,8 @@ import re
 import sqlite3 as sqlite
 import unicodedata
 from datetime import datetime
-
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 # * Third Party Imports -->
 import discord
 from discord.ext import commands
@@ -53,6 +54,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 class SaveSuggestion(commands.Cog):
     suggestion_name_regex = re.compile(r"(?P<name>(?<=#).*)")
     config_name = 'save_suggestions'
+    executor = ThreadPoolExecutor(3)
 # region [Init]
 
     def __init__(self, bot):
@@ -98,6 +100,10 @@ class SaveSuggestion(commands.Cog):
     @property
     def saved_messages(self):
         return self.data_storage_handler.get_all_message_ids()
+
+    @property
+    def loop(self):
+        return asyncio.get_running_loop()
 
 # endregion [Properties]
 
@@ -178,13 +184,23 @@ class SaveSuggestion(commands.Cog):
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
-    async def clear_all(self, ctx):
-        if ctx.channel.name in self.allowed_channels:
-            writejson({}, self.save_file)
-            _msg = 'I have cleared the file'
+    async def clear_all_suggestions(self, ctx, sure=False):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        if sure is False:
+            await ctx.send("Do you really want to delete all saved suggestions?\n\nANSWER **YES** in the next __30 SECONDS__")
+            user = ctx.author
+            channel = ctx.channel
+
+            def check(m):
+                return m.author.name == user.name and m.channel.name == channel.name
+            try:
+                msg = await self.bot.wait_for('message', check=check, timeout=30.0)
+                await self._clear_suggestions(ctx, msg.content)
+            except asyncio.TimeoutError:
+                await ctx.send('No answer received, canceling request to delete Database, nothing was deleted')
         else:
-            _msg = 'you dont have the permission for that'
-        await ctx.send(_msg)
+            await self._clear_suggestions(ctx, 'yes')
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
@@ -239,6 +255,15 @@ class SaveSuggestion(commands.Cog):
         except sqlite.Error as error:
             log.error(error)
             return False
+
+    async def _clear_suggestions(self, ctx, answer):
+        if answer.casefold() == 'yes':
+            await ctx.send('deleting Database')
+            await self.loop.run_in_executor(self.executor, self.data_storage_handler.clear)
+            await ctx.send('Database was cleared, ready for input again')
+
+        elif answer.casefold() == 'no':
+            await ctx.send('canceling request to delete Database, nothing was deleted')
 
 
 # endregion [DataStorage]

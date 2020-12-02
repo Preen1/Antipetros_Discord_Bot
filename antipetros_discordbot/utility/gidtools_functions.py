@@ -515,7 +515,7 @@ def timenamemaker(in_full_path):
     str
         the new file name
     """
-    _time = str(datetime.datetime.now()).rsplit('.', maxsplit=1)[0]
+    _time = datetime.datetime.utcnow().strftime('_[%Y-%m-%dT%H-%M]')
     log.debug(f"_time is [{_time}]")
     _file = splitoff(in_full_path)[1]
     _file_tup = os.path.splitext(_file)
@@ -686,9 +686,24 @@ def file_walker(in_path, in_with_folders=False):
 # endregion [Functions_Search]
 
 
-# region [Functions_Misc]
+def _filter_by_fileage(file_path):
+    return os.stat(file_path).st_ctime
 
-# -------------------------------------------------------------- limit_amount_of_files -------------------------------------------------------------- #
+
+def limit_amount_files_absolute(in_basename, in_directory, in_amount_max):
+    existing_files = []
+    for file in os.scandir(in_directory):
+        if in_basename in file.name:
+            existing_files.append(pathmaker(file.path))
+    existing_files = sorted(existing_files, key=_filter_by_fileage)
+    while len(existing_files) > in_amount_max:
+        os.remove(existing_files.pop(0))
+
+        # region [Functions_Misc]
+
+        # -------------------------------------------------------------- limit_amount_of_files -------------------------------------------------------------- #
+
+
 def limit_amount_of_files(in_basename, in_directory, in_amount_max):
     # -------------------------------------------------------------- limit_amount_of_files -------------------------------------------------------------- #
     """

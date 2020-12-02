@@ -2,19 +2,21 @@
 
 # * Standard Library Imports -->
 from datetime import datetime
+from collections import namedtuple
 # * Third Party Imports -->
-from discord.ext import commands
+from discord.ext import commands, tasks
 from async_property import async_property
-
+from discord.ext.commands import when_mentioned_or
+from watchgod import awatch
 # * Gid Imports -->
 import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG
-
+from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
 # endregion[Imports]
 
-__updated__ = '2020-11-29 03:00:10'
+__updated__ = '2020-12-02 06:57:47'
 
 # region [AppUserData]
 
@@ -33,10 +35,46 @@ log.info(glog.imported(__name__))
 
 
 class AntiPetrosBot(commands.Bot):
+
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+
         self.start_time = datetime.utcnow()
         self.max_message_length = 2000
+        self.bot_member = None
+        self.all_my_roles = []
+
+        super().__init__(*args, **kwargs)
+        self.get_bot_roles_loop.start()
+
+    @tasks.loop(minutes=10, reconnect=True)
+    async def get_bot_roles_loop(self):
+        log.info('Refreshing Bot Roles')
+        self.all_my_roles = []
+        self.bot_member = await self.retrieve_member(self.antistasi_guild.id, self.id)
+        for index, role in enumerate(self.bot_member.roles):
+            if index != 0:
+                self.all_my_roles.append(role)
+        if BASE_CONFIG.getboolean('prefix', 'invoke_by_role_and_mention') is True:
+            self.command_prefix = when_mentioned_or_roles_or(BASE_CONFIG.get('prefix', 'command_prefix'))
+        else:
+            self.command_prefix = BASE_CONFIG.get('prefix', 'command_prefix')
+        log.debug("command prefixes: %s", self.command_prefix(self, ''))
+
+    @get_bot_roles_loop.before_loop
+    async def before_get_bot_roles_loop(self):
+        await self.wait_until_ready()
+
+    @property
+    def antistasi_guild(self):
+        return self.get_guild(BASE_CONFIG.getint('general_settings', 'antistasi_guild_id'))
+
+    @property
+    def id(self):
+        return self.user.id
+
+    @property
+    def display_name(self):
+        return self.user.display_name
 
     @property
     def is_debug(self):
@@ -67,6 +105,11 @@ class AntiPetrosBot(commands.Bot):
                 await ctx.send(_out)
                 _out = ''
         await ctx.send(_out)
+
+    async def channel_from_name(self, channel_name):
+        for channel in self.antistasi_guild.channels:
+            if channel.name.casefold() == channel_name.casefold():
+                return self.fetch_channel(channel.id)
 
 
 # region[Main_Exec]

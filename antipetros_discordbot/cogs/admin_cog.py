@@ -207,6 +207,13 @@ class Administration(commands.Cog):
         channel = ctx.channel
         message = await channel.fetch_message(msg_id)
         await message.delete()
+        await ctx.message.delete()
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.bot.user.name})"
+
+    def __str__(self):
+        return self.__class__.__name__
 
 
 def setup(bot):

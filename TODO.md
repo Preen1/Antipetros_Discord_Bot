@@ -2,11 +2,16 @@
 
 ## Features
 
-<!-- ### Important
+### Important
+
+- create nice looking help command
+- better docstrings and docstring all commands at least
 
 ### Unimportant
 
-### Maybe -->
+- assign good names to the cogs as argument in the init.
+
+<!-- ### Maybe -->
 
 ## Bugs
 

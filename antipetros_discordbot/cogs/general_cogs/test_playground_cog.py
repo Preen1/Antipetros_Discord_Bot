@@ -12,11 +12,20 @@ import random
 import discord
 from PIL import Image
 from discord.ext import commands
-
+import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.data.fixed_data.faq_data import FAQ_BY_NUMBERS
 from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import Bold, Cursive, CodeBlock, LineCode, UnderScore, BlockQuote
+
+
+# region [Logging]
+
+log = glog.aux_logger(__name__)
+log.info(glog.imported(__name__))
+
+# endregion[Logging]
+
 
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -83,6 +92,7 @@ class TestPlayground(commands.Cog):
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     async def roll_a_d(self, ctx, sides: int, amount: int = 1):
+        log.info(ctx.message.raw_role_mentions)
         _result = 0
         _dice = []
         time_start = time()
