@@ -1,5 +1,5 @@
 
-__updated__ = '2020-12-03 11:21:23'
+__updated__ = '2020-12-03 12:08:14'
 
 # region [Imports]
 
@@ -54,9 +54,12 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[TODO]
 
 class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
+    # region [Class_Attributes]
     suggestion_name_regex = re.compile(r"(?P<name>(?<=#).*)")
     config_name = 'save_suggestions'
     executor = ThreadPoolExecutor(3)
+# endregion [Class_Attributes]
+
 # region [Init]
 
     def __init__(self, bot):
@@ -65,11 +68,6 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
         log.debug(glog.class_initiated(self))
 
 # endregion [Init]
-
-# region [Setup]
-
-
-# endregion [Setup]
 
 # region [Properties]
 
@@ -114,7 +112,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
     async def extra_cog_setup(self):
         log.info(f"{self} Cog ----> nothing to set up")
 
-    async def new_suggestion(self, channel, message, guild_id, reaction_user):
+    async def _new_suggestion(self, channel, message, guild_id, reaction_user):
         if message.id in self.saved_messages:
             await channel.send(embed=await self.make_already_saved_embed())
             return
@@ -137,20 +135,23 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
         if was_saved is True:
             await channel.send(embed=await self.make_add_success_embed(suggestion_item))
 
-    async def change_category(self, channel, message, emoji_name):
+    async def _remove_previous_categories(self, target_message, new_emoji_name):
+        for reaction_emoji in self.categories:
+            if reaction_emoji is not None and reaction_emoji != new_emoji_name:
+                other_reaction = await self.specifc_reaction_from_message(target_message, reaction_emoji)
+                if other_reaction is not None:
+                    await other_reaction.clear()
+
+    async def _change_category(self, channel, message, emoji_name):
         category = self.categories.get(emoji_name)
         if category:
             success = await self.set_category(category, message.id)
             if success:
                 await channel.send(embed=await self.make_changed_category_embed(message, category))
                 log.info("updated category for suggestion (id: %s) to category '%s'", message.id, category)
-                for reaction_emoji in self.categories:
-                    if reaction_emoji is not None and reaction_emoji != emoji_name:
-                        other_reaction = await self.specifc_reaction_from_message(message, reaction_emoji)
-                        if other_reaction is not None:
-                            await other_reaction.clear()
+                await self._remove_previous_categories(message, emoji_name)
 
-    async def change_votes(self, message, emoji_name):
+    async def _change_votes(self, message, emoji_name):
         reaction = await self.specifc_reaction_from_message(message, emoji_name)
         _count = reaction.count
         self.data_storage_handler.update_votes(emoji_name, _count, message.id)
@@ -169,18 +170,19 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
         emoji_name = unicodedata.name(payload.emoji.name)
 
         if emoji_name == self.command_emojis['save']:
-            await self.new_suggestion(channel, message, payload.guild_id, reaction_user)
+            await self._new_suggestion(channel, message, payload.guild_id, reaction_user)
 
         elif emoji_name in self.categories and message.id in self.saved_messages:
-            await self.change_category(channel, message, emoji_name)
+            await self._change_category(channel, message, emoji_name)
 
         elif emoji_name in [self.command_emojis['upvote'], self.command_emojis['downvote']] and message.id in self.saved_messages:
-            await self.change_votes(message, emoji_name)
+            await self._change_votes(message, emoji_name)
 
 
 # endregion [Listener]
 
 # region [Commands]
+
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
@@ -270,6 +272,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Embeds]
 
+
     async def make_add_success_embed(self, suggestion_item: SUGGESTION_DATA_ITEM):
         _filtered_content = []
         if suggestion_item.name is not None:
@@ -282,7 +285,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
         _filtered_content = f"```\n{_filtered_content.strip()}\n```"
 
         embed = discord.Embed(title="**Suggestion was Saved!**", description="Your suggestion was saved for the Dev Team.\n\n", color=0xf2ea48)
-        embed.set_thumbnail(url="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Media-floppy.svg/2000px-Media-floppy.svg.png")
+        embed.set_thumbnail(url=self.bot.embed_symbols.get('save', None))
         embed.add_field(name="Title:", value=f"__{suggestion_item.name}__", inline=False)
         if COGS_CONFIG.getboolean(self.config_name, 'add_success_embed_verbose') is True:
             embed.add_field(name="Author:", value=f"*{suggestion_item.message_author.name}*", inline=True)
@@ -296,21 +299,20 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
     async def make_changed_category_embed(self, message, category):
         embed = discord.Embed(title="**Updated Suggestion Category**", description="I updated the category an Suggestion\n\n", color=0xf2a44a)
-        embed.set_thumbnail(url="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Update-manager-icon.svg/500px-Update-manager-icon.svg.png")
+        embed.set_thumbnail(url=self.bot.embed_symbols.get('update', None))
         embed.add_field(name="New Category:", value=category, inline=False)
         embed.add_field(name="Suggestion:", value=message.jump_url, inline=False)
         return embed
 
     async def make_already_saved_embed(self):
         embed = discord.Embed(title="**This Suggestion was already saved!**", description="I did not save the Suggestion as I have it already saved", color=0xe04d7e)
-        embed.set_thumbnail(url="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Dialog-error.svg/2000px-Dialog-error.svg.png")
+        embed.set_thumbnail(url=self.bot.embed_symbols.get('not_possible', None))
         return embed
 
 
 # endregion [Embeds]
 
 # region [Helper]
-
 
     async def collect_title(self, content):
         name_result = self.suggestion_name_regex.search(content)
@@ -330,7 +332,6 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 # endregion [Helper]
 
 # region [DunderMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

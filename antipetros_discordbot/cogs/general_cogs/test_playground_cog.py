@@ -139,6 +139,7 @@ class TestPlayground(commands.Cog):
                     await self.old_map_message.delete()
                 delete_time = 30 if self.bot.is_debug is True else None
                 self.old_map_message = await ctx.send(file=discord.File(fp=image_binary, filename="map.png"), delete_after=delete_time)
+            self.bot.commands_executed += 1
 
     @commands.command(name='FAQ_you')
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))

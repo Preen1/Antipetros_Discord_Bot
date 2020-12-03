@@ -33,7 +33,7 @@ currently implemented config options:
     - notify_with_link --> boolean if the notification DM should include the bad link
 """
 
-__updated__ = '2020-12-03 11:20:42'
+__updated__ = '2020-12-03 12:09:40'
 # region [Imports]
 
 # * Standard Library Imports -->
@@ -498,7 +498,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
         _rel_time = link_item.delete_date_time - link_item.date_time
         _embed = discord.Embed(title="Saved Link", description="Temporary Stored Link", color=0x4fe70e)
-        _embed.set_thumbnail(url="https://images.emojiterra.com/twitter/v13.0/512px/1f517.png")
+        _embed.set_thumbnail(url=self.bot.embed_symbols.get('link', None))
         _embed.add_field(name="from:", value=link_item.author.name, inline=True)
         _embed.add_field(name=link_item.link_name + ':', value=link_item.link, inline=False)
         _embed.add_field(name="available until:", value=link_item.delete_date_time.strftime("%Y/%m/%d, %H:%M:%S") + f" ({str(_rel_time).split(',')[0].strip()})", inline=False)
@@ -518,7 +518,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
         """
 
         embed = discord.Embed(title="FORBIDDEN LINK", description="You tried to save a link that is either in my forbidden_link-list or contains a forbidden word.", color=0x7c0303)
-        embed.set_thumbnail(url="https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Forbidden_Symbol_Transparent.svg/1200px-Forbidden_Symbol_Transparent.svg.png")
+        embed.set_thumbnail(url=self.bot.embed_symbols.get('forbidden', None))
         embed.add_field(name="🚫 The link has NOT been saved! 🚫", value="-", inline=False)
         embed.add_field(name="⚠️ DO NOT TRY THIS AGAIN ⚠️", value="-", inline=False)
         embed.set_footer(text="! This has been Logged !")
@@ -537,7 +537,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
         _description = ('The message has been successfully deleted and warning was posted!' if was_deleted else "I was not able to delete the message, but posted the warning")
 
         embed = discord.Embed(title='ATTEMPT AT SAVING FORBIDDEN LINK', description=_description, color=0xdf0005)
-        embed.set_thumbnail(url="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Warning.svg/1200px-Warning.svg.png")
+        embed.set_thumbnail(url=self.bot.embed_symbols.get('warning', None))
         embed.add_field(name="User", value=f"__**{author.name}**__", inline=False)
         embed.add_field(name="User Display Name", value=f"*{author.display_name}*", inline=False)
         embed.add_field(name="User ID", value=f"**{author.id}**", inline=False)

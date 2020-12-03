@@ -88,9 +88,11 @@ class Administration(commands.Cog):
     @commands.command(name='die_antipetros_die')
     @commands.has_any_role(*COGS_CONFIG.getlist('admin', 'allowed_roles'))
     async def shutdown(self, ctx):
-        if ctx.channel.name in self.allowed_channels:
-            await ctx.send('cya!')
-            await self.bot.logout()
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        started_at = self.bot.start_time.strftime(self.bot.std_date_time_format)
+        await ctx.send(embed=await self.bot.make_basic_embed(title='cya!', text='AntiPetros is shutting down.', symbol='shutdown', was_online_since=started_at, commands_executed=str(self.bot.commands_executed)))
+        await self.bot.logout()
 
     @commands.command(name='list_configs')
     @commands.dm_only()

@@ -84,6 +84,10 @@ class {{ cog_item.name }}(commands.Cog, command_attrs={{% for com_attr_name, com
         {% endfor %}
         log.debug(glog.class_initiated(self))
 
+    @property
+    def allowed_channels(self):
+        return set(COGS_CONFIG.getlist(self.config_name, 'allowed_channels'))
+
 
 
     def cog_unload(self):
@@ -119,9 +123,6 @@ class {{ cog_item.name }}(commands.Cog, command_attrs={{% for com_attr_name, com
     {% endfor %}
 
 
-    @property
-    def allowed_channels(self):
-        return set(COGS_CONFIG.getlist(self.config_name, 'allowed_channels'))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"
