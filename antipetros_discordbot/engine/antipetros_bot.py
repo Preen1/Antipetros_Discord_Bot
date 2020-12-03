@@ -8,6 +8,7 @@ from discord.ext import commands, tasks
 from async_property import async_property
 from discord.ext.commands import when_mentioned_or
 from watchgod import awatch
+from concurrent.futures import ThreadPoolExecutor
 # * Gid Imports -->
 import gidlogger as glog
 
@@ -16,7 +17,7 @@ from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG
 from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
 # endregion[Imports]
 
-__updated__ = '2020-12-03 01:32:41'
+__updated__ = '2020-12-03 11:18:57'
 
 # region [AppUserData]
 
@@ -39,20 +40,21 @@ log.info(glog.imported(__name__))
 
 
 class AntiPetrosBot(commands.Bot):
+    executor = ThreadPoolExecutor(3, thread_name_prefix='Bot_Thread')
 
     def __init__(self, *args, **kwargs):
-
+        super().__init__(*args, **kwargs)
         self.start_time = datetime.utcnow()
         self.max_message_length = 2000
         self.bot_member = None
         self.all_my_roles = []
 
-        super().__init__(*args, **kwargs)
         self.get_bot_roles_loop.start()
+        glog.class_initiated(self)
 
     @tasks.loop(minutes=10, reconnect=True)
     async def get_bot_roles_loop(self):
-        log.info('Refreshing Bot Roles')
+        log.info('Starting Refreshing Bot Roles')
         self.all_my_roles = []
         self.bot_member = await self.retrieve_member(self.antistasi_guild.id, self.id)
         for index, role in enumerate(self.bot_member.roles):
@@ -62,7 +64,7 @@ class AntiPetrosBot(commands.Bot):
             self.command_prefix = when_mentioned_or_roles_or(BASE_CONFIG.get('prefix', 'command_prefix'))
         else:
             self.command_prefix = BASE_CONFIG.get('prefix', 'command_prefix')
-        log.debug("command prefixes: %s", self.command_prefix(self, ''))
+        log.info('Finished Refreshing Bot Roles')
 
     @get_bot_roles_loop.before_loop
     async def before_get_bot_roles_loop(self):
@@ -122,6 +124,15 @@ class AntiPetrosBot(commands.Bot):
             print(member.name)
             if member.name.casefold() == member_name:
                 return member
+
+    async def execute_in_thread(self, func, *args, **kwargs):
+        return await self.loop.run_in_executor(self.executor, func, *args, **kwargs)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}()"
+
+    def __str__(self):
+        return self.__class__.__name__
 
 
 # region[Main_Exec]

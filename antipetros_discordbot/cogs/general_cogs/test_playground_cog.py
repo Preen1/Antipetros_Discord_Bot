@@ -44,7 +44,6 @@ Your contribution and participation to this community will determine how long th
 
 
 class TestPlayground(commands.Cog):
-    executor = ThreadPoolExecutor(3, thread_name_prefix='Thread')
 
     def __init__(self, bot):
         self.bot = bot
@@ -134,7 +133,7 @@ class TestPlayground(commands.Cog):
 
             with BytesIO() as image_binary:
 
-                self.base_map_image, image_binary = await loop.run_in_executor(self.executor, self.map_image_handling, self.base_map_image, marker, color, image_binary)
+                self.base_map_image, image_binary = await self.bot.execute_in_thread(self.map_image_handling, self.base_map_image, marker, color, image_binary)
 
                 if self.old_map_message is not None:
                     await self.old_map_message.delete()

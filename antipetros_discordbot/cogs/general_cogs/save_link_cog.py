@@ -33,7 +33,7 @@ currently implemented config options:
     - notify_with_link --> boolean if the notification DM should include the bad link
 """
 
-__updated__ = '2020-12-02 20:15:43'
+__updated__ = '2020-12-03 11:20:42'
 # region [Imports]
 
 # * Standard Library Imports -->
@@ -100,7 +100,6 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
     # url to blacklist for forbidden_link_list
     blocklist_hostfile_url = "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn/hosts"
     config_name = 'save_link'
-    executor = ThreadPoolExecutor(3)
 # region [Init]
 
     def __init__(self, bot):
@@ -660,7 +659,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
                 msg = await self.link_channel.fetch_message(link_id)
                 await msg.delete()
             await ctx.send('deleting Database')
-            await self.loop.run_in_executor(self.executor, self.data_storage_handler.clear)
+            await self.bot.execute_in_thread(self.data_storage_handler.clear)
             await ctx.send('Database was cleared, ready for input again')
 
         elif answer.casefold() == 'no':

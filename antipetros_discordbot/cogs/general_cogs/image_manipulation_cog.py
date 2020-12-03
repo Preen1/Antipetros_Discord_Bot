@@ -1,5 +1,5 @@
 
-__updated__ = '2020-12-03 05:21:51'
+__updated__ = '2020-12-03 11:22:27'
 
 # region [Imports]
 
@@ -47,7 +47,6 @@ IMAGE_MANIPULATION_CONFIG_NAME = 'image_manipulation'
 class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
     allowed_stamp_formats = set(loadjson(pathmaker(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\json_data\image_file_extensions.json")))
     stamp_positions = {'top': WatermarkPosition.Top, 'bottom': WatermarkPosition.Bottom, 'left': WatermarkPosition.Left, 'right': WatermarkPosition.Right, 'center': WatermarkPosition.Center}
-    executor = ThreadPoolExecutor(3, thread_name_prefix='Thread')
 
     def __init__(self, bot):
         self.bot = bot
@@ -231,12 +230,12 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
                     temp_file = Path(pathmaker(temp_dir, 'temp_file.png'))
                     log.debug("Tempfile '%s' created", temp_file)
                     await _file.save(temp_file)
-                    in_image = await self.loop.run_in_executor(self.executor, Image.open, temp_file)
-                    in_image = await self.loop.run_in_executor(self.executor, in_image.copy)
+                    in_image = await self.bot.execute_in_thread(Image.open, temp_file)
+                    in_image = await self.bot.execute_in_thread(in_image.copy)
                 factor = self.target_stamp_fraction if factor is None else factor
                 pos_function = self.stamp_pos_functions.get(first_pos | second_pos)
 
-                in_image = await self.loop.run_in_executor(self.executor, pos_function, in_image, _stamp, factor)
+                in_image = await self.bot.execute_in_thread(pos_function, in_image, _stamp, factor)
                 name = 'antistasified_' + os.path.splitext(_file.filename)[0]
 
                 await self._send_image(ctx, in_image, name, f"__**{name}**__")
@@ -282,7 +281,7 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
             user = await self.bot.retrieve_member(guild_id, target_id)
             avatar_image = await self.get_avatar_from_user(user)
         stamp = self.avatar_stamp
-        modified_avatar = await self.loop.run_in_executor(self.executor, self._to_bottom_right, avatar_image, stamp, self.avatar_stamp_fraction)
+        modified_avatar = await self.bot.execute_in_thread(self._to_bottom_right, avatar_image, stamp, self.avatar_stamp_fraction)
 
         name = f"{ctx.author.name}_Member_avatar"
         await self._send_image(ctx, modified_avatar, name, f"**Your New Avatar {ctx.author.name}**")
@@ -293,8 +292,8 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
             temp_file = Path(pathmaker(temp_dir, 'temp_file.png'))
             log.debug("Tempfile '%s' created", temp_file)
             await avatar.save(temp_file)
-            avatar_image = await self.loop.run_in_executor(self.executor, Image.open, temp_file)
-            avatar_image = await self.loop.run_in_executor(self.executor, avatar_image.copy)
+            avatar_image = await self.bot.execute_in_thread(Image.open, temp_file)
+            avatar_image = await self.bot.execute_in_thread(avatar_image.copy)
         return avatar_image
 
     @commands.Cog.listener(name='on_ready')

@@ -1,5 +1,5 @@
 
-__updated__ = '2020-12-02 20:15:44'
+__updated__ = '2020-12-03 11:21:23'
 
 # region [Imports]
 
@@ -259,7 +259,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
     async def _clear_suggestions(self, ctx, answer):
         if answer.casefold() == 'yes':
             await ctx.send('deleting Database')
-            await self.loop.run_in_executor(self.executor, self.data_storage_handler.clear)
+            await self.bot.execute_in_thread(self.data_storage_handler.clear)
             await ctx.send('Database was cleared, ready for input again')
 
         elif answer.casefold() == 'no':
