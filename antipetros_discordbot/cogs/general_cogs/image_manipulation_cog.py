@@ -1,5 +1,5 @@
 
-__updated__ = '2020-12-02 20:16:01'
+__updated__ = '2020-12-03 05:17:56'
 
 # region [Imports]
 
@@ -126,6 +126,7 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
         return stamp_image.resize((round(stamp_image.size[0] * transform_factor), round(stamp_image.size[1] * transform_factor)), resample=Image.LANCZOS)
 
     def _to_bottom_right(self, input_image, stamp_image, factor):
+        log.debug('pasting image to bottom_right')
         input_image_width, input_image_height = input_image.size
         _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
         input_image.paste(_resized_stamp,

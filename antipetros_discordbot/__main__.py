@@ -6,7 +6,7 @@ Main module, starts the Antistasi Discord Bot.
 """
 # endregion [Module_Docstring]
 
-__updated__ = '2020-12-02 16:43:45'
+__updated__ = '2020-12-03 05:14:59'
 
 
 # region [Imports]
@@ -33,13 +33,13 @@ from antipetros_discordbot.utility.gidtools_functions import writejson
 # endregion[Imports]
 
 # region [Logging]
+__stmt = "Last Updated: " + os.environ['LAST_UPDATED']
+LAST_UPDATED_STMT = '~' * 25 + ' ' + __stmt + ' ' + '~' * 25
+
 
 _log_file = glog.log_folderer(__name__)
-log = glog.main_logger(_log_file, BASE_CONFIG.get('logging', 'logging_level'))
-formatter = logging.Formatter('%(asctime)s | %(levelname)s | (%(lineno)s) | %(module)s | %(funcName)s | --> %(message)s <--')
-handler = logging.StreamHandler()
-handler.setFormatter(formatter)
-logging.getLogger().addHandler(handler)
+log = glog.main_logger(_log_file, BASE_CONFIG.get('logging', 'logging_level'), other_logger_names=['asyncio', 'gidsql', 'gidfiles'])
+log.info(LAST_UPDATED_STMT)
 log.info(glog.NEWRUN())
 if BASE_CONFIG.getboolean('logging', 'use_logging') is False:
     logging.disable(logging.CRITICAL)

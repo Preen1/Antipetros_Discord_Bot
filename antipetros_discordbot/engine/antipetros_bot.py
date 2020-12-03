@@ -16,7 +16,7 @@ from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG
 from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
 # endregion[Imports]
 
-__updated__ = '2020-12-02 17:50:04'
+__updated__ = '2020-12-03 01:32:41'
 
 # region [AppUserData]
 
@@ -101,9 +101,7 @@ class AntiPetrosBot(commands.Bot):
 
     async def split_to_messages(self, ctx, message, split_on='\n'):
         _out = ''
-        print(len(message))
         chunks = message.split(split_on)
-        max_index = len(chunks) - 1
         for chunk in chunks:
             if sum(map(len, _out)) < self.max_message_length:
                 _out += chunk + split_on

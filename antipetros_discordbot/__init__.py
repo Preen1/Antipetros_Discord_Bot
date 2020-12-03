@@ -7,13 +7,15 @@ __version__ = "0.1"
 
 # * Third Party Imports -->
 from dotenv import load_dotenv
+import os
+
 
 load_dotenv()
-# os.environ['PYTHONASYNCIODEBUG'] = '1'
+
+os.environ['PYTHONDEVMODE'] = '1'
 
 
 def last_updated(as_datetime=False):
-    import os
     import re
     from datetime import datetime
     from functools import partial
@@ -35,7 +37,4 @@ def last_updated(as_datetime=False):
     return latest_time.strftime("%Y-%m-%d %H:%M:%S")
 
 
-__stmt = "Last Updated: " + str(last_updated())
-print('~' * (52 + len(__stmt)))
-print('~' * 25 + ' ' + __stmt + ' ' + '~' * 25)
-print('~' * (52 + len(__stmt)))
+os.environ['LAST_UPDATED'] = str(last_updated())

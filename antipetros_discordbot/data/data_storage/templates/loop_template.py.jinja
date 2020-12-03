@@ -1,10 +1,5 @@
 @tasks.loop({% for loop_attr_name, loop_attr_value in loop_item.all_attributes %}{{ loop_attr_name }}={{ loop_attr_value }}{% if not loop.last %}, {% endif %}{% endfor %}, reconnect=True)
 async def {{ loop_item.name }}(self):
-    {% if loop_item.docstring is defined %}
-    """
-    {{ loop_item.docstring }}
-    """
-    {% endif %}
     pass
 
 @{{ loop_item.name }}.before_loop

@@ -1,18 +1,6 @@
-@commands.command({% if command_item.hidden is false %}hidden=False{% endif %})
+@commands.command()
 {% raw %}@ commands.has_any_role(*COGS_CONFIG.getlist('{{ cog_item.config_name }}', 'allowed_roles')){% endraw %}
 async def {{ command_item.name }}(self, ctx):
-    {% if command_item.docstring is defined %}
-    """
-    {{ command_item.docstring.short_description }}
-
-    {{ command_item.docstring.extra_description }}
-
-    Args:
-        {% for arg_name, arg_types, arg_optional, arg_description in command_item.docstring.all_args %}
-        {{ arg_name }} ({% for arg_type in arg_types %}{{ arg_type }}{% if not loop.last %}, {% endif %}{% endfor %}{% if arg_optional == true %}, optional{% endif %}): {{ arg_description }}
-
-        {% endfor %}
-    """
     if ctx.channel.name not in self.allowed_channels:
         return
     pass
