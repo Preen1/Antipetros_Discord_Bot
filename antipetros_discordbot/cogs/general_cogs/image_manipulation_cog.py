@@ -1,5 +1,5 @@
 
-__updated__ = '2020-12-03 05:17:56'
+__updated__ = '2020-12-03 05:21:51'
 
 # region [Imports]
 
@@ -47,7 +47,7 @@ IMAGE_MANIPULATION_CONFIG_NAME = 'image_manipulation'
 class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
     allowed_stamp_formats = set(loadjson(pathmaker(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\json_data\image_file_extensions.json")))
     stamp_positions = {'top': WatermarkPosition.Top, 'bottom': WatermarkPosition.Bottom, 'left': WatermarkPosition.Left, 'right': WatermarkPosition.Right, 'center': WatermarkPosition.Center}
-    executor = ThreadPoolExecutor(3)
+    executor = ThreadPoolExecutor(3, thread_name_prefix='Thread')
 
     def __init__(self, bot):
         self.bot = bot

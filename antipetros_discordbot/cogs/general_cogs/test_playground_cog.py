@@ -44,6 +44,7 @@ Your contribution and participation to this community will determine how long th
 
 
 class TestPlayground(commands.Cog):
+    executor = ThreadPoolExecutor(3, thread_name_prefix='Thread')
 
     def __init__(self, bot):
         self.bot = bot
@@ -114,7 +115,9 @@ class TestPlayground(commands.Cog):
             out_message = f"**you have rolled a total of:** {str(_result)}\n\n**standard deviantion:** {str(_stdev)}\n**mean:** {str(_mean)}\n**median:** {str(_median)}\n**mode:** {str(x)}\n**variance:** {str(y)}"
         await ctx.send(out_message + f'\n\n**THIS TOOK** {str(round(time()-time_start,3))} SECONDS')
 
-    def map_image_handling(self, base_image, marker_image, color, bytes_out):
+    def map_image_handling(self, base_image, marker_name, color, bytes_out):
+        log.debug("creating changed map, changed_location: '%s', changed_color: '%s'", marker_name, color)
+        marker_image = self.outpost_overlay.get(marker_name)
         marker_alpha = marker_image.getchannel('A')
         marker_image = Image.new('RGBA', marker_image.size, color=color)
         marker_image.putalpha(marker_alpha)
@@ -128,14 +131,15 @@ class TestPlayground(commands.Cog):
     async def map_changed(self, ctx, marker, color):
         if ctx.channel.name in self.allowed_channels:
             loop = get_event_loop()
-            marker_image = self.outpost_overlay.get(marker)
+
             with BytesIO() as image_binary:
-                with ThreadPoolExecutor() as pool:
-                    self.base_map_image, image_binary = await loop.run_in_executor(pool, self.map_image_handling, self.base_map_image, marker_image, color, image_binary)
+
+                self.base_map_image, image_binary = await loop.run_in_executor(self.executor, self.map_image_handling, self.base_map_image, marker, color, image_binary)
 
                 if self.old_map_message is not None:
                     await self.old_map_message.delete()
-                self.old_map_message = await ctx.send(file=discord.File(fp=image_binary, filename="map.png"))
+                delete_time = 30 if self.bot.is_debug is True else None
+                self.old_map_message = await ctx.send(file=discord.File(fp=image_binary, filename="map.png"), delete_after=delete_time)
 
     @commands.command(name='FAQ_you')
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
