@@ -1,42 +1,128 @@
 
+
+# region [Imports]
+
 # * Standard Library Imports -->
+
+import asyncio
+import gc
+import logging
 import os
-from datetime import datetime
+import re
+import sys
+import json
+import lzma
+import time
+import queue
+import logging
+import platform
+import subprocess
+from enum import Enum, Flag, auto
+from time import sleep
+from pprint import pprint, pformat
+from typing import Union
+from datetime import tzinfo, datetime, timezone, timedelta
+from functools import wraps, lru_cache, singledispatch, total_ordering, partial
+from contextlib import contextmanager
+from collections import Counter, ChainMap, deque, namedtuple, defaultdict
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+
+
 # * Third Party Imports -->
-import discord
+
+from discord.ext import commands, tasks
 from discord import DiscordException
+import discord
 from fuzzywuzzy import process as fuzzprocess
-from discord.ext import commands
+# import requests
+# import pyperclip
+# import matplotlib.pyplot as plt
+# from bs4 import BeautifulSoup
+# from dotenv import load_dotenv
+# from github import Github, GithubException
+# from jinja2 import BaseLoader, Environment
+# from natsort import natsorted
+# from fuzzywuzzy import fuzz, process
+
+
+# * PyQt5 Imports -->
+
+# from PyQt5.QtGui import QFont, QIcon, QBrush, QColor, QCursor, QPixmap, QStandardItem, QRegExpValidator
+# from PyQt5.QtCore import (Qt, QRect, QSize, QObject, QRegExp, QThread, QMetaObject, QCoreApplication,
+#                           QFileSystemWatcher, QPropertyAnimation, QAbstractTableModel, pyqtSlot, pyqtSignal)
+# from PyQt5.QtWidgets import (QMenu, QFrame, QLabel, QDialog, QLayout, QWidget, QWizard, QMenuBar, QSpinBox, QCheckBox, QComboBox,
+#                              QGroupBox, QLineEdit, QListView, QCompleter, QStatusBar, QTableView, QTabWidget, QDockWidget, QFileDialog,
+#                              QFormLayout, QGridLayout, QHBoxLayout, QHeaderView, QListWidget, QMainWindow, QMessageBox, QPushButton,
+#                              QSizePolicy, QSpacerItem, QToolButton, QVBoxLayout, QWizardPage, QApplication, QButtonGroup, QRadioButton,
+#                              QFontComboBox, QStackedWidget, QListWidgetItem, QTreeWidgetItem, QDialogButtonBox, QAbstractItemView,
+#                              QCommandLinkButton, QAbstractScrollArea, QGraphicsOpacityEffect, QTreeWidgetItemIterator, QAction, QSystemTrayIcon)
+
+
+# * Gid Imports -->
+
+import gidlogger as glog
+from gidtools.gidfiles import (QuickFile, readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
+                               dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
+
 
 # * Local Imports -->
+from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG, CONFIG_DIR
 from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
-from antipetros_discordbot.utility.gidtools_functions import pathmaker
-from antipetros_discordbot.data.config.config_singleton import CONFIG_DIR, BASE_CONFIG, COGS_CONFIG
 from antipetros_discordbot.utility.misc import seconds_to_pretty
-import gidlogger as glog
 
-THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
+# endregion[Imports]
+
+# region [TODO]
+
+
+# endregion [TODO]
+
+# region [AppUserData]
+
+
+# endregion [AppUserData]
 
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.debug(glog.imported(__name__))
+log.info(glog.imported(__name__))
 
 # endregion[Logging]
 
-# TODO: create regions for this file
-# TODO: Document and Docstrings
+# region [Constants]
+
+
+# endregion[Constants]
 
 
 class Administration(commands.Cog):
+    # region [ClassAttributes]
+
+    config_name = 'admin'
+
+    # endregion[ClassAttributes]
+
+# region [Init]
 
     def __init__(self, bot):
         self.bot = bot
-        self.is_debug = BASE_CONFIG.getboolean('general_settings', 'is_debug')
         self.all_configs = [BASE_CONFIG, COGS_CONFIG]
-        self.allowed_channels = set(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels'))
-        self.allowed_dm_invoker_ids = list(map(int, COGS_CONFIG.getlist('admin', 'allowed_dm_ids')))
         self.config_dir = CONFIG_DIR
+
+# endregion[Init]
+
+
+# region [Properties]
+
+    @property
+    def allowed_dm_invoker_ids(self):
+        return set(map(int, COGS_CONFIG.getlist(self.config_name, 'allowed_dm_ids')))
+
+    @property
+    def allowed_channels(self):
+        return set(COGS_CONFIG.getlist(self.config_name, 'allowed_channels'))
+
+# endregion[Properties]
 
     @commands.Cog.listener(name='on_ready')
     async def extra_cog_setup(self):
@@ -81,7 +167,7 @@ class Administration(commands.Cog):
                 except DiscordException as error:
                     log.error(error)
 
-        _delete_time = 5 if self.is_debug is True else 30
+        _delete_time = 5 if self.bot.is_debug is True else 30
         await ctx.send(f"**successfully reloaded the following extensions:**\n{reloaded_extensions}", delete_after=_delete_time)
         await ctx.message.delete(delay=float(_delete_time - (_delete_time // 2)))
 
@@ -222,4 +308,7 @@ class Administration(commands.Cog):
 
 
 def setup(bot):
+    """
+    Mandatory function to add the Cog to the bot.
+    """
     bot.add_cog(Administration(bot))

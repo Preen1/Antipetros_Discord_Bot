@@ -4,10 +4,10 @@ import random
 import statistics
 from io import BytesIO
 from time import time
-from asyncio import get_event_loop
+
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
-import random
+
 import asyncio
 # * Third Party Imports -->
 import discord

@@ -96,10 +96,14 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
     available_commands:
         -
     """
+# region [ClassAttributes]
 
     # url to blacklist for forbidden_link_list
     blocklist_hostfile_url = "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn/hosts"
     config_name = 'save_link'
+
+# endregion [ClassAttributes]
+
 # region [Init]
 
     def __init__(self, bot):
@@ -115,7 +119,6 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
         log.debug(glog.class_initiated(self))
 
 # endregion [Init]
-
 
 # region [Setup]
 
@@ -201,10 +204,6 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
         path = COGS_CONFIG.get(self.config_name, 'bad_link_image_path')
         name = COGS_CONFIG.get(self.config_name, 'bad_link_image_name')
         return name, path
-
-    @property
-    def loop(self):
-        return asyncio.get_running_loop()
 
 
 # endregion [Properties]
@@ -557,7 +556,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 # endregion [Embeds]
 
 
-# region [Helper]
+# region [HelperMethods]
 
     async def _get_bad_link_image(self):
         """
@@ -664,9 +663,9 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
             await ctx.send(embed=await self.bot.make_basic_embed(title="Aborting deletion process", text='aborting deletion process, nothing was deleted', symbol='cancelled'))
 
 
-# endregion [Helper]
+# endregion [HelperMethods]
 
-# region [DunderMethods]
+# region [SpecialMethods]
 
 
     def __repr__(self):

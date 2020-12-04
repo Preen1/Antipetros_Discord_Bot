@@ -24,6 +24,11 @@ from antipetros_discordbot.data.config.config_singleton import COGS_CONFIG
 
 # endregion[Imports]
 
+# region [TODO]
+
+
+# endregion [TODO]
+
 # region [Logging]
 
 log = glog.aux_logger(__name__)
@@ -44,8 +49,15 @@ IMAGE_MANIPULATION_CONFIG_NAME = 'image_manipulation'
 
 
 class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
+
+    # region [ClassAttributes]
+
     allowed_stamp_formats = set(loadjson(pathmaker(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\json_data\image_file_extensions.json")))
     stamp_positions = {'top': WatermarkPosition.Top, 'bottom': WatermarkPosition.Bottom, 'left': WatermarkPosition.Left, 'right': WatermarkPosition.Right, 'center': WatermarkPosition.Center}
+
+# endregion[ClassAttributes]
+
+# region [Init]
 
     def __init__(self, bot):
         self.bot = bot
@@ -61,7 +73,11 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
                                     WatermarkPosition.Center | WatermarkPosition.Bottom: self._to_bottom_center,
                                     WatermarkPosition.Center | WatermarkPosition.Top: self._to_top_center}
 
-        self.get_stamps()
+        self._get_stamps()
+
+# endregion[Init]
+
+# region [Properties]
 
     @property
     def allowed_channels(self):
@@ -99,11 +115,9 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
             COGS_CONFIG.read()
         return self.stamps.get(COGS_CONFIG.get(IMAGE_MANIPULATION_CONFIG_NAME, 'avatar_stamp')).copy()
 
-    @property
-    def loop(self):
-        return get_running_loop()
+# endregion[Properties]
 
-    def get_stamps(self):
+    def _get_stamps(self):
         self.stamps = {}
         for file in os.scandir(self.stamp_location):
             if os.path.isfile(file.path) is True and os.path.splitext(file.name)[1] in self.allowed_stamp_formats:
@@ -114,7 +128,8 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
                 image.putalpha(alpha)
                 self.stamps[name] = image
 
-    def _stamp_resize(self, input_image, stamp_image, factor):
+    @staticmethod
+    def _stamp_resize(input_image, stamp_image, factor):
         input_image_width, input_image_height = input_image.size
         input_image_width_fractioned = input_image_width * factor
         input_image_height_fractioned = input_image_height * factor
@@ -299,16 +314,19 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
     async def extra_cog_setup(self):
         log.info(f"{self} Cog ----> finished extra setup")
 
+# region [SpecialMethods]
+
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"
 
     def __str__(self):
         return self.__class__.__name__
 
+# endregion[SpecialMethods]
+
 
 def setup(bot):
+    """
+    Mandatory function to add the Cog to the bot.
+    """
     bot.add_cog(ImageManipulator(bot))
-
-
-if __name__ == '__main__':
-    pass

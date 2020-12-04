@@ -27,6 +27,7 @@ def create_project_meta_env_file():
         envfile.write(f'TOPLEVELMODULE={_toplevelmodule}\n')
         envfile.write(f'MAIN_SCRIPT_FILE={_main_script_file}\n')
         envfile.write(f'PROJECT_NAME={PROJECT_NAME}\n')
+        envfile.write('# PYTHONDEVMODE=true\n')
 
 
 def modify_activate_bat():

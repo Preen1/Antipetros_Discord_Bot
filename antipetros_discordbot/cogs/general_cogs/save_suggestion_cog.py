@@ -53,11 +53,13 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[TODO]
 
 class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
-    # region [Class_Attributes]
+
+    # region [ClassAttributes]
+
     suggestion_name_regex = re.compile(r"(?P<name>(?<=#).*)")
     config_name = 'save_suggestions'
     executor = ThreadPoolExecutor(3)
-# endregion [Class_Attributes]
+# endregion [ClassAttributes]
 
 # region [Init]
 
@@ -99,13 +101,11 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
     def saved_messages(self):
         return self.data_storage_handler.get_all_message_ids()
 
-    @property
-    def loop(self):
-        return asyncio.get_running_loop()
 
 # endregion [Properties]
 
 # region [Listener]
+
 
     @commands.Cog.listener(name='on_ready')
     async def extra_cog_setup(self):
@@ -181,6 +181,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 # endregion [Listener]
 
 # region [Commands]
+
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
@@ -270,6 +271,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Embeds]
 
+
     async def make_add_success_embed(self, suggestion_item: SUGGESTION_DATA_ITEM):
         _filtered_content = []
         if suggestion_item.name is not None:
@@ -309,8 +311,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
 # endregion [Embeds]
 
-# region [Helper]
-
+# region [HelperMethods]
 
     async def collect_title(self, content):
         name_result = self.suggestion_name_regex.search(content)
@@ -327,10 +328,9 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
                 return reaction
 
 
-# endregion [Helper]
+# endregion [HelperMethods]
 
-# region [DunderMethods]
-
+# region [SpecialMethods]
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"
@@ -338,8 +338,11 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
     def __str__(self):
         return self.__class__.__name__
 
-# endregion [DunderMethods]
+# endregion [SpecialMethods]
 
 
 def setup(bot):
+    """
+    Mandatory function to add the Cog to the bot.
+    """
     bot.add_cog(SaveSuggestion(bot))

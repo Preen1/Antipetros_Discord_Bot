@@ -3,12 +3,14 @@
 # * Standard Library Imports -->
 from datetime import datetime
 from collections import namedtuple
+
 # * Third Party Imports -->
 from discord.ext import commands, tasks
 from async_property import async_property
 from discord import Embed, File
 from watchgod import awatch
 from concurrent.futures import ThreadPoolExecutor
+
 # * Gid Imports -->
 import gidlogger as glog
 
@@ -165,10 +167,3 @@ class AntiPetrosBot(commands.Bot):
 
     def __str__(self):
         return self.__class__.__name__
-
-
-# region[Main_Exec]
-if __name__ == '__main__':
-    pass
-
-# endregion[Main_Exec]
