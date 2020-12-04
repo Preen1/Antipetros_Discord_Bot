@@ -10,6 +10,7 @@ import unicodedata
 from datetime import datetime
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from tempfile import TemporaryDirectory, TemporaryFile
 # * Third Party Imports -->
 import discord
 from discord.ext import commands
@@ -23,7 +24,7 @@ from antipetros_discordbot.utility.named_tuples import SUGGESTION_DATA_ITEM
 from antipetros_discordbot.utility.sqldata_storager import SuggestionDataStorageSQLite
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.data.config.config_singleton import COGS_CONFIG
-
+from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 # endregion[Imports]
 
 # region [Logging]
@@ -43,9 +44,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # region [TODO]
 
-
 # TODO: create get_my_data and remove_my_suggestion and delete_all_my_data method for the user
-
 # TODO: create report generator in different formats, at least json and Html, probably also as embeds and Markdown
 # TODO: create regions for this file
 # TODO: Document and Docstrings
@@ -58,7 +57,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
     suggestion_name_regex = re.compile(r"(?P<name>(?<=#).*)")
     config_name = 'save_suggestions'
-    executor = ThreadPoolExecutor(3)
+
 # endregion [ClassAttributes]
 
 # region [Init]
@@ -94,6 +93,12 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
         return set(COGS_CONFIG.getlist(self.config_name, 'allowed_channels'))
 
     @property
+    def notify_contact_member(self):
+        if self.bot.is_debug:
+            COGS_CONFIG.read()
+        return COGS_CONFIG.get(self.config_name, 'notify_contact_member')
+
+    @property
     def messages_to_watch(self):
         return self.data_storage_handler.get_all_non_discussed_message_ids()
 
@@ -111,51 +116,6 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
     async def extra_cog_setup(self):
         log.info(f"{self} Cog ----> nothing to set up")
 
-    async def _new_suggestion(self, channel, message, guild_id, reaction_user):
-        if message.id in self.saved_messages:
-            await channel.send(embed=await self.make_already_saved_embed())
-            return
-
-        message_member = await self.bot.retrieve_member(guild_id, message.author.id)
-        reaction_member = await self.bot.retrieve_member(guild_id, reaction_user.id)
-        now_time = datetime.utcnow()
-        name = await self.collect_title(message.content)
-        extra_data = (message.attachments[0].filename, await message.attachments[0].read()) if len(message.attachments) != 0 else None
-
-        suggestion_item = SUGGESTION_DATA_ITEM(name, message_member, reaction_member, message, now_time)
-
-        was_saved, suggestion_item = await self.add_suggestion(suggestion_item, extra_data)
-        log.info("saved new suggestion, suggestion name: '%s', suggestion author: '%s', saved by: '%s', suggestion has extra data: '%s'",
-                 name,
-                 message_member.name,
-                 reaction_member.name,
-                 'yes' if extra_data is not None else 'no')
-
-        if was_saved is True:
-            await channel.send(embed=await self.make_add_success_embed(suggestion_item))
-
-    async def _remove_previous_categories(self, target_message, new_emoji_name):
-        for reaction_emoji in self.categories:
-            if reaction_emoji is not None and reaction_emoji != new_emoji_name:
-                other_reaction = await self.specifc_reaction_from_message(target_message, reaction_emoji)
-                if other_reaction is not None:
-                    await other_reaction.clear()
-
-    async def _change_category(self, channel, message, emoji_name):
-        category = self.categories.get(emoji_name)
-        if category:
-            success = await self.set_category(category, message.id)
-            if success:
-                await channel.send(embed=await self.make_changed_category_embed(message, category))
-                log.info("updated category for suggestion (id: %s) to category '%s'", message.id, category)
-                await self._remove_previous_categories(message, emoji_name)
-
-    async def _change_votes(self, message, emoji_name):
-        reaction = await self.specifc_reaction_from_message(message, emoji_name)
-        _count = reaction.count
-        self.data_storage_handler.update_votes(emoji_name, _count, message.id)
-        log.info("updated votecount for suggestion (id: %s) for type: '%s' to count: %s", message.id, emoji_name, _count)
-
     @ commands.Cog.listener()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
     async def on_raw_reaction_add(self, payload):
@@ -170,6 +130,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
         if emoji_name == self.command_emojis['save']:
             await self._new_suggestion(channel, message, payload.guild_id, reaction_user)
+            await message.author.send(f"The Dev team has saved one of your suggestions to their Database.\n\nIf you don't want this, DM me `[AT]AntiPetros unsave_suggestion {message.id}`")
 
         elif emoji_name in self.categories and message.id in self.saved_messages:
             await self._change_category(channel, message, emoji_name)
@@ -203,6 +164,38 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
         else:
             await self._clear_suggestions(ctx, 'yes')
 
+    @commands.command(name='unsave_suggestion')
+    @commands.dm_only()
+    async def user_delete_suggestion(self, ctx, suggestion_id: int):
+        if suggestion_id not in self.saved_messages:
+            await ctx.send('We have no message saved with this ID | if you feel like this is an error please contact: ' + self.notify_contact_member)
+            return
+        suggestion = self.data_storage_handler.get_suggestion_by_id(suggestion_id)
+        if ctx.author.name != suggestion['author_name']:
+            await ctx.send("You are not the Author of that suggestion, so you cannot remove it | if you feel like this is an error please contact: " + self.notify_contact_member)
+            return
+        await ctx.send(f"Do you really don't want the following suggestion saved by the dev team?\n{CodeBlock(suggestion['content'])}\n\nPossible Answers: YES, NO\nTime to answer: 30sec")
+
+        def check(m):
+            return m.author.name == ctx.author.name and m.channel == ctx.channel
+
+        try:
+            msg = await self.bot.wait_for('message', check=check, timeout=30.0)
+            if 'yes' in msg.content.casefold():
+                self.data_storage_handler.remove_suggestion_by_id(suggestion_id)
+                await ctx.send("Suggestion was remove from stored data, it will still be on discord!")
+                return
+            elif 'no' in msg.content.casefold():
+                await ctx.send("NO was answered, keeping message saved.")
+                return
+            else:
+                await ctx.send("Did not register an valid answer, cancelling.")
+                return
+
+        except asyncio.TimeoutError:
+            await ctx.send('No answer received, aborting request, you can always try again')
+            return
+
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
     async def retrieve_all(self, ctx):
@@ -218,19 +211,49 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
             _txt = 'no saved entries found'
         await ctx.send(_txt)
 
+    @ commands.command(name="remove_all_my_data")
+    @commands.dm_only()
+    async def remove_all_userdata(self, ctx):
+        user = ctx.author
+        all_user_data = self.data_storage_handler.get_suggestions_per_author(user.name)
+        if len(all_user_data) == 0:
+            await ctx.send("We have no data stored from you | if you feel like this is an error please contact: " + self.notify_contact_member)
+            return
+        await ctx.send(f"Do you really all your suggestion stored by the dev team deleted from the Database?\n\nPossible Answers: YES, NO\nTime to answer: 30sec")
+
+        def check(m):
+            return m.author.name == ctx.author.name and m.channel == ctx.channel
+
+        try:
+            msg = await self.bot.wait_for('message', check=check, timeout=30.0)
+            if 'yes' in msg.content.casefold():
+                for row in all_user_data:
+                    self.data_storage_handler.remove_suggestion_by_id(row['message_discord_id'])
+                await ctx.send("All your data was removed from the database")
+                return
+            elif 'no' in msg.content.casefold():
+                await ctx.send("NO was answered, keeping messages saved.")
+                return
+            else:
+                await ctx.send("Did not register an valid answer, cancelling.")
+                return
+
+        except asyncio.TimeoutError:
+            await ctx.send('No answer received, aborting request, you can always try again')
+            return
+
     @ commands.command()
-    @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
+    @commands.dm_only()
     async def request_my_data(self, ctx):
         user = ctx.author
-        _json = loadjson(self.save_file)
-        _data = _json.get(str(user), None)
-        if _data is None:
-            await user.send('we have nothing saved from you')
-        else:
-            _out = ''
-            for time, _save_content in _data:
-                _out += f'**At {time} we saved this message from you:**\n```{_save_content}```\n\n'
-            await user.send(_out)
+        all_user_data = self.data_storage_handler.get_suggestions_per_author(user.name)
+        if len(all_user_data) == 0:
+            await ctx.send("We have no data stored from you | if you feel like this is an error please contact: " + self.notify_contact_member)
+            return
+        with TemporaryDirectory() as tmpdir:
+            writejson(await self._row_to_json_user_data(all_user_data), pathmaker(tmpdir, 'output.json'))
+            file = discord.File(pathmaker(tmpdir, 'output.json'), filename=ctx.author.name + '_data.txt')
+            await ctx.send(file=file)
 
 # endregion [Commands]
 
@@ -327,6 +350,64 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
             if unicodedata.name(reaction.emoji) == target_reaction:
                 return reaction
 
+    async def _new_suggestion(self, channel, message, guild_id, reaction_user):
+        if message.id in self.saved_messages:
+            await channel.send(embed=await self.make_already_saved_embed())
+            return
+
+        message_member = await self.bot.retrieve_member(guild_id, message.author.id)
+        reaction_member = await self.bot.retrieve_member(guild_id, reaction_user.id)
+        now_time = datetime.utcnow()
+        name = await self.collect_title(message.content)
+        extra_data = (message.attachments[0].filename, await message.attachments[0].read()) if len(message.attachments) != 0 else None
+
+        suggestion_item = SUGGESTION_DATA_ITEM(name, message_member, reaction_member, message, now_time)
+
+        was_saved, suggestion_item = await self.add_suggestion(suggestion_item, extra_data)
+        log.info("saved new suggestion, suggestion name: '%s', suggestion author: '%s', saved by: '%s', suggestion has extra data: '%s'",
+                 name,
+                 message_member.name,
+                 reaction_member.name,
+                 'yes' if extra_data is not None else 'no')
+
+        if was_saved is True:
+            await channel.send(embed=await self.make_add_success_embed(suggestion_item))
+
+    async def _remove_previous_categories(self, target_message, new_emoji_name):
+        for reaction_emoji in self.categories:
+            if reaction_emoji is not None and reaction_emoji != new_emoji_name:
+                other_reaction = await self.specifc_reaction_from_message(target_message, reaction_emoji)
+                if other_reaction is not None:
+                    await other_reaction.clear()
+
+    async def _change_category(self, channel, message, emoji_name):
+        category = self.categories.get(emoji_name)
+        if category:
+            success = await self.set_category(category, message.id)
+            if success:
+                await channel.send(embed=await self.make_changed_category_embed(message, category))
+                log.info("updated category for suggestion (id: %s) to category '%s'", message.id, category)
+                await self._remove_previous_categories(message, emoji_name)
+
+    async def _change_votes(self, message, emoji_name):
+        reaction = await self.specifc_reaction_from_message(message, emoji_name)
+        _count = reaction.count
+        self.data_storage_handler.update_votes(emoji_name, _count, message.id)
+        log.info("updated votecount for suggestion (id: %s) for type: '%s' to count: %s", message.id, emoji_name, _count)
+
+    async def _row_to_json_user_data(self, data):
+        _out = {}
+        for row in data:
+            _out[row['message_discord_id']] = {'name': row['name'],
+                                               'utc_posted_time': row['utc_posted_time'],
+                                               'utc_saved_time': row['utc_saved_time'],
+                                               'upvotes': row['upvotes'],
+                                               'downvotes': row['downvotes'],
+                                               'category_name': row['category_name'],
+                                               'author_name': row['author_name'],
+                                               'content': row['content'],
+                                               'data_name': row['data_name']}
+        return _out
 
 # endregion [HelperMethods]
 

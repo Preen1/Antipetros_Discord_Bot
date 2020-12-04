@@ -148,6 +148,20 @@ class SuggestionDataStorageSQLite:
             _out = set(_out)
         return _out
 
+    def get_suggestions_per_author(self, author_name):
+        result = self.db.query('get_suggestions_by_author', (author_name,), row_factory=True)
+        return list(result)
+
+    def get_suggestion_by_id(self, suggestion_id):
+        result = self.db.query('get_suggestion_by_id', (suggestion_id,), row_factory=True)
+        return result[0]
+
+    def remove_suggestion_by_id(self, suggestion_id):
+        data_id = self.db.query('get_data_id_by_message_id', (suggestion_id,), row_factory=True)[0]['extra_data_id']
+        self.db.write('remove_suggestion_by_id', (suggestion_id,))
+        if data_id is not None:
+            self.db.write('remove_extra_data_by_id', (data_id,))
+
     def add_suggestion(self, suggestion_item):
 
         for author in [suggestion_item.message_author, suggestion_item.reaction_author]:

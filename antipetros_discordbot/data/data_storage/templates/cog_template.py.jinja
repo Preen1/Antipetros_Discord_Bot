@@ -105,6 +105,12 @@ class {{ cog_item.name }}(commands.Cog, command_attrs={{ "{" }}{% for com_attr_n
 
 # endregion [Properties]
 
+# region [Setup]
+
+
+
+# endregion [Setup]
+
 # region [Loops]
 
     {% for cog_loop in cog_item.all_loops %}
@@ -135,6 +141,24 @@ class {{ cog_item.name }}(commands.Cog, command_attrs={{ "{" }}{% for com_attr_n
     {% endfor %}
 
 # endregion [Commands]
+
+# region [DataStorage]
+
+
+
+# endregion [DataStorage]
+
+# region [Embeds]
+
+
+
+# endregion [Embeds]
+
+# region [HelperMethods]
+
+
+
+# endregion [HelperMethods]
 
 # region [SpecialMethods]
 
