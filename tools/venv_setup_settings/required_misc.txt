@@ -20,3 +20,5 @@ fpdf2
 url-normalize
 async-property
 watchgod
+json-tricks
+aiohttp
