@@ -1,5 +1,4 @@
 
-__updated__ = '2020-12-03 11:22:27'
 
 # region [Imports]
 

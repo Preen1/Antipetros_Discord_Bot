@@ -1,5 +1,4 @@
 
-__updated__ = '2020-12-03 12:08:14'
 
 # region [Imports]
 
@@ -183,7 +182,6 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Commands]
 
-
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
     async def clear_all_suggestions(self, ctx, sure=False):
@@ -272,7 +270,6 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Embeds]
 
-
     async def make_add_success_embed(self, suggestion_item: SUGGESTION_DATA_ITEM):
         _filtered_content = []
         if suggestion_item.name is not None:
@@ -314,6 +311,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Helper]
 
+
     async def collect_title(self, content):
         name_result = self.suggestion_name_regex.search(content)
         if name_result:
@@ -332,6 +330,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 # endregion [Helper]
 
 # region [DunderMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

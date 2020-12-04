@@ -11,6 +11,7 @@
 ### Unimportant
 
 - assign good names to the cogs as argument in the init.
+- ask for symbols at art team
 
 <!-- ### Maybe -->
 

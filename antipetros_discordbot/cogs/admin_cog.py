@@ -161,9 +161,9 @@ class Administration(commands.Cog):
         BASE_CONFIG.set('blacklist', 'user', current_blacklist)
         BASE_CONFIG.save()
         if self.bot.is_debug is True:
-            await user.send(f"***THIS IS JUST A TEST, SORRY FOR THE DM BOTHER***\n\nYou have been put on my __BLACKLIST__, you won't be able to invoke my commands.\n\nIf you think this was done in error or other questions, contact **__{self.bot.contact_user}__** per DM!")
+            await user.send(f"***THIS IS JUST A TEST, SORRY FOR THE DM BOTHER***\n\nYou have been put on my __BLACKLIST__, you won't be able to invoke my commands.\n\nIf you think this was done in error or other questions, contact **__{self.bot.notify_contact_member}__** per DM!")
         else:
-            await user.send(f"You have been put on my __BLACKLIST__, you won't be able to invoke my commands.\n\nIf you think this was done in error or other questions, contact **__{self.bot.contact_user}__** per DM!")
+            await user.send(f"You have been put on my __BLACKLIST__, you won't be able to invoke my commands.\n\nIf you think this was done in error or other questions, contact **__{self.bot.notify_contact_member}__** per DM!")
         await ctx.send(f"User '{user.name}' with the id '{user.id}' was added to my blacklist, he wont be able to invoke my commands!\n\nI have also notified him by DM of this fact!")
 
     @commands.command()

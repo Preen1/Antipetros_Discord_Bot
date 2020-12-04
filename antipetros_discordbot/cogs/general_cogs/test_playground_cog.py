@@ -44,6 +44,7 @@ Your contribution and participation to this community will determine how long th
 
 
 class TestPlayground(commands.Cog):
+    config_name = "test_playground"
 
     def __init__(self, bot):
         self.bot = bot
@@ -60,6 +61,18 @@ class TestPlayground(commands.Cog):
                               "https://i.redd.it/h3bi3p5jurwz.jpg",
                               "https://pbs.twimg.com/media/DSrDQVFVAAAODM1.jpg",
                               "https://memegenerator.net/img/instances/58080047/carthago-delenda-est.jpg"]
+
+    # @property
+    # def last_map_msg(self):
+    #     msg_id = COGS_CONFIG.get(self.config_name, 'last_map_image_msg_id')
+    #     if msg_id == '':
+    #         return None
+    #     try:
+    #         msg_id = int(msg_id)
+    #     except ValueError:
+    #         COGS_CONFIG.set(self.config_name, 'last_map_image_msg_id')
+    #         return None
+    #     msg = self.bot.
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
@@ -129,7 +142,6 @@ class TestPlayground(commands.Cog):
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     async def map_changed(self, ctx, marker, color):
         if ctx.channel.name in self.allowed_channels:
-            loop = get_event_loop()
 
             with BytesIO() as image_binary:
 

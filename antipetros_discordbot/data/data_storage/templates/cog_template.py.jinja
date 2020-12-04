@@ -1,3 +1,4 @@
+
 # region [Imports]
 
 # * Standard Library Imports -->
@@ -55,7 +56,7 @@ from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS
 
 # endregion[Imports]
 
-__updated__ = '2020-12-02 19:49:26'
+
 
 # region [AppUserData]
 
@@ -74,8 +75,8 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[Constants]
 
-class {{ cog_item.name }}(commands.Cog, command_attrs={{% for com_attr_name, com_attr_value in cog_item.all_com_attr %}'{{ com_attr_name }}': {{ com_attr_value }}{% if not loop.last %}, {% endif %}{% endfor %}}):
-    config_name = {{ cog_item.config_name }}
+class {{ cog_item.name }}(commands.Cog, command_attrs={{ "{" }}{% for com_attr_name, com_attr_value in cog_item.all_com_attr %}'{{ com_attr_name }}': {{ com_attr_value }}{{ ", " if not loop.last }}{% endfor %}{{ "}" }}):
+    config_name = "{{ cog_item.config_name }}"
 
     def __init__(self,bot):
         self.bot = bot
@@ -98,9 +99,7 @@ class {{ cog_item.name }}(commands.Cog, command_attrs={{% for com_attr_name, com
         {% else %}
         pass
         {% endif %}
-
     {% for cog_loop in cog_item.all_loops %}
-
     {{ cog_loop.code }}
 
     {% endfor %}
@@ -109,15 +108,11 @@ class {{ cog_item.name }}(commands.Cog, command_attrs={{% for com_attr_name, com
     async def extra_cog_setup(self):
         log.info(f"{self} Cog ----> finished extra setup")
 
-
     {% for listener in cog_item.all_listeners %}
-
     {{ listener.code }}
 
     {% endfor %}
-
     {% for command in cog_item.all_commands %}
-
     {{ command.code }}
 
     {% endfor %}

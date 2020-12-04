@@ -23,7 +23,6 @@ from antipetros_discordbot.utility.gidtools_functions import work_in, pathmaker
 
 # endregion[Imports]
 
-__updated__ = '2020-11-19 19:24:01'
 
 # region [AppUserData]
 

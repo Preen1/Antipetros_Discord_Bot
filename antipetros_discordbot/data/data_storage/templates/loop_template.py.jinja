@@ -1,7 +1,8 @@
-@tasks.loop({% for loop_attr_name, loop_attr_value in loop_item.all_attributes %}{{ loop_attr_name }}={{ loop_attr_value }}{% if not loop.last %}, {% endif %}{% endfor %}, reconnect=True)
-async def {{ loop_item.name }}(self):
-    pass
 
-@{{ loop_item.name }}.before_loop
-async def before_{{ loop_item.name }}(self):
-    await self.bot.wait_until_ready()
+    @tasks.loop({% for loop_attr_name, loop_attr_value in loop_item.all_attributes %}{{ loop_attr_name }}={{ loop_attr_value }}{{ ", " if not loop.last }}{% endfor %}, reconnect=True)
+    async def {{ loop_item.name }}(self):
+        pass
+
+    @{{ loop_item.name }}.before_loop
+    async def before_{{ loop_item.name }}(self):
+        await self.bot.wait_until_ready()

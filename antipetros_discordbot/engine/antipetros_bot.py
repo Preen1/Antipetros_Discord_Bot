@@ -18,7 +18,6 @@ from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 # endregion[Imports]
 
-__updated__ = '2020-12-03 12:31:37'
 
 # region [AppUserData]
 
@@ -95,8 +94,8 @@ class AntiPetrosBot(commands.Bot):
         return list(map(int, BASE_CONFIG.getlist('blacklist', 'user')))
 
     @property
-    def contact_user(self):
-        return BASE_CONFIG.get('blacklist', 'contact_user')
+    def notify_contact_member(self):
+        return BASE_CONFIG.get('blacklist', 'notify_contact_member')
 
     @property
     def standard_embed_color(self):

@@ -23,11 +23,8 @@ from antipetros_discordbot.utility.gidtools_functions import pathmaker
 # from fuzzywuzzy import fuzz, process
 
 
-
-
 # endregion[Imports]
 
-__updated__ = '2020-11-21 13:07:56'
 
 # region [AppUserData]
 

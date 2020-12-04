@@ -12,7 +12,7 @@ SUGGESTION_DATA_ITEM = namedtuple('SuggestionDataItem', ['name', 'message_author
 
 
 # for templates
-NEW_COG_ITEM = namedtuple('NewCogItem', ['name', 'absolute_location', 'import_location', 'config_name', 'all_com_attr', 'all_loops', 'all_listeners', 'all_commands', 'extra_imports', 'code'], defaults=('', [], [], [], [], []))
-NEW_COMMAND_ITEM = namedtuple('NewCommandItem', ['name', 'code'], defaults=('', ))
-NEW_LISTENER_ITEM = namedtuple('NewListenerItem', ['name', 'event_name', 'code'], defaults=('', ))
-NEW_LOOP_ITEM = namedtuple('NewLoopItem', ['name', 'all_attributes', 'code'], defaults=('',))
+NEW_COG_ITEM = namedtuple('NewCogItem', ['name', 'absolute_location', 'import_location', 'config_name', 'all_com_attr', 'all_loops', 'all_listeners', 'all_commands', 'extra_imports', 'code'])
+NEW_COMMAND_ITEM = namedtuple('NewCommandItem', ['name', 'code'])
+NEW_LISTENER_ITEM = namedtuple('NewListenerItem', ['name', 'event_name', 'code'])
+NEW_LOOP_ITEM = namedtuple('NewLoopItem', ['name', 'all_attributes', 'code'])

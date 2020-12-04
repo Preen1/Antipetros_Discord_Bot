@@ -33,7 +33,7 @@ currently implemented config options:
     - notify_with_link --> boolean if the notification DM should include the bad link
 """
 
-__updated__ = '2020-12-03 12:09:40'
+
 # region [Imports]
 
 # * Standard Library Imports -->
@@ -654,16 +654,14 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
     async def _clear_links(self, ctx, answer):
         if answer.casefold() == 'yes':
-            await ctx.send('deleting posted links')
             for link_id in self.data_storage_handler.get_all_posted_links():
                 msg = await self.link_channel.fetch_message(link_id)
                 await msg.delete()
-            await ctx.send('deleting Database')
             await self.bot.execute_in_thread(self.data_storage_handler.clear)
-            await ctx.send('Database was cleared, ready for input again')
+            await ctx.send(embed=await self.bot.make_basic_embed(title="Link data deleted", text="The link data storage was deleted an initialized again, it is ready for new input", symbol='trash'))
 
         elif answer.casefold() == 'no':
-            await ctx.send('canceling request to delete Database, nothing was deleted')
+            await ctx.send(embed=await self.bot.make_basic_embed(title="Aborting deletion process", text='aborting deletion process, nothing was deleted', symbol='cancelled'))
 
 
 # endregion [Helper]

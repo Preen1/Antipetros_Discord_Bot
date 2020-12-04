@@ -1,8 +1,8 @@
-@ commands.Cog.listener(name={{ listener_item.event_name }})
-{% raw %}@ commands.has_any_role(*COGS_CONFIG.getlist('{{ cog_item.config_name }}', 'allowed_roles')){% endraw %}
-async def {{ listener_item.name }}(self, payload):
-    {% endif %}
-    channel = self.bot.get_channel(payload.channel_id)
-    if channel.name not in self.allowed_channels:
-        return
-    pass
+
+    @ commands.Cog.listener(name="{{ listener_item.event_name }}")
+    {% raw %}@ commands.has_any_role(*COGS_CONFIG.getlist('{{ cog_item.config_name }}', 'allowed_roles')){% endraw %}
+    async def {{ listener_item.name }}(self, payload):
+        channel = self.bot.get_channel(payload.channel_id)
+        if channel.name not in self.allowed_channels:
+            return
+        pass
