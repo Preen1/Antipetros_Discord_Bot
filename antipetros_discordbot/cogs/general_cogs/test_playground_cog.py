@@ -114,7 +114,8 @@ class TestPlayground(commands.Cog):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
-    async def roll_a_d(self, ctx, sides: int, amount: int = 1):
+    @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
+    async def roll(self, ctx, sides: int = 6, amount: int = 1):
         log.info(ctx.message.raw_role_mentions)
         _result = 0
         _dice = []
@@ -123,18 +124,22 @@ class TestPlayground(commands.Cog):
             _rolled = random.randint(1, sides)
             _result += _rolled
             _dice.append(_rolled)
-            if i % 1000000 == 0:
+            if i + 1 % 1000000 == 0:
                 await ctx.send(f'reached {str("1.000.000")} dice again', delete_after=120)
 
-        _stdev = statistics.stdev(_dice)
-        _mean = statistics.mean(_dice)
-        _median = statistics.median(_dice)
-        x = statistics.mode(_dice)
-        y = statistics.variance(_dice)
-        out_message = f"**you have rolled a total of:** {str(_result)}\n**dice result:** {', '.join(map(str,_dice))}\n\n**standard deviantion:** {str(_stdev)}\n**mean:** {str(_mean)}\n**median:** {str(_median)}\n**mode:** {str(x)}\n**variance:** {str(y)}"
-        if len(out_message) >= 1900:
-            out_message = f"**you have rolled a total of:** {str(_result)}\n\n**standard deviantion:** {str(_stdev)}\n**mean:** {str(_mean)}\n**median:** {str(_median)}\n**mode:** {str(x)}\n**variance:** {str(y)}"
-        await ctx.send(out_message + f'\n\n**THIS TOOK** {str(round(time()-time_start,3))} SECONDS')
+        if amount > 1:
+            _stdev = statistics.stdev(_dice)
+            _mean = statistics.mean(_dice)
+            _median = statistics.median(_dice)
+            x = statistics.mode(_dice)
+            y = statistics.variance(_dice)
+            out_message = f"{ctx.author.mention} **you have rolled a total of:** {str(_result)}\n**dice result:** {', '.join(map(str,_dice))}\n\n**standard deviantion:** {str(_stdev)}\n**mean:** {str(_mean)}\n**median:** {str(_median)}\n**mode:** {str(x)}\n**variance:** {str(y)}"
+            if len(out_message) >= 1900:
+                out_message = f"{ctx.author.mention} **you have rolled a total of:** {str(_result)}\n\n**standard deviantion:** {str(_stdev)}\n**mean:** {str(_mean)}\n**median:** {str(_median)}\n**mode:** {str(x)}\n**variance:** {str(y)}"
+            await ctx.send(out_message + f'\n\n**THIS TOOK** {str(round(time()-time_start,3))} SECONDS')
+        else:
+            await ctx.send(f"{ctx.author.mention} you have rolled {_result}")
+        await self.bot.did_command()
 
     def map_image_handling(self, base_image, marker_name, color, bytes_out):
         log.debug("creating changed map, changed_location: '%s', changed_color: '%s'", marker_name, color)

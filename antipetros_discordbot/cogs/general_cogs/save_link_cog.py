@@ -239,6 +239,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'delete_all_allowed_roles'))
+    @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def clear_all_links(self, ctx, sure=False):
         if ctx.channel.name not in self.allowed_channels:
             return
@@ -258,9 +259,11 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
                 await ctx.send('No answer received, canceling request to delete Database, nothing was deleted')
         else:
             await self._clear_links(ctx, 'yes')
+        await self.bot.did_command()
 
     @commands.command(hidden=False)
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def get_link(self, ctx, name):
         """
         Get a link as normal answer message, by link name.
@@ -280,9 +283,11 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
         # TODO: make as embed, also change to only get raw data from datastoragehandler
         await ctx.send(_link)
         log.info("retrieve link '%s'", _link)
+        await self.bot.did_command()
 
     @commands.command(hidden=False)
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def get_all_links(self, ctx, in_format='plain'):
         """
         Get a list of all saved links, as a file.
@@ -318,9 +323,11 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
             _file = discord.File(_path, _name)
             await ctx.send(file=_file)
+        await self.bot.did_command()
 
     @commands.command(hidden=False)
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def save_link(self, ctx, link: str, link_name: str = None, days_to_hold: int = None):
         """
         Main Command of the SaveLink Cog.
@@ -334,6 +341,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
             link_name (str, optional): name to save the link as, if not given will be generated from url. Defaults to None.
             days_to_hold (int, optional): time befor the link will be deleted from storage channel in days, if not give will be retrieved from config. Defaults to None.
         """
+        # TODO: refractor that monster of an function
         log.debug("command was triggered in %s", ctx.channel.name)
         if ctx.channel.name not in self.allowed_channels:
             log.debug("channel not is 'allowed channel'")
@@ -411,9 +419,11 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
                 user = self.bot.get_user(int(user_id))
                 await user.send(embed=notify_embed, delete_after=delete_answer)
                 log.debug("notified '%s' about the offending link", user.name)
+        await self.bot.did_command()
 
     @commands.command(hidden=False)
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def get_forbidden_list(self, ctx, file_format='json'):
         """
         command to get the forbidden link list as an file.
@@ -436,9 +446,11 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
                 _file = discord.File(_path, filename=_name)
                 await ctx.send(file=_file, delete_after=60)
                 log.info("send forbidden link list to '%s'", ctx.author.name)
+        await self.bot.did_command()
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def delete_link(self, ctx, name, scope='channel'):
         # TODO: Docstring
         log.debug("command was triggered in %s", ctx.channel.name)
@@ -465,6 +477,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
                 await message.delete()
                 answer["deleted_from_channel"] = "✅"
         await ctx.send(embed=await self.bot.make_basic_embed(title="Deleted Link", text='Link was deleted from: ', symbol='trash', **answer))
+        await self.bot.did_command()
 
 # endregion [Commands]
 

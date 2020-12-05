@@ -228,10 +228,12 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
             image.save(image_binary, image_format.upper(), optimize=True)
             image_binary.seek(0)
             out_file = discord.File(image_binary, filename=name + '.' + image_format)
+            # TODO: make as embed
             await ctx.send(message_title, file=out_file)
 
     @commands.command(name='antistasify')
     @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_roles'))
+    @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def stamp_image(self, ctx, stamp='AS_LOGO_1', first_pos='bottom', second_pos='right', factor: float = None):
         if ctx.channel.name not in self.allowed_channels:
             return
@@ -267,10 +269,12 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
                 name = 'antistasified_' + os.path.splitext(_file.filename)[0]
                 # TODO: make as embed
                 await self._send_image(ctx, in_image, name, f"__**{name}**__")
+        await self.bot.did_command()
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_roles'))
     async def flag_test(self, ctx, flag_one, flag_two):
+        # TODO: remove this, or move to debug
         if ctx.channel.name not in self.allowed_channels:
             return
         _flag_one = self.stamp_positions.get(flag_one.casefold(), None)
@@ -285,6 +289,7 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_roles'))
+    @commands.cooldown(1, 120, commands.BucketType.channel)
     async def available_stamps(self, ctx):
         if ctx.channel.name not in self.allowed_channels:
             return
@@ -299,9 +304,11 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
                 _file = discord.File(image_binary, filename=name + '.png')
                 # TODO: make as embed
                 await ctx.send(name, file=_file, delete_after=120)
+        await self.bot.did_command()
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_avatar_roles'))
+    @commands.cooldown(1, 60 * 5, commands.BucketType.member)
     async def member_avatar(self, ctx, target_id: int = None):
         if ctx.channel.name not in self.allowed_channels:
             return
@@ -317,6 +324,7 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
         name = f"{ctx.author.name}_Member_avatar"
 
         await self._send_image(ctx, modified_avatar, name, f"**Your New Avatar {ctx.author.name}**")
+        await self.bot.did_command()
 
     async def get_avatar_from_user(self, user):
         avatar = user.avatar_url

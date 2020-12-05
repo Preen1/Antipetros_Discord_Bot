@@ -75,8 +75,10 @@ class AntiPetrosBot(commands.Bot):
 
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.MaxConcurrencyReached):
-            await ctx.channel.send('Bot is busy! Please retry in a minute')
+            await ctx.channel.send(f'{ctx.author.mention} Sorry,Bot is busy! Please retry in a minute')
             return
+        elif isinstance(error, commands.CommandOnCooldown):
+            await ctx.channel.send(f'{ctx.author.mention} I have recently used this command and it is on cooldown still.')
 
     @tasks.loop(minutes=10, reconnect=True)
     async def get_bot_roles_loop(self):
@@ -128,6 +130,9 @@ class AntiPetrosBot(commands.Bot):
     @property
     def std_date_time_format(self):
         return BASE_CONFIG.get('datetime', 'std_format')
+
+    async def did_command(self):
+        self.commands_executed += 1
 
     async def retrieve_antistasi_member(self, user_id):
         return await self.antistasi_guild.fetch_member(user_id)

@@ -126,6 +126,7 @@ class Administration(commands.Cog):
 
 # region [Properties]
 
+
     @ property
     def allowed_dm_invoker_ids(self):
         return set(map(int, COGS_CONFIG.getlist(self.config_name, 'allowed_dm_ids')))
@@ -159,7 +160,7 @@ class Administration(commands.Cog):
         else:
             return pathmaker(self.config_dir, available_configs[_result[0]])
 
-    @ commands.command()
+    @ commands.command(name="reload_all")
     @ commands.has_any_role(*COGS_CONFIG.getlist('admin', 'allowed_roles'))
     async def reload_all_ext(self, ctx):
         if ctx.channel.name not in self.allowed_channels:
@@ -184,7 +185,7 @@ class Administration(commands.Cog):
         await ctx.send(f"**successfully reloaded the following extensions:**\n{reloaded_extensions}", delete_after=_delete_time)
         await ctx.message.delete(delay=float(_delete_time - (_delete_time // 2)))
 
-    @ commands.command(name='die')
+    @ commands.command(name='die', aliases=['go_away', 'turn_of', 'shutdown', 'exit', 'close'])
     @ commands.has_any_role(*COGS_CONFIG.getlist('admin', 'allowed_roles'))
     async def shutdown(self, ctx):
         if ctx.channel.name not in self.allowed_channels:
