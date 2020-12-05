@@ -63,6 +63,7 @@ class TestPlayground(commands.Cog):
                               "https://memegenerator.net/img/instances/58080047/carthago-delenda-est.jpg"]
         if self.bot.is_debug:
             self.save_commands()
+            log.debug("commands for %s saved to commands.json")
     # @property
     # def last_map_msg(self):
     #     msg_id = COGS_CONFIG.get(self.config_name, 'last_map_image_msg_id')
@@ -78,8 +79,9 @@ class TestPlayground(commands.Cog):
     def save_commands(self):
         command_json_file = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\docs\commands.json"
         command_json = loadjson(command_json_file)
-        command_json[str(self)] = [com.name for com in self.get_commands()]
+        command_json[str(self)] = {com.name: com.help for com in self.get_commands()}
         writejson(command_json, command_json_file, indent=4)
+        log.debug("commands for %s saved to %s", self, command_json_file)
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
@@ -311,6 +313,16 @@ class TestPlayground(commands.Cog):
         except asyncio.TimeoutError:
             await ctx.send('No answer received, aborting request, you can always try again')
             return
+
+# region [SpecialMethods]
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.bot.user.name})"
+
+    def __str__(self):
+        return self.__class__.__name__
+
+# endregion [SpecialMethods]
 
 
 def setup(bot):

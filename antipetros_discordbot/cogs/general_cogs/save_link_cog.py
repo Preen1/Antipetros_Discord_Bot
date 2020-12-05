@@ -127,8 +127,9 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
     def save_commands(self):
         command_json_file = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\docs\commands.json"
         command_json = loadjson(command_json_file)
-        command_json[str(self)] = [com.name for com in self.get_commands()]
+        command_json[str(self)] = {com.name: com.help for com in self.get_commands()}
         writejson(command_json, command_json_file, indent=4)
+        log.debug("commands for %s saved to %s", self, command_json_file)
 
     async def _process_raw_blocklist_content(self, raw_content):
         """
