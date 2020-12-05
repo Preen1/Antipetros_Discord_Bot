@@ -236,6 +236,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
         if ctx.channel.name not in self.allowed_channels:
             return
         if sure is False:
+            # TODO: make as embed
             await ctx.send("Do you really want to delete all saved links?\n\nANSWER **YES** in the next __30 SECONDS__")
             user = ctx.author
             channel = ctx.channel
@@ -246,6 +247,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
                 msg = await self.bot.wait_for('message', check=check, timeout=30.0)
                 await self._clear_links(ctx, msg.content)
             except asyncio.TimeoutError:
+                # TODO: make as embed
                 await ctx.send('No answer received, canceling request to delete Database, nothing was deleted')
         else:
             await self._clear_links(ctx, 'yes')
@@ -268,6 +270,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
             return
         log.info("Link with Link name '%s' was requested", name)
         _link = self.data_storage_handler.get_link(name)
+        # TODO: make as embed, also change to only get raw data from datastoragehandler
         await ctx.send(_link)
         log.info("retrieve link '%s'", _link)
 
@@ -291,6 +294,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
                 _name = 'all_links.json'
                 _path = pathmaker(tempdir, _name)
                 if len(_link_dict) == 0:
+                    # TODO: make as embed
                     await ctx.send('no saved links')
                     return
                 writejson(_link_dict, _path)
@@ -300,6 +304,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
                 _name = 'all_links.txt'
                 _path = pathmaker(tempdir, _name)
                 if len(_link_list) == 0:
+                    # TODO: make as embed
                     await ctx.send('no saved links')
                     return
                 writeit(_path, '\n'.join(_link_list))
@@ -343,6 +348,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
             # check if link name is already occupied
             if await self._check_link_name_existing(link_name) is True:
                 log.error("link name '%s' already in DataStorage", link_name)
+                # TODO: make as embed
                 await ctx.send(f"The link_name '{link_name}', is already taken, please choose a different Name.")
                 return None
 
@@ -367,6 +373,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
             await self.save(link_item, link_store_message.id)
 
             # post an success message to the channel from where the command was invoked. Delete after 60 seconds.
+            # TODO: make as embed
             await ctx.send('✅ Link was successfully saved')
 
         else:
@@ -434,23 +441,23 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
         log.info("Link with Link name '%s' was requested to be deleted by '%s'", name, ctx.author.name)
         link_name, link_message_id, link_status = self.data_storage_handler.get_link_for_delete(name)
         if link_message_id is None:
-            await ctx.send(f"I was not able to find an saved link with the name: '{name}'")
+            await ctx.send(embed=await self.bot.make_basic_embed(title="Link not found", text="I cannot find a link with that name", symbol="cancelled", link_name=name))
             log.warning("No saved link found with name: '%s'", name)
             return
         if scope == 'channel' and link_status in [1, True]:
-            await ctx.send(f"Link '{link_name}' was already deleted from the channel, it is still in my Database")
+            await ctx.send(embed=await self.bot.make_basic_embed(title='Link was already deleted!', text='The link was already deleted from the channel some time ago', symbol="not_possible"))
             return
-        answer = f'link: **{link_name}**\n\n'
+        answer = {}
         if scope == 'full':
             self.data_storage_handler.delete_link(link_name)
-            answer += "> was deleted from my Database\n\n"
+            answer["deleted_from_database"] = "✅"
         if link_status != 1:
             message = await self.link_channel.fetch_message(link_message_id)
             if scope != 'full':
                 self.data_storage_handler.update_removed_status(link_message_id)
                 await message.delete()
-                answer += "> was deleted from the channel\n\n"
-        await ctx.send(answer)
+                answer["deleted_from_channel"] = "✅"
+        await ctx.send(embed=await self.bot.make_basic_embed(title="Deleted Link", text='Link was deleted from: ', symbol='trash', **answer))
 
 # endregion [Commands]
 

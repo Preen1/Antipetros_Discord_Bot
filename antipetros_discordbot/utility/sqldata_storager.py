@@ -82,7 +82,7 @@ class LinkDataStorageSQLite:
             yield item[0]
 
     def get_link_for_delete(self, name):
-        _name = fuzzprocess.extractOne(name, self.all_link_names)
+        _name = fuzzprocess.extractOne(name, self.all_link_names, score_cutoff=80)
         if _name is None:
             return None, None, None
         _name = _name[0]

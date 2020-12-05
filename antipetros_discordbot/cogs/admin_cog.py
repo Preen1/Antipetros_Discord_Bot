@@ -168,6 +168,7 @@ class Administration(commands.Cog):
                     log.error(error)
 
         _delete_time = 5 if self.bot.is_debug is True else 30
+        # TODO: make as embed
         await ctx.send(f"**successfully reloaded the following extensions:**\n{reloaded_extensions}", delete_after=_delete_time)
         await ctx.message.delete(delay=float(_delete_time - (_delete_time // 2)))
 
@@ -187,7 +188,9 @@ class Administration(commands.Cog):
             available_configs = await self.get_available_configs()
             _embed = discord.Embed(title="Anti Petros Report")
             await add_to_embed_listfield(_embed, 'Available Configs', available_configs.keys(), prefix='-')
+            # TODO: make as embed
             await ctx.send(embed=_embed)
+
             log.info("config list send to '%s'", ctx.author.name)
 
     @commands.command(name='send_config')
@@ -204,11 +207,13 @@ class Administration(commands.Cog):
                 requested_configs.append(os.path.basename(_req_config_path))
 
             if requested_configs == []:
+                # TODO: make as embed
                 await ctx.send(f'I was **NOT** able to find a config named `{config_name}`!\nTry again with `all` as argument, or request the available configs with the command `list_configs`')
             else:
                 for req_config in requested_configs:
                     _msg = f"Here is the file for the requested config `{req_config}`"
                     _file = await self.config_file_to_discord_file(req_config)
+                    # TODO: make as embed
                     await ctx.send(_msg, file=_file)
                 log.info("requested configs (%s) send to %s", ", ".join(requested_configs), ctx.author.name)
 
@@ -218,16 +223,19 @@ class Administration(commands.Cog):
         if ctx.author.id not in self.allowed_dm_invoker_ids:
             return
         if len(ctx.message.attachments) > 1:
+            # TODO: make as embed
             await ctx.send('please only send a single file with the command')
             return
         _file = ctx.message.attachments[0]
         _config_path = await self.match_config_name(config_name)
         if _config_path is None:
+            # TODO: make as embed
             await ctx.send(f'could not find a config that fuzzy matches `{config_name}`')
         else:
             await _file.save(_config_path)
             for cfg in self.all_configs:
                 cfg.read()
+                # TODO: make as embed
             await ctx.send(f'saved your file as `{os.path.basename(_config_path)}`.\n\n_You may have to reload the Cogs or restart the bot for it to take effect!_')
 
     @commands.command()
@@ -237,9 +245,11 @@ class Administration(commands.Cog):
             return
         user = await self.bot.fetch_user(user_id)
         if user is None:
+            # TODO: make as embed
             await ctx.send(f"Can not find a User with the id '{str(user_id)}'!")
             return
         if user.bot is True:
+            # TODO: make as embed
             await ctx.send("the user you are trying to add is a **__BOT__**!\n\nThis can't be done!")
             return
         current_blacklist = self.bot.blacklist_user
@@ -247,9 +257,12 @@ class Administration(commands.Cog):
         BASE_CONFIG.set('blacklist', 'user', current_blacklist)
         BASE_CONFIG.save()
         if self.bot.is_debug is True:
+            # TODO: make as embed
             await user.send(f"***THIS IS JUST A TEST, SORRY FOR THE DM BOTHER***\n\nYou have been put on my __BLACKLIST__, you won't be able to invoke my commands.\n\nIf you think this was done in error or other questions, contact **__{self.bot.notify_contact_member}__** per DM!")
         else:
+            # TODO: make as embed
             await user.send(f"You have been put on my __BLACKLIST__, you won't be able to invoke my commands.\n\nIf you think this was done in error or other questions, contact **__{self.bot.notify_contact_member}__** per DM!")
+            # TODO: make as embed
         await ctx.send(f"User '{user.name}' with the id '{user.id}' was added to my blacklist, he wont be able to invoke my commands!\n\nI have also notified him by DM of this fact!")
 
     @commands.command()
@@ -259,10 +272,12 @@ class Administration(commands.Cog):
             return
         user = await self.bot.fetch_user(user_id)
         if user is None:
+            # TODO: make as embed
             await ctx.send(f"Can not find a User with the id '{str(user_id)}'!")
             return
         current_blacklist = self.bot.blacklist_user
         if user.id not in current_blacklist:
+            # TODO: make as embed
             await ctx.send(f"User '{user.name}' with User_id '{user.id}' is currently **__NOT__** in my ***Blacklist***\n and can therefor not be removed from the ***Blacklist***!")
             return
 
@@ -274,9 +289,12 @@ class Administration(commands.Cog):
         BASE_CONFIG.set('blacklist', 'user', current_blacklist)
         BASE_CONFIG.save()
         if self.bot.is_debug is True:
+            # TODO: make as embed
             await user.send("***THIS IS JUST A TEST, SORRY FOR THE DM BOTHER***\n\nYou have been **__REMOVED__** from my Blacklist.\n\nYou can again invoke my commands again!")
         else:
+            # TODO: make as embed
             await user.send("You have been **__REMOVED__** from my Blacklist.\n\nYou can again invoke my commands again!")
+            # TODO: make as embed
         await ctx.send(f"User '{user.name}' with User_id '{user.id}' was removed from my Blacklist.\n\nHe is now able again, to invoke my commands!")
 
     @commands.command()
@@ -287,6 +305,7 @@ class Administration(commands.Cog):
         now_time = datetime.utcnow()
         delta_time = now_time - self.bot.start_time
         seconds = round(delta_time.total_seconds())
+        # TODO: make as embed
         await ctx.send(f"__Uptime__ -->\n\t\t| {str(seconds_to_pretty(seconds))}")
         log.info(f"reported uptime to '{ctx.author.name}'")
 

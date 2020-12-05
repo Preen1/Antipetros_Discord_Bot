@@ -140,6 +140,7 @@ def main():
         channel = ANTI_PETROS_BOT.get_channel(BASE_CONFIG.getint('startup_message', 'channel'))
         if BASE_CONFIG.getboolean('startup_message', 'use_startup_message') is True:
             delete_time = 15 if ANTI_PETROS_BOT.is_debug is True else 60
+            # TODO: make as embed
             await channel.send(BASE_CONFIG.get('startup_message', 'message'), delete_after=delete_time)
         await asyncio.sleep(5)
         if ANTI_PETROS_BOT.is_debug:

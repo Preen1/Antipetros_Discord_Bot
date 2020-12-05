@@ -130,6 +130,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
         if emoji_name == self.command_emojis['save']:
             await self._new_suggestion(channel, message, payload.guild_id, reaction_user)
+            # TODO: make as embed
             await message.author.send(f"The Dev team has saved one of your suggestions to their Database.\n\nIf you don't want this, DM me `[AT]AntiPetros unsave_suggestion {message.id}`")
 
         elif emoji_name in self.categories and message.id in self.saved_messages:
@@ -160,6 +161,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
                 msg = await self.bot.wait_for('message', check=check, timeout=30.0)
                 await self._clear_suggestions(ctx, msg.content)
             except asyncio.TimeoutError:
+                # TODO: make as embed
                 await ctx.send('No answer received, canceling request to delete Database, nothing was deleted')
         else:
             await self._clear_suggestions(ctx, 'yes')
@@ -168,10 +170,12 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
     @commands.dm_only()
     async def user_delete_suggestion(self, ctx, suggestion_id: int):
         if suggestion_id not in self.saved_messages:
+            # TODO: make as embed
             await ctx.send('We have no message saved with this ID | if you feel like this is an error please contact: ' + self.notify_contact_member)
             return
         suggestion = self.data_storage_handler.get_suggestion_by_id(suggestion_id)
         if ctx.author.name != suggestion['author_name']:
+            # TODO: make as embed
             await ctx.send("You are not the Author of that suggestion, so you cannot remove it | if you feel like this is an error please contact: " + self.notify_contact_member)
             return
         await ctx.send(f"Do you really don't want the following suggestion saved by the dev team?\n{CodeBlock(suggestion['content'])}\n\nPossible Answers: YES, NO\nTime to answer: 30sec")
@@ -183,22 +187,27 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
             msg = await self.bot.wait_for('message', check=check, timeout=30.0)
             if 'yes' in msg.content.casefold():
                 self.data_storage_handler.remove_suggestion_by_id(suggestion_id)
+                # TODO: make as embed
                 await ctx.send("Suggestion was remove from stored data, it will still be on discord!")
                 return
             elif 'no' in msg.content.casefold():
+                # TODO: make as embed
                 await ctx.send("NO was answered, keeping message saved.")
                 return
             else:
+                # TODO: make as embed
                 await ctx.send("Did not register an valid answer, cancelling.")
                 return
 
         except asyncio.TimeoutError:
+            # TODO: make as embed
             await ctx.send('No answer received, aborting request, you can always try again')
             return
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
     async def retrieve_all(self, ctx):
+        # TODO: make completly new for sqlite or dynamic datahandler
         _txt = ''
         x = loadjson(self.save_file)
         if x != {}:
@@ -217,8 +226,10 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
         user = ctx.author
         all_user_data = self.data_storage_handler.get_suggestions_per_author(user.name)
         if len(all_user_data) == 0:
+            # TODO: make as embed
             await ctx.send("We have no data stored from you | if you feel like this is an error please contact: " + self.notify_contact_member)
             return
+            # TODO: make as embed
         await ctx.send(f"Do you really all your suggestion stored by the dev team deleted from the Database?\n\nPossible Answers: YES, NO\nTime to answer: 30sec")
 
         def check(m):
@@ -229,16 +240,20 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
             if 'yes' in msg.content.casefold():
                 for row in all_user_data:
                     self.data_storage_handler.remove_suggestion_by_id(row['message_discord_id'])
+                    # TODO: make as embed
                 await ctx.send("All your data was removed from the database")
                 return
             elif 'no' in msg.content.casefold():
+                # TODO: make as embed
                 await ctx.send("NO was answered, keeping messages saved.")
                 return
             else:
+                # TODO: make as embed
                 await ctx.send("Did not register an valid answer, cancelling.")
                 return
 
         except asyncio.TimeoutError:
+            # TODO: make as embed
             await ctx.send('No answer received, aborting request, you can always try again')
             return
 
@@ -248,6 +263,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
         user = ctx.author
         all_user_data = self.data_storage_handler.get_suggestions_per_author(user.name)
         if len(all_user_data) == 0:
+            # TODO: make as embed
             await ctx.send("We have no data stored from you | if you feel like this is an error please contact: " + self.notify_contact_member)
             return
         with TemporaryDirectory() as tmpdir:
@@ -282,11 +298,14 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
     async def _clear_suggestions(self, ctx, answer):
         if answer.casefold() == 'yes':
+            # TODO: make as embed
             await ctx.send('deleting Database')
             await self.bot.execute_in_thread(self.data_storage_handler.clear)
+            # TODO: make as embed
             await ctx.send('Database was cleared, ready for input again')
 
         elif answer.casefold() == 'no':
+            # TODO: make as embed
             await ctx.send('canceling request to delete Database, nothing was deleted')
 
 

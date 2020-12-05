@@ -225,15 +225,18 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
         if ctx.channel.name not in self.allowed_channels:
             return
         if len(ctx.message.attachments) == 0:
+            # TODO: make as embed
             await ctx.send('! **there is NO image to antistasify** !')
             return
         if stamp not in self.stamps:
+            # TODO: make as embed
             await ctx.send("! **There is NO stamp with that name** !")
             return
         first_pos = self.stamp_positions.get(first_pos.casefold(), None)
         second_pos = self.stamp_positions.get(second_pos.casefold(), None)
 
         if any(_pos is None for _pos in [first_pos, second_pos]) or first_pos | second_pos not in self.stamp_pos_functions:
+            # TODO: make as embed
             await ctx.send("! **Those are NOT valid position combinations** !")
             return
         for _file in ctx.message.attachments:
@@ -251,7 +254,7 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
 
                 in_image = await self.bot.execute_in_thread(pos_function, in_image, _stamp, factor)
                 name = 'antistasified_' + os.path.splitext(_file.filename)[0]
-
+                # TODO: make as embed
                 await self._send_image(ctx, in_image, name, f"__**{name}**__")
 
     @commands.command()
@@ -263,8 +266,10 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
         _flag_two = self.stamp_positions.get(flag_two.casefold(), None)
         _comb = _flag_one | _flag_two
         if _comb in WATERMARK_COMBINATIONS:
+            # TODO: make as embed
             await ctx.send(f"{str(_comb)} is a valid combination")
         else:
+            # TODO: make as embed
             await ctx.send(f"{str(_comb)} is NOT a valid combination!")
 
     @commands.command()
@@ -281,6 +286,7 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
                 thumb_image.save(image_binary, 'PNG', optimize=True)
                 image_binary.seek(0)
                 _file = discord.File(image_binary, filename=name + '.png')
+                # TODO: make as embed
                 await ctx.send(name, file=_file, delete_after=120)
 
     @commands.command()
@@ -298,6 +304,7 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
         modified_avatar = await self.bot.execute_in_thread(self._to_bottom_right, avatar_image, stamp, self.avatar_stamp_fraction)
 
         name = f"{ctx.author.name}_Member_avatar"
+
         await self._send_image(ctx, modified_avatar, name, f"**Your New Avatar {ctx.author.name}**")
 
     async def get_avatar_from_user(self, user):
