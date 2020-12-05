@@ -21,6 +21,7 @@ import gidlogger as glog
 from antipetros_discordbot.utility.enums import WATERMARK_COMBINATIONS, WatermarkPosition
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.data.config.config_singleton import COGS_CONFIG
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 
 # endregion[Imports]
 
@@ -74,6 +75,16 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
                                     WatermarkPosition.Center | WatermarkPosition.Top: self._to_top_center}
 
         self._get_stamps()
+        if self.bot.is_debug:
+            self.save_commands()
+        glog.class_init_notification(log, self)
+
+    def save_commands(self):
+        command_json_file = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\docs\commands.json"
+        command_json = loadjson(command_json_file)
+        command_json[str(self)] = [com.name for com in self.get_commands()]
+        writejson(command_json, command_json_file, indent=4)
+
 
 # endregion[Init]
 

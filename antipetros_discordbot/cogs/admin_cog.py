@@ -69,6 +69,7 @@ from gidtools.gidfiles import (QuickFile, readit, clearit, readbin, writeit, loa
 from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG, CONFIG_DIR
 from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
 from antipetros_discordbot.utility.misc import seconds_to_pretty
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 
 # endregion[Imports]
 
@@ -109,6 +110,16 @@ class Administration(commands.Cog):
         self.bot = bot
         self.all_configs = [BASE_CONFIG, COGS_CONFIG]
         self.config_dir = CONFIG_DIR
+        if self.bot.is_debug:
+            self.save_commands()
+        glog.class_init_notification(log, self)
+
+    def save_commands(self):
+        command_json_file = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\docs\commands.json"
+        command_json = loadjson(command_json_file)
+        command_json[str(self)] = [com.name for com in self.get_commands()]
+        writejson(command_json, command_json_file, indent=4)
+
 
 # endregion[Init]
 

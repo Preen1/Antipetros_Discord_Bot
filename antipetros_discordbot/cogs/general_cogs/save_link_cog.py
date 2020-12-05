@@ -113,14 +113,22 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
         self.forbidden_links = set(loadjson(pathmaker(THIS_FILE_DIR, r'..\..\data\data_storage\json_data\forbidden_link_list.json')))  # read previously saved blacklist, because extra_setup method does not run when the cog is only reloaded
         self.forbidden_url_words = set(map(lambda x: str(x).casefold(), loadjson(pathmaker(THIS_FILE_DIR, r'..\..\data\data_storage\json_data\forbidden_url_words.json'))))
-
+        if self.bot.is_debug:
+            self.save_commands()
         self.fresh_blacklist_loop.start()
         self.check_link_best_by_loop.start()
+
         glog.class_init_notification(log, self)
 
 # endregion [Init]
 
 # region [Setup]
+
+    def save_commands(self):
+        command_json_file = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\docs\commands.json"
+        command_json = loadjson(command_json_file)
+        command_json[str(self)] = [com.name for com in self.get_commands()]
+        writejson(command_json, command_json_file, indent=4)
 
     async def _process_raw_blocklist_content(self, raw_content):
         """
@@ -190,7 +198,6 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Properties]
 
-
     @property
     def link_channel(self):
         return self.bot.get_channel(COGS_CONFIG.getint(self.config_name, 'link_channel'))
@@ -209,7 +216,6 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 # endregion [Properties]
 
 # region [Listener]
-
 
     @commands.Cog.listener(name='on_ready')
     async def _extra_cog_setup(self):
@@ -492,6 +498,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Embeds]
 
+
     async def _answer_embed(self, link_item):
         """
         creates the stored link embed for an saved link.
@@ -564,6 +571,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
 
 # region [HelperMethods]
+
 
     async def _get_bad_link_image(self):
         """
@@ -673,7 +681,6 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

@@ -93,6 +93,8 @@ class {{ cog_item.name }}(commands.Cog, command_attrs={{ "{" }}{% for com_attr_n
         {% for cog_loop in cog_item.all_loops %}
         self.{{ cog_loop.name }}.start()
         {% endfor %}
+        if self.bot.is_debug:
+            self.save_commands()
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -106,6 +108,12 @@ class {{ cog_item.name }}(commands.Cog, command_attrs={{ "{" }}{% for com_attr_n
 # endregion [Properties]
 
 # region [Setup]
+
+    def save_commands(self):
+        command_json_file = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\docs\commands.json"
+        command_json = loadjson(command_json_file)
+        command_json[str(self)] = [com.name for com in self.get_commands()]
+        writejson(command_json, command_json_file, indent=4)
 
 
 
