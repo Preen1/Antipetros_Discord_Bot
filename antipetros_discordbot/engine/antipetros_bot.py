@@ -73,6 +73,11 @@ class AntiPetrosBot(commands.Bot):
                 log.debug("loaded extension-cog: '%s' from '%s'", name, full_import_path)
         log.info("extensions-cogs loaded: %s", ', '.join([_ex_cog for _ex_cog in self.cogs]))
 
+    async def on_command_error(self, ctx, error):
+        if isinstance(error, commands.MaxConcurrencyReached):
+            await ctx.channel.send('Bot is busy! Please retry in a minute')
+            return
+
     @tasks.loop(minutes=10, reconnect=True)
     async def get_bot_roles_loop(self):
         log.info('Starting Refreshing Bot Roles')

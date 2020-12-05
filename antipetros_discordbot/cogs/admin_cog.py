@@ -184,7 +184,7 @@ class Administration(commands.Cog):
         await ctx.send(f"**successfully reloaded the following extensions:**\n{reloaded_extensions}", delete_after=_delete_time)
         await ctx.message.delete(delay=float(_delete_time - (_delete_time // 2)))
 
-    @ commands.command(name='die_antipetros_die')
+    @ commands.command(name='die')
     @ commands.has_any_role(*COGS_CONFIG.getlist('admin', 'allowed_roles'))
     async def shutdown(self, ctx):
         if ctx.channel.name not in self.allowed_channels:

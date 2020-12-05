@@ -18,7 +18,7 @@ def when_mentioned_or_roles_or(prefixes=None):
 
         extra = list(prefixes)
         r = when_mentioned(bot, msg)
-        for role in bot.all_my_roles:
+        for role in bot.all_bot_roles:
             if role.name not in role_exceptions and role.name.casefold() not in role_exceptions:  # and role.mentionable is True:
                 r += [role.mention + ' ']
         return r + extra

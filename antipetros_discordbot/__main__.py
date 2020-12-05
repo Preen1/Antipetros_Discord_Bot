@@ -11,6 +11,7 @@ Main module, starts the Antistasi Discord Bot.
 
 # * Standard Library Imports -->
 import os
+import sys
 import logging
 import configparser
 from pprint import pprint, pformat
@@ -129,8 +130,7 @@ def main():
 
     ANTI_PETROS_BOT.run(get_token(), bot=True, reconnect=True)
 
+
 # endregion [Main_function]
-
-
 if __name__ == '__main__':
     main()

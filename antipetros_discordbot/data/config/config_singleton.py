@@ -40,8 +40,8 @@ glog.import_notification(log, __name__)
 # region [Constants]
 
 CONFIG_DIR = os.path.abspath(os.path.dirname(__file__))
-BASE_CONFIG = ConfigHandler(pathmaker(CONFIG_DIR, "base_config.ini"))
-COGS_CONFIG = ConfigHandler(pathmaker(CONFIG_DIR, 'cogs_config.ini'))
+BASE_CONFIG = ConfigHandler(pathmaker(CONFIG_DIR, "base_config.ini"), interpolation=None)
+COGS_CONFIG = ConfigHandler(pathmaker(CONFIG_DIR, 'cogs_config.ini'), interpolation=None)
 # endregion[Constants]
 
 

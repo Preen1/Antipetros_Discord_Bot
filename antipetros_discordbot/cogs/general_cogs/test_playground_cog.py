@@ -149,6 +149,7 @@ class TestPlayground(commands.Cog):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def map_changed(self, ctx, marker, color):
         if ctx.channel.name in self.allowed_channels:
 
@@ -161,10 +162,11 @@ class TestPlayground(commands.Cog):
                 delete_time = 30 if self.bot.is_debug is True else None
                 self.old_map_message = await ctx.send(file=discord.File(fp=image_binary, filename="map.png"), delete_after=delete_time)
             self.bot.commands_executed += 1
+            log.debug("finished 'map_changed' command")
 
     @commands.command(name='FAQ_you')
-    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     async def get_faq_by_number(self, ctx, faq_number: int):
+
         if ctx.channel.name in self.allowed_channels:
             _faq_dict = FAQ_BY_NUMBERS
             _msg = _faq_dict.get(faq_number, None)
