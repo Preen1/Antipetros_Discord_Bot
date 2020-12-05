@@ -63,7 +63,7 @@ from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.debug(glog.imported(__name__))
+glog.import_notification(log, __name__)
 
 # endregion[Logging]
 
@@ -116,7 +116,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
         self.fresh_blacklist_loop.start()
         self.check_link_best_by_loop.start()
-        log.debug(glog.class_initiated(self))
+        glog.class_init_notification(log, self)
 
 # endregion [Init]
 

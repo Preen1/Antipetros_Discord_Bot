@@ -32,7 +32,7 @@ from antipetros_discordbot.data.config.config_singleton import COGS_CONFIG
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.debug(glog.imported(__name__))
+glog.import_notification(log, __name__)
 
 # endregion[Logging]
 

@@ -2,7 +2,7 @@
 
 # * Standard Library Imports -->
 from enum import Enum, Flag, auto
-
+from datetime import datetime
 # endregion[Imports]
 
 
@@ -29,7 +29,3 @@ WATERMARK_COMBINATIONS = {WatermarkPosition.Left | WatermarkPosition.Top,
                           WatermarkPosition.Center | WatermarkPosition.Left,
                           WatermarkPosition.Center | WatermarkPosition.Right,
                           WatermarkPosition.Center | WatermarkPosition.Center}
-
-
-if __name__ == '__main__':
-    pass

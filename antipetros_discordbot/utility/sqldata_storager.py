@@ -11,7 +11,7 @@ from fuzzywuzzy import process as fuzzprocess
 
 # * Gid Imports -->
 from gidtools.gidsql.facade import GidSqliteDatabase, Fetch
-
+import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
 from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG
@@ -31,11 +31,17 @@ ARCHIVE_LOCATION = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetro
 # TODO: Document and Docstrings
 # TODO: refractor to subfolder
 
+
+log = glog.aux_logger(__name__)
+glog.import_notification(log, __name__)
+
+
 class LinkDataStorageSQLite:
     def __init__(self):
         self.db = GidSqliteDatabase(DB_LOC_LINKS, SCRIPT_LOC_LINKS)
         self.db.startup_db()
         self.db.vacuum()
+        glog.class_init_notification(log, self)
 
     def add_data(self, item, message_id):
         if isinstance(item, LINK_DATA_ITEM):
@@ -118,6 +124,7 @@ class SuggestionDataStorageSQLite:
         self.db = GidSqliteDatabase(DB_LOC_SUGGESTIONS, SCRIPT_LOC_SUGGESTIONS)
         self.db.startup_db()
         self.db.vacuum()
+        glog.class_init_notification(log, self)
 
     @property
     def category_emojis(self):

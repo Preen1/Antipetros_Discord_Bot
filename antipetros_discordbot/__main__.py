@@ -42,8 +42,6 @@ if BASE_CONFIG.getboolean('logging', 'use_logging') is False:
 
 # region [Constants]
 
-# import location of the Admin Cog as it is not loaded dynamically
-ADMIN_COG = "antipetros_discordbot.cogs.admin_cog"
 
 # endregion [Constants]
 
@@ -91,22 +89,6 @@ def get_token():
         raise TokenError('token loaded from enviroment is empty or not set')
 
 
-def get_initial_extensions():
-    """
-    Reads extensions to load from the config.
-
-    Cogs should be specified in the config as [folder].[cog_name without '.py'] = [boolean]
-
-    Relies on 'cog_location' under 'general_settings' in the BaseConfig, for the base cog folder.
-
-    Yields:
-        str: the full cog import path if the cog is set to load
-    """
-    _base_location = BASE_CONFIG.get('general_settings', 'cogs_location')
-    for _extension in BASE_CONFIG.options('extensions'):
-        if BASE_CONFIG.getboolean('extensions', _extension) is True:
-            yield _base_location + '.' + _extension
-
 # endregion [Helper_Functions]
 
 # region [Main_function]
@@ -125,11 +107,6 @@ def main():
     """
 
     ANTI_PETROS_BOT = AntiPetrosBot(command_prefix='$$', HELP_COMMAND=get_help_command(), self_bot=False)
-
-    ANTI_PETROS_BOT.load_extension(ADMIN_COG)
-    for extension in get_initial_extensions():
-        log.info("%s.py loaded", extension.split('.')[-1])
-        ANTI_PETROS_BOT.load_extension(extension)
 
     @ANTI_PETROS_BOT.event
     async def on_ready():

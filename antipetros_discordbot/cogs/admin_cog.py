@@ -85,7 +85,8 @@ from antipetros_discordbot.utility.misc import seconds_to_pretty
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
+glog.import_notification(log, __name__)
+
 
 # endregion[Logging]
 
@@ -114,17 +115,17 @@ class Administration(commands.Cog):
 
 # region [Properties]
 
-    @property
+    @ property
     def allowed_dm_invoker_ids(self):
         return set(map(int, COGS_CONFIG.getlist(self.config_name, 'allowed_dm_ids')))
 
-    @property
+    @ property
     def allowed_channels(self):
         return set(COGS_CONFIG.getlist(self.config_name, 'allowed_channels'))
 
 # endregion[Properties]
 
-    @commands.Cog.listener(name='on_ready')
+    @ commands.Cog.listener(name='on_ready')
     async def extra_cog_setup(self):
         log.info(f"{self} Cog ----> nothing to set up")
 
@@ -147,8 +148,8 @@ class Administration(commands.Cog):
         else:
             return pathmaker(self.config_dir, available_configs[_result[0]])
 
-    @commands.command()
-    @commands.has_any_role(*COGS_CONFIG.getlist('admin', 'allowed_roles'))
+    @ commands.command()
+    @ commands.has_any_role(*COGS_CONFIG.getlist('admin', 'allowed_roles'))
     async def reload_all_ext(self, ctx):
         if ctx.channel.name not in self.allowed_channels:
             return
@@ -172,8 +173,8 @@ class Administration(commands.Cog):
         await ctx.send(f"**successfully reloaded the following extensions:**\n{reloaded_extensions}", delete_after=_delete_time)
         await ctx.message.delete(delay=float(_delete_time - (_delete_time // 2)))
 
-    @commands.command(name='die_antipetros_die')
-    @commands.has_any_role(*COGS_CONFIG.getlist('admin', 'allowed_roles'))
+    @ commands.command(name='die_antipetros_die')
+    @ commands.has_any_role(*COGS_CONFIG.getlist('admin', 'allowed_roles'))
     async def shutdown(self, ctx):
         if ctx.channel.name not in self.allowed_channels:
             return
@@ -181,8 +182,8 @@ class Administration(commands.Cog):
         await ctx.send(embed=await self.bot.make_basic_embed(title='cya!', text='AntiPetros is shutting down.', symbol='shutdown', was_online_since=started_at, commands_executed=str(self.bot.commands_executed)))
         await self.bot.logout()
 
-    @commands.command(name='list_configs')
-    @commands.dm_only()
+    @ commands.command(name='list_configs')
+    @ commands.dm_only()
     async def list_configs(self, ctx):
         if ctx.author.id in self.allowed_dm_invoker_ids:
             available_configs = await self.get_available_configs()
@@ -193,8 +194,8 @@ class Administration(commands.Cog):
 
             log.info("config list send to '%s'", ctx.author.name)
 
-    @commands.command(name='send_config')
-    @commands.dm_only()
+    @ commands.command(name='send_config')
+    @ commands.dm_only()
     async def config_request(self, ctx, config_name='all'):
         if ctx.author.id in self.allowed_dm_invoker_ids:
             available_configs = await self.get_available_configs()
@@ -217,8 +218,8 @@ class Administration(commands.Cog):
                     await ctx.send(_msg, file=_file)
                 log.info("requested configs (%s) send to %s", ", ".join(requested_configs), ctx.author.name)
 
-    @commands.command(name='overwrite_config')
-    @commands.dm_only()
+    @ commands.command(name='overwrite_config')
+    @ commands.dm_only()
     async def overwrite_config_from_file(self, ctx, config_name):
         if ctx.author.id not in self.allowed_dm_invoker_ids:
             return
@@ -238,8 +239,8 @@ class Administration(commands.Cog):
                 # TODO: make as embed
             await ctx.send(f'saved your file as `{os.path.basename(_config_path)}`.\n\n_You may have to reload the Cogs or restart the bot for it to take effect!_')
 
-    @commands.command()
-    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @ commands.command()
+    @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     async def add_to_blacklist(self, ctx, user_id: int):
         if ctx.channel.name not in self.allowed_channels:
             return
@@ -265,8 +266,8 @@ class Administration(commands.Cog):
             # TODO: make as embed
         await ctx.send(f"User '{user.name}' with the id '{user.id}' was added to my blacklist, he wont be able to invoke my commands!\n\nI have also notified him by DM of this fact!")
 
-    @commands.command()
-    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @ commands.command()
+    @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     async def remove_from_blacklist(self, ctx, user_id: int):
         if ctx.channel.name not in self.allowed_channels:
             return
@@ -297,8 +298,8 @@ class Administration(commands.Cog):
             # TODO: make as embed
         await ctx.send(f"User '{user.name}' with User_id '{user.id}' was removed from my Blacklist.\n\nHe is now able again, to invoke my commands!")
 
-    @commands.command()
-    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @ commands.command()
+    @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     async def tell_uptime(self, ctx):
         if ctx.channel.name not in self.allowed_channels:
             return
@@ -309,8 +310,8 @@ class Administration(commands.Cog):
         await ctx.send(f"__Uptime__ -->\n\t\t| {str(seconds_to_pretty(seconds))}")
         log.info(f"reported uptime to '{ctx.author.name}'")
 
-    @commands.command()
-    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @ commands.command()
+    @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     async def delete_msg(self, ctx, msg_id: int):
         if ctx.channel.name not in self.allowed_channels:
             return

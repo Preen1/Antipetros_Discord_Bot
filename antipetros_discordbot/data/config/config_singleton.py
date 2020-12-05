@@ -33,7 +33,7 @@ from antipetros_discordbot.utility.gidtools_functions import pathmaker
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.debug(glog.imported(__name__))
+glog.import_notification(log, __name__)
 
 # endregion[Logging]
 

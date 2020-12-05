@@ -93,7 +93,7 @@ class {{ cog_item.name }}(commands.Cog, command_attrs={{ "{" }}{% for com_attr_n
         {% for cog_loop in cog_item.all_loops %}
         self.{{ cog_loop.name }}.start()
         {% endfor %}
-        log.debug(glog.class_initiated(self))
+        glog.class_init_notification(log, self)
 
 # endregion [Init]
 

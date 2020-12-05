@@ -15,7 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG
+from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG
 from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 # endregion[Imports]
@@ -28,7 +28,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
+glog.import_notification(log, __name__)
 
 # endregion[Logging]
 
@@ -43,28 +43,44 @@ log.info(glog.imported(__name__))
 
 class AntiPetrosBot(commands.Bot):
     executor = ThreadPoolExecutor(3, thread_name_prefix='Bot_Thread')
-    std_date_time_format = "%Y-%m-%d %H:%M:%S"
+    admin_cog_import_path = "antipetros_discordbot.cogs.admin_cog"
+    embed_symbols = loadjson(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\json_data\embed_symbols.json")
+    cog_import_base_path = BASE_CONFIG.get('general_settings', 'cogs_location')
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, ** kwargs):
         super().__init__(*args, **kwargs)
         self.start_time = datetime.utcnow()
         self.max_message_length = 2000
-        self.embed_symbols = loadjson(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\json_data\embed_symbols.json")
         self.commands_executed = 0
         self.bot_member = None
-        self.all_my_roles = []
+        self.all_bot_roles = []
+        self.setup()
 
+        glog.class_init_notification(log, self)
+
+    def setup(self):
+        self.get_initial_cogs()
         self.get_bot_roles_loop.start()
-        glog.class_initiated(self)
+
+    def get_initial_cogs(self):
+        self.load_extension(self.admin_cog_import_path)
+        log.debug("loaded extension\cog: '%s' from '%s'", self.admin_cog_import_path.split('.')[-1], self.admin_cog_import_path)
+        for _cog in BASE_CONFIG.options('extensions'):
+            if BASE_CONFIG.getboolean('extensions', _cog) is True:
+                name = _cog.split('.')[-1]
+                full_import_path = self.cog_import_base_path + '.' + _cog
+                self.load_extension(full_import_path)
+                log.debug("loaded extension-cog: '%s' from '%s'", name, full_import_path)
+        log.info("extensions-cogs loaded: %s", ', '.join([_ex_cog for _ex_cog in self.cogs]))
 
     @tasks.loop(minutes=10, reconnect=True)
     async def get_bot_roles_loop(self):
         log.info('Starting Refreshing Bot Roles')
-        self.all_my_roles = []
+        self.all_bot_roles = []
         self.bot_member = await self.retrieve_member(self.antistasi_guild.id, self.id)
         for index, role in enumerate(self.bot_member.roles):
             if index != 0:
-                self.all_my_roles.append(role)
+                self.all_bot_roles.append(role)
         if BASE_CONFIG.getboolean('prefix', 'invoke_by_role_and_mention') is True:
             self.command_prefix = when_mentioned_or_roles_or(BASE_CONFIG.get('prefix', 'command_prefix'))
         else:
@@ -103,6 +119,10 @@ class AntiPetrosBot(commands.Bot):
     def standard_embed_color(self):
         color_string = BASE_CONFIG.get('embeds', 'standard_embed_color')
         return int(color_string, base=16)
+
+    @property
+    def std_date_time_format(self):
+        return BASE_CONFIG.get('datetime', 'std_format')
 
     async def retrieve_antistasi_member(self, user_id):
         return await self.antistasi_guild.fetch_member(user_id)

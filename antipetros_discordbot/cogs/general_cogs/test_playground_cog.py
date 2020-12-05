@@ -23,7 +23,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_help
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
+glog.import_notification(log, __name__)
 
 # endregion[Logging]
 

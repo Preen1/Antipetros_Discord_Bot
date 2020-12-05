@@ -30,7 +30,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_help
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.debug(glog.imported(__name__))
+glog.import_notification(log, __name__)
 
 # endregion[Logging]
 
@@ -65,7 +65,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
     def __init__(self, bot):
         self.bot = bot
         self.data_storage_handler = SuggestionDataStorageSQLite()
-        log.debug(glog.class_initiated(self))
+        glog.class_init_notification(log, self)
 
 # endregion [Init]
 
@@ -111,7 +111,6 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Listener]
 
-
     @commands.Cog.listener(name='on_ready')
     async def extra_cog_setup(self):
         log.info(f"{self} Cog ----> nothing to set up")
@@ -143,7 +142,6 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 # endregion [Listener]
 
 # region [Commands]
-
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
@@ -313,7 +311,6 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Embeds]
 
-
     async def make_add_success_embed(self, suggestion_item: SUGGESTION_DATA_ITEM):
         _filtered_content = []
         if suggestion_item.name is not None:
@@ -354,6 +351,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 # endregion [Embeds]
 
 # region [HelperMethods]
+
 
     async def collect_title(self, content):
         name_result = self.suggestion_name_regex.search(content)
