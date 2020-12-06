@@ -38,7 +38,7 @@ glog.import_notification(log, __name__)
 
 # TODO: create regions for this file
 # TODO: Document and Docstrings
-# TODO: Create run in thread method and executor classattr
+# IDEA: Use an assistant class to hold some of the properties and then use the __getattr__ to make it look as one object, just for structuring
 
 
 class AntiPetrosBot(commands.Bot):

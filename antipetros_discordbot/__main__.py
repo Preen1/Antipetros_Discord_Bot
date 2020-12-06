@@ -127,8 +127,8 @@ def main():
             log.debug(change)
             BASE_CONFIG.read()
             COGS_CONFIG.read()
-
-    ANTI_PETROS_BOT.run(get_token(), bot=True, reconnect=True)
+    if len(sys.argv) == 1 or sys.argv[1] != 'get_info_run':
+        ANTI_PETROS_BOT.run(get_token(), bot=True, reconnect=True)
 
 
 # endregion [Main_function]

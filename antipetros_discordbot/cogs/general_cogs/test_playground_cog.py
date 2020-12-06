@@ -18,7 +18,7 @@ import gidlogger as glog
 from antipetros_discordbot.data.fixed_data.faq_data import FAQ_BY_NUMBERS
 from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import Bold, Cursive, CodeBlock, LineCode, UnderScore, BlockQuote
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 
 # region [Logging]
 
@@ -79,7 +79,9 @@ class TestPlayground(commands.Cog):
     def save_commands(self):
         command_json_file = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\docs\commands.json"
         command_json = loadjson(command_json_file)
-        command_json[str(self)] = {com.name: com.help for com in self.get_commands()}
+        command_json[str(self)] = {'file_path': pathmaker(os.path.abspath(__file__)),
+                                   'description': __doc__,
+                                   'commands': {(com.name + ' ' + com.signature).replace('<ctx>', '').replace('  ', ' ').strip(): com.help for com in self.get_commands()}}
         writejson(command_json, command_json_file, indent=4)
         log.debug("commands for %s saved to %s", self, command_json_file)
 

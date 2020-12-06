@@ -16,6 +16,7 @@ Pillow
 PyGithub
 discord
 discord_flags
+discord.py-stubs
 fpdf2
 url-normalize
 async-property

@@ -72,7 +72,9 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
     def save_commands(self):
         command_json_file = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\docs\commands.json"
         command_json = loadjson(command_json_file)
-        command_json[str(self)] = {com.name: com.help for com in self.get_commands()}
+        command_json[str(self)] = {'file_path': pathmaker(os.path.abspath(__file__)),
+                                   'description': __doc__,
+                                   'commands': {(com.name + ' ' + com.signature).replace('<ctx>', '').replace('  ', ' ').strip(): com.help for com in self.get_commands()}}
         writejson(command_json, command_json_file, indent=4)
         log.debug("commands for %s saved to %s", self, command_json_file)
 
@@ -120,6 +122,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Listener]
 
+
     @commands.Cog.listener(name='on_ready')
     async def extra_cog_setup(self):
         log.info(f"{self} Cog ----> nothing to set up")
@@ -151,6 +154,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 # endregion [Listener]
 
 # region [Commands]
+
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
@@ -320,6 +324,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Embeds]
 
+
     async def make_add_success_embed(self, suggestion_item: SUGGESTION_DATA_ITEM):
         _filtered_content = []
         if suggestion_item.name is not None:
@@ -360,7 +365,6 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 # endregion [Embeds]
 
 # region [HelperMethods]
-
 
     async def collect_title(self, content):
         name_result = self.suggestion_name_regex.search(content)

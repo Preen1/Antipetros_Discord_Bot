@@ -10,27 +10,27 @@ cogs_config.ini section: self.config_name
 
 currently implemented config options:
 
-    - 'allowed_roles' --> comma-seperated-list of role names
-    (eg: Dev_helper, Admin) !names have to match completely and are case-sensitive!
+- 'allowed_roles' --> comma-seperated-list of role names
+(eg: Dev_helper, Admin) !names have to match completely and are case-sensitive!
 
-    - 'allowed_channels' --> comma-seperated-list of channel names
-    (eg: bot-development-and-testing, general-dev-stuff) !names have to match completely and are case-sensitive!
+- 'allowed_channels' --> comma-seperated-list of channel names
+(eg: bot-development-and-testing, general-dev-stuff) !names have to match completely and are case-sensitive!
 
-    - 'link_channel' --> channel id for the channel that is used as 'storage', where the bot posts the saved links for the time period
-    (eg: 645930607683174401)
+- 'link_channel' --> channel id for the channel that is used as 'storage', where the bot posts the saved links for the time period
+(eg: 645930607683174401)
 
-    - 'delete_all_allowed_roles' --> comma-seperated-list of role names that are allowed to clear the link Database, all links will be lost.
-    will propably be turned into user id list
+- 'delete_all_allowed_roles' --> comma-seperated-list of role names that are allowed to clear the link Database, all links will be lost.
+will propably be turned into user id list
 
-    - bad_link_image_path/bad_link_image_name --> file_path or appdata file name to an image to use when answering to an forbidden link (None means no image)
+- bad_link_image_path/bad_link_image_name --> file_path or appdata file name to an image to use when answering to an forbidden link (None means no image)
 
 
-    - default_storage_days --> integer of days to default to if user does not specifiy amount of time to keep link
-    (eg: 7)
+- default_storage_days --> integer of days to default to if user does not specifiy amount of time to keep link
+(eg: 7)
 
-    - member_to_notifiy_bad_link --> comma-seperated-list of user_ids of users that should be notified per DM when an bad link is posted.
+- member_to_notifiy_bad_link --> comma-seperated-list of user_ids of users that should be notified per DM when an bad link is posted.
 
-    - notify_with_link --> boolean if the notification DM should include the bad link
+- notify_with_link --> boolean if the notification DM should include the bad link
 """
 
 
@@ -127,7 +127,9 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
     def save_commands(self):
         command_json_file = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\docs\commands.json"
         command_json = loadjson(command_json_file)
-        command_json[str(self)] = {com.name: com.help for com in self.get_commands()}
+        command_json[str(self)] = {'file_path': pathmaker(os.path.abspath(__file__)),
+                                   'description': __doc__,
+                                   'commands': {(com.name + ' ' + com.signature).replace('<ctx>', '').replace('  ', ' ').strip(): com.help for com in self.get_commands()}}
         writejson(command_json, command_json_file, indent=4)
         log.debug("commands for %s saved to %s", self, command_json_file)
 
@@ -199,6 +201,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Properties]
 
+
     @property
     def link_channel(self):
         return self.bot.get_channel(COGS_CONFIG.getint(self.config_name, 'link_channel'))
@@ -217,6 +220,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 # endregion [Properties]
 
 # region [Listener]
+
 
     @commands.Cog.listener(name='on_ready')
     async def _extra_cog_setup(self):
@@ -266,12 +270,9 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def get_link(self, ctx, name):
         """
-        Get a link as normal answer message, by link name.
-
-        actual matching is implemented and handled by the DataStorage
+        Get a previously saved link by name.
 
         Args:
-            ctx (discord.context): mandatory command argument
             name (str): link name
         """
         log.debug("command was triggered in %s", ctx.channel.name)
@@ -288,13 +289,12 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
     @commands.command(hidden=False)
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
-    async def get_all_links(self, ctx, in_format='plain'):
+    async def get_all_links(self, ctx, in_format='txt'):
         """
-        Get a list of all saved links, as a file.
+        Get a list of all previously saved links, as a file.
 
         Args:
-            ctx (discord.context): mandatory command argument
-            in_format (str, optional): output format, currently possible: 'json', 'plain' is txt. Defaults to 'plain'.
+            in_format (str, optional): output format, currently possible: 'json', 'txt'. Defaults to 'txt'.
         """
         log.debug("command was triggered in %s", ctx.channel.name)
         if ctx.channel.name not in self.allowed_channels:
@@ -311,7 +311,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
                     return
                 writejson(_link_dict, _path)
 
-            else:
+            elif in_format == 'txt':
                 _link_list = self.data_storage_handler.get_all_links('plain')
                 _name = 'all_links.txt'
                 _path = pathmaker(tempdir, _name)
@@ -320,7 +320,9 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
                     await ctx.send('no saved links')
                     return
                 writeit(_path, '\n'.join(_link_list))
-
+            else:
+                await ctx.send(embed=await self.bot.make_basic_embed(title='Unknown Format requested', text=f'unable to provide link list in format "{in_format}"'), symbol='not_possible')
+                return
             _file = discord.File(_path, _name)
             await ctx.send(file=_file)
         await self.bot.did_command()
@@ -330,13 +332,9 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def save_link(self, ctx, link: str, link_name: str = None, days_to_hold: int = None):
         """
-        Main Command of the SaveLink Cog.
         Save a link to the DataStorage and posts it for a certain time to an storage channel.
 
-        [extended_summary]
-
         Args:
-            ctx (discord.context): mandatory command argument
             link (str): link to save
             link_name (str, optional): name to save the link as, if not given will be generated from url. Defaults to None.
             days_to_hold (int, optional): time befor the link will be deleted from storage channel in days, if not give will be retrieved from config. Defaults to None.
@@ -428,10 +426,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
         """
         command to get the forbidden link list as an file.
 
-        Mostly debug related. Should be turned into an DM Command.
-
         Args:
-
             file_format (str, optional): format the list file should have(currently possible: 'json'). Defaults to 'json'.
         """
         log.debug("command was triggered in %s", ctx.channel.name)
@@ -512,7 +507,6 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Embeds]
 
-
     async def _answer_embed(self, link_item):
         """
         creates the stored link embed for an saved link.
@@ -585,7 +579,6 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
 
 # region [HelperMethods]
-
 
     async def _get_bad_link_image(self):
         """
@@ -695,6 +688,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"
