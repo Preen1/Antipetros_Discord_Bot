@@ -101,7 +101,7 @@ still WiP
 
 <details><summary><b>Description</b></summary><blockquote>
 
-
+    
 An extension Cog to let users temporary save links.
 
 Saved links get posted to a certain channel and deleted after the specified time period from that channel (default in config).
@@ -224,12 +224,12 @@ will propably be turned into user id list
 
 **Developed with Python Version `3.8.6`**
 
-- async_property<=`0.2.1`
 - fuzzywuzzy<=`0.18.0`
-- Jinja2<=`2.11.2`
 - discord_flags<=`2.1.1`
 - watchgod<=`0.6`
+- Jinja2<=`2.11.2`
 - aiohttp<=`3.7.3`
+- async_property<=`0.2.1`
 - discord<=`1.0.1`
 - gidconfig<=`0.1.2`
 - gidlogger<=`0.1.2`

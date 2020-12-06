@@ -1,9 +1,9 @@
-async_property>=0.2.1
 fuzzywuzzy>=0.18.0
-Jinja2>=2.11.2
 discord_flags>=2.1.1
 watchgod>=0.6
+Jinja2>=2.11.2
 aiohttp>=3.7.3
+async_property>=0.2.1
 discord>=1.0.1
 gidconfig>=0.1.2
 gidlogger>=0.1.2
