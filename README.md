@@ -101,7 +101,7 @@ still WiP
 
 <details><summary><b>Description</b></summary><blockquote>
 
-    
+
 An extension Cog to let users temporary save links.
 
 Saved links get posted to a certain channel and deleted after the specified time period from that channel (default in config).
