@@ -1,6 +1,6 @@
 # <p align="center">AntiPetrosDiscordBot</p> #
 
-<p align="center">![Anti-Petros Avatar](/misc/images/AntiPetros_for_readme.png)</p>
+<p align="center">![Anti-Petros Avatar](https://github.com/official-antistasi-community/Antipetros_Discord_Bot/misc/images/AntiPetros_for_readme.png)</p>
 
 
 None
