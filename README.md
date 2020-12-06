@@ -1,7 +1,7 @@
 # <p align="center">AntiPetrosDiscordBot</p> #
 
 
-<p align="center"><img src="../misc/images/AntiPetros_for_readme.png" alt="Anti-Petros Avatar"/></p>
+<p align="center"><img src="misc/images/AntiPetros_for_readme.png" alt="Anti-Petros Avatar"/></p>
 
 
 None
