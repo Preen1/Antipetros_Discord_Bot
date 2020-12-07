@@ -7,6 +7,7 @@ INSERT
         "utc_posted_time",
         "utc_saved_time",
         "content",
+        "link_to_message",
         "extra_data_id"
     )
 VALUES (
@@ -22,6 +23,7 @@ VALUES (
             FROM "author_tbl"
             WHERE "discord_id" = ?
         ),
+        ?,
         ?,
         ?,
         ?,

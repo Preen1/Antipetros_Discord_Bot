@@ -1,7 +1,7 @@
-# <p align="center">AntiPetrosDiscordBot</p> #
+# <p align="center">Anti-Petros Discord Bot</p> #
 
 
-<p align="center"><img src="../misc/images/AntiPetros_for_readme.png" alt="Anti-Petros Avatar"/></p>
+<p align="center"><img src="misc/images/AntiPetros_for_readme.png" alt="Anti-Petros Avatar"/></p>
 
 
 None
@@ -224,12 +224,12 @@ will propably be turned into user id list
 
 **Developed with Python Version `3.8.6`**
 
-- fuzzywuzzy<=`0.18.0`
 - discord_flags<=`2.1.1`
-- watchgod<=`0.6`
-- Jinja2<=`2.11.2`
 - aiohttp<=`3.7.3`
+- fuzzywuzzy<=`0.18.0`
 - async_property<=`0.2.1`
+- Jinja2<=`2.11.2`
+- watchgod<=`0.6`
 - discord<=`1.0.1`
 - gidconfig<=`0.1.2`
 - gidlogger<=`0.1.2`

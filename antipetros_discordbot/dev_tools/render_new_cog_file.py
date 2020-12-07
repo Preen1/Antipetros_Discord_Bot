@@ -53,7 +53,7 @@ log.info(glog.imported(__name__))
 
 # region [Constants]
 
-TEMPLATE_PATH = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\templates"
+TEMPLATE_PATH = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\templates\python"
 
 ENV = Environment(loader=FileSystemLoader(TEMPLATE_PATH, encoding='utf-8'))
 

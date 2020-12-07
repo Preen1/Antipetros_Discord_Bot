@@ -23,3 +23,5 @@ async-property
 watchgod
 json-tricks
 aiohttp
+pdfkit
+weasyprint

@@ -81,6 +81,7 @@ CREATE TABLE suggestion_tbl (
     author_id INTEGER REFERENCES author_tbl (id) NOT NULL,
     added_by_author_id INTEGER REFERENCES author_tbl (id) NOT NULL,
     message_discord_id INTEGER UNIQUE NOT NULL,
+    link_to_message STRING UNIQUE,
     utc_posted_time DATETIME NOT NULL,
     utc_saved_time DATETIME NOT NULL,
     upvotes INTEGER DEFAULT (1),

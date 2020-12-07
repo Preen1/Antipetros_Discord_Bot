@@ -6,7 +6,8 @@ INSERT
         "added_by_author_id",
         "utc_posted_time",
         "utc_saved_time",
-        "content"
+        "content",
+        "link_to_message"
     )
 VALUES (
         ?,
@@ -21,6 +22,7 @@ VALUES (
             FROM "author_tbl"
             WHERE "discord_id" = ?
         ),
+        ?,
         ?,
         ?,
         ?

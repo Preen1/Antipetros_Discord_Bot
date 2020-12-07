@@ -73,12 +73,14 @@ class AntiPetrosBot(commands.Bot):
                 log.debug("loaded extension-cog: '%s' from '%s'", name, full_import_path)
         log.info("extensions-cogs loaded: %s", ', '.join([_ex_cog for _ex_cog in self.cogs]))
 
-    async def on_command_error(self, ctx, error):
-        if isinstance(error, commands.MaxConcurrencyReached):
-            await ctx.channel.send(f'{ctx.author.mention} Sorry,Bot is busy! Please retry in a minute')
-            return
-        elif isinstance(error, commands.CommandOnCooldown):
-            await ctx.channel.send(f'{ctx.author.mention} I have recently used this command and it is on cooldown still.')
+    # async def on_command_error(self, ctx, error):
+    #     if isinstance(error, commands.MaxConcurrencyReached):
+    #         await ctx.channel.send(f'{ctx.author.mention} Sorry,Bot is busy! Please retry in a minute')
+    #         return
+    #     elif isinstance(error, commands.CommandOnCooldown):
+    #         await ctx.channel.send(f'{ctx.author.mention} I have recently used this command and it is on cooldown still.')
+    #     else:
+    #         log.error(error)
 
     @tasks.loop(minutes=10, reconnect=True)
     async def get_bot_roles_loop(self):

@@ -7,23 +7,26 @@ import os
 import re
 import sqlite3 as sqlite
 import unicodedata
-from datetime import datetime
+from datetime import datetime, timedelta
 import asyncio
+import shutil
 from concurrent.futures import ThreadPoolExecutor
 from tempfile import TemporaryDirectory, TemporaryFile
 # * Third Party Imports -->
 import discord
 from discord.ext import commands
 from async_property import async_property
-
+from jinja2 import Environment, FileSystemLoader
+import pdfkit
+from weasyprint import HTML, CSS
 # * Gid Imports -->
 import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.utility.named_tuples import SUGGESTION_DATA_ITEM
 from antipetros_discordbot.utility.sqldata_storager import SuggestionDataStorageSQLite
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
-from antipetros_discordbot.data.config.config_singleton import COGS_CONFIG
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, writeit
+from antipetros_discordbot.data.config.config_singleton import COGS_CONFIG, BASE_CONFIG
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 # endregion[Imports]
 
@@ -57,7 +60,8 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
     suggestion_name_regex = re.compile(r"(?P<name>(?<=#).*)")
     config_name = 'save_suggestions'
-
+    jinja_env = Environment(loader=FileSystemLoader(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\templates\reports"))
+    css_files = {"basic_report_style": (r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\templates\reports\basic_report_style.css", "basic_report_style.css")}
 # endregion [ClassAttributes]
 
 # region [Init]
@@ -117,11 +121,13 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
     def saved_messages(self):
         return self.data_storage_handler.get_all_message_ids()
 
+    @property
+    def std_datetime_format(self):
+        return BASE_CONFIG.get('datetime', 'std_format')
 
 # endregion [Properties]
 
 # region [Listener]
-
 
     @commands.Cog.listener(name='on_ready')
     async def extra_cog_setup(self):
@@ -217,19 +223,39 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
-    async def retrieve_all(self, ctx):
-        # TODO: make completly new for sqlite or dynamic datahandler
-        _txt = ''
-        x = loadjson(self.save_file)
-        if x != {}:
-            for key, value in x.items():
-                _txt += '**' + key + '**\n'
-                for _time, _msg in value:
-                    _txt += '- ' + _time + ' ----> ' + _msg + '\n\n'
-                _txt += '-----------\n\n'
-        else:
-            _txt = 'no saved entries found'
-        await ctx.send(_txt)
+    async def get_all_suggestions(self, ctx, min_date=None, report_template: str = "basic_report.html.jinja"):
+        log.debug('command was triggered')
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        log.debug('correct channel')
+
+        log.debug('getting min_date')
+        min_date = datetime.strptime(min_date + '_01:01:01', "%Y-%m-%d_%H:%M:%S") if min_date is not None else datetime.utcnow() - timedelta(days=7)
+        log.debug('min_date is %s', min_date)
+        log.debug('querying data')
+        query = await self.bot.execute_in_thread(self.data_storage_handler.get_all_suggestion_by_timeframe, min_date)
+        var_dict = {"from_date": min_date.strftime(self.std_datetime_format),
+                    "to_date": datetime.utcnow().strftime(self.std_datetime_format),
+                    "all_suggestions": query}
+        log.debug('getting template')
+        template = self.jinja_env.get_template(report_template)
+        log.debug('creating Tempdir')
+        with TemporaryDirectory() as tempfold:
+            html_path = pathmaker(tempfold, "suggestion_report.html")
+            pdf_path = pathmaker(tempfold, 'suggestion_report.pdf')
+            log.debug('rendering template and writing to file')
+            writeit(html_path, await self.bot.execute_in_thread(template.render, var_dict))
+            log.debug('copying stylesheet')
+            shutil.copyfile(self.css_files.get('basic_report_style')[0], pathmaker(tempfold, self.css_files.get('basic_report_style')[1]))
+            log.debug('transforming html to pdf')
+
+            weasy_html = HTML(filename=html_path)
+            weasy_html.write_png('test_report.png')
+            weasy_html.write_pdf(pdf_path)
+
+            file = discord.File(pdf_path, filename='suggestion_report.pdf')
+            log.debug('sending file')
+            await ctx.send(file=file)
 
     @ commands.command(name="remove_all_my_data")
     @commands.dm_only()
@@ -365,6 +391,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 # endregion [Embeds]
 
 # region [HelperMethods]
+
 
     async def collect_title(self, content):
         name_result = self.suggestion_name_regex.search(content)

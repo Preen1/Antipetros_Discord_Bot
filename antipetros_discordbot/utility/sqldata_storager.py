@@ -49,6 +49,10 @@ class LinkDataStorageSQLite:
             self.db.writer.write(self.db.scripter['insert_saved_link'], (item.link_name, item.link, item.date_time, item.delete_date_time, item.author.id, message_id))
 
     @property
+    def std_datetime_format(self):
+        return BASE_CONFIG.get('datetime', 'std_format')
+
+    @property
     def link_messages_to_remove(self):
         for item in self.db.query('SELECT "message_discord_id" FROM "saved_links_tbl" WHERE "is_removed"=0 AND "delete_time"<?', (datetime.utcnow(),)):
             yield item[0]
@@ -178,6 +182,7 @@ class SuggestionDataStorageSQLite:
                                             any(role.name == 'Member' for role in author.roles)))
 
         if suggestion_item.extra_data is None:
+            content = suggestion_item.message.content if suggestion_item.name is None else suggestion_item.message.content.replace('# ' + suggestion_item.name, '')
             sql_phrase = 'insert_suggestion'
             arguments = (suggestion_item.name,
                          suggestion_item.message.id,
@@ -185,7 +190,8 @@ class SuggestionDataStorageSQLite:
                          suggestion_item.reaction_author.id,
                          suggestion_item.message.created_at,
                          suggestion_item.time,
-                         suggestion_item.message.content)
+                         suggestion_item.message.content,
+                         suggestion_item.message.jump_url)
 
         else:
             extra_data_name, extra_data_path = suggestion_item.extra_data
@@ -199,9 +205,37 @@ class SuggestionDataStorageSQLite:
                          suggestion_item.message.created_at,
                          suggestion_item.time,
                          suggestion_item.message.content,
+                         suggestion_item.message.jump_url,
                          extra_data_name)
         self.db.write(sql_phrase, arguments)
         self.db.vacuum()
+
+    def get_all_suggestion_by_timeframe(self, min_time: datetime, max_time: datetime = datetime.utcnow()):
+        log.debug('querying all suggestions by time')
+        result = self.db.query('get_suggestions_by_timeframe', (min_time, max_time), row_factory=True)
+        none_id = 1
+        _out = []
+
+        for row in result:
+            item = {'name': row['name'],
+                    'utc_posted_time': row['utc_posted_time'],
+                    'utc_saved_time': row['utc_saved_time'],
+                    'upvotes': row['upvotes'],
+                    'downvotes': row['downvotes'],
+                    'link_to_message': row['link_to_message'],
+                    'category_name': row['category_name'],
+                    'author_name': row['author_name'],
+                    'setter_name': row['setter_name'],
+                    'content': row['content'],
+                    'data_name': row['data_name'],
+                    'data_location': row['data_location']}
+            if item['name'] is None:
+                item['name'] = 'NoName Suggestion ' + str(none_id)
+                none_id += 1
+            item['utc_posted_time'] = item['utc_posted_time'].split('.')[0]
+            item['utc_saved_time'] = item['utc_saved_time'].split('.')[0]
+            _out.append(item)
+        return _out
 
     def clear(self):
         BASE_CONFIG.read()
