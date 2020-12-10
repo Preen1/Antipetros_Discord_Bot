@@ -14,6 +14,7 @@ import discord
 from PIL import Image, ImageEnhance
 from discord.ext import commands
 
+
 # * Gid Imports -->
 import gidlogger as glog
 
@@ -230,64 +231,50 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
             image.save(image_binary, image_format.upper(), optimize=True)
             image_binary.seek(0)
             out_file = discord.File(image_binary, filename=name + '.' + image_format)
-            # TODO: make as embed
-            await ctx.send(message_title, file=out_file)
+            embed = discord.Embed(title=message_title)
+            embed.set_image(url=f"attachment://{name.replace('_','')}.{image_format}")
+            await ctx.send(embed=embed, file=out_file)
 
     @commands.command(name='antistasify')
     @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_roles'))
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
-    async def stamp_image(self, ctx, stamp='AS_LOGO_1', first_pos='bottom', second_pos='right', factor: float = None):
-        if ctx.channel.name not in self.allowed_channels:
-            return
-        if len(ctx.message.attachments) == 0:
-            # TODO: make as embed
-            await ctx.send('! **there is NO image to antistasify** !')
-            return
-        if stamp not in self.stamps:
-            # TODO: make as embed
-            await ctx.send("! **There is NO stamp with that name** !")
-            return
-        first_pos = self.stamp_positions.get(first_pos.casefold(), None)
-        second_pos = self.stamp_positions.get(second_pos.casefold(), None)
-
-        if any(_pos is None for _pos in [first_pos, second_pos]) or first_pos | second_pos not in self.stamp_pos_functions:
-            # TODO: make as embed
-            await ctx.send("! **Those are NOT valid position combinations** !")
-            return
-        for _file in ctx.message.attachments:
-            # TODO: maybe make extra attribute for input format, check what is possible and working. else make a generic format list
-            if any(_file.filename.endswith(allowed_ext) for allowed_ext in self.allowed_stamp_formats):
-                _stamp = self.stamps.get(stamp).copy()
-                with TemporaryDirectory(prefix='temp') as temp_dir:
-                    temp_file = Path(pathmaker(temp_dir, 'temp_file.png'))
-                    log.debug("Tempfile '%s' created", temp_file)
-                    await _file.save(temp_file)
-                    in_image = await self.bot.execute_in_thread(Image.open, temp_file)
-                    in_image = await self.bot.execute_in_thread(in_image.copy)
-                factor = self.target_stamp_fraction if factor is None else factor
-                pos_function = self.stamp_pos_functions.get(first_pos | second_pos)
-
-                in_image = await self.bot.execute_in_thread(pos_function, in_image, _stamp, factor)
-                name = 'antistasified_' + os.path.splitext(_file.filename)[0]
+    async def stamp_image(self, ctx, stamp='ASLOGO1', first_pos='bottom', second_pos='right', factor: float = None):
+        async with ctx.channel.typing():
+            if ctx.channel.name not in self.allowed_channels:
+                return
+            if len(ctx.message.attachments) == 0:
                 # TODO: make as embed
-                await self._send_image(ctx, in_image, name, f"__**{name}**__")
-        await self.bot.did_command()
+                await ctx.send('! **there is NO image to antistasify** !')
+                return
+            if stamp not in self.stamps:
+                # TODO: make as embed
+                await ctx.send("! **There is NO stamp with that name** !")
+                return
+            first_pos = self.stamp_positions.get(first_pos.casefold(), None)
+            second_pos = self.stamp_positions.get(second_pos.casefold(), None)
 
-    @commands.command()
-    @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_roles'))
-    async def flag_test(self, ctx, flag_one, flag_two):
-        # TODO: remove this, or move to debug
-        if ctx.channel.name not in self.allowed_channels:
-            return
-        _flag_one = self.stamp_positions.get(flag_one.casefold(), None)
-        _flag_two = self.stamp_positions.get(flag_two.casefold(), None)
-        _comb = _flag_one | _flag_two
-        if _comb in WATERMARK_COMBINATIONS:
-            # TODO: make as embed
-            await ctx.send(f"{str(_comb)} is a valid combination")
-        else:
-            # TODO: make as embed
-            await ctx.send(f"{str(_comb)} is NOT a valid combination!")
+            if any(_pos is None for _pos in [first_pos, second_pos]) or first_pos | second_pos not in self.stamp_pos_functions:
+                # TODO: make as embed
+                await ctx.send("! **Those are NOT valid position combinations** !")
+                return
+            for _file in ctx.message.attachments:
+                # TODO: maybe make extra attribute for input format, check what is possible and working. else make a generic format list
+                if any(_file.filename.endswith(allowed_ext) for allowed_ext in self.allowed_stamp_formats):
+                    _stamp = self.stamps.get(stamp).copy()
+                    with TemporaryDirectory(prefix='temp') as temp_dir:
+                        temp_file = Path(pathmaker(temp_dir, 'temp_file.png'))
+                        log.debug("Tempfile '%s' created", temp_file)
+                        await _file.save(temp_file)
+                        in_image = await self.bot.execute_in_thread(Image.open, temp_file)
+                        in_image = await self.bot.execute_in_thread(in_image.copy)
+                    factor = self.target_stamp_fraction if factor is None else factor
+                    pos_function = self.stamp_pos_functions.get(first_pos | second_pos)
+
+                    in_image = await self.bot.execute_in_thread(pos_function, in_image, _stamp, factor)
+                    name = 'antistasified_' + os.path.splitext(_file.filename)[0]
+                    # TODO: make as embed
+                    await self._send_image(ctx, in_image, name, f"__**{name}**__")
+            await self.bot.did_command()
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_roles'))
@@ -296,7 +283,7 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
         if ctx.channel.name not in self.allowed_channels:
             return
 
-        await ctx.send("__**Currently available Stamps are:**__\nThese messages will be deleted in 120 seconds", delete_after=120)
+        await ctx.send(embed=await self.bot.make_basic_embed(title="__**Currently available Stamps are:**__", footer="These messages will be deleted in 120 seconds", symbol='photo'), delete_after=120)
         for name, image in self.stamps.items():
             thumb_image = image.copy()
             thumb_image.thumbnail((128, 128))
@@ -304,8 +291,10 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
                 thumb_image.save(image_binary, 'PNG', optimize=True)
                 image_binary.seek(0)
                 _file = discord.File(image_binary, filename=name + '.png')
-                # TODO: make as embed
-                await ctx.send(name, file=_file, delete_after=120)
+                embed = discord.Embed(title="Available Stamp")
+                embed.add_field(name='Stamp Name:', value=name)
+                embed.set_image(url=f"attachment://{name}.png")
+                await ctx.send(embed=embed, file=_file, delete_after=120)
         await self.bot.did_command()
 
     @commands.command()
@@ -335,14 +324,12 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
             log.debug("Tempfile '%s' created", temp_file)
             await avatar.save(temp_file)
             avatar_image = await self.bot.execute_in_thread(Image.open, temp_file)
-            avatar_image = await self.bot.execute_in_thread(avatar_image.copy)
+            avatar_image = avatar_image.copy()
         return avatar_image
 
-    @commands.Cog.listener(name='on_ready')
-    async def extra_cog_setup(self):
-        log.info(f"{self} Cog ----> finished extra setup")
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

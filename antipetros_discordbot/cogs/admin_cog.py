@@ -93,6 +93,7 @@ glog.import_notification(log, __name__)
 
 # region [Constants]
 
+THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[Constants]
 
@@ -124,7 +125,6 @@ class Administration(commands.Cog):
         log.debug("commands for %s saved to %s", self, command_json_file)
 
 # endregion[Init]
-
 
 # region [Properties]
 
@@ -177,6 +177,7 @@ class Administration(commands.Cog):
                 try:
                     self.bot.unload_extension(_location)
                     self.bot.load_extension(_location)
+                    log.debug('Extension Cog "%s" was successfully reloaded from "%s"', _extension.split('.')[-1], _location)
                     reloaded_extensions += f"> __'{_extension}'__ was **SUCCESSFULLY** reloaded!\n\n"
                 except DiscordException as error:
                     log.error(error)
@@ -191,8 +192,11 @@ class Administration(commands.Cog):
     async def shutdown(self, ctx):
         if ctx.channel.name not in self.allowed_channels:
             return
+        log.debug('shutdown command received from "%s"', ctx.user.name)
         started_at = self.bot.start_time.strftime(self.bot.std_date_time_format)
-        await ctx.send(embed=await self.bot.make_basic_embed(title='cya!', text='AntiPetros is shutting down.', symbol='shutdown', was_online_since=started_at, commands_executed=str(self.bot.commands_executed)))
+        embed = await self.bot.make_basic_embed(title='cya!', text='AntiPetros is shutting down.', symbol='shutdown', was_online_since=started_at, commands_executed=str(self.bot.commands_executed))
+        embed.set_image(url='https://media.discordapp.net/attachments/449481990513754114/785601325329023006/2d1ca5fea58e65277ac5c18788b21d03.gif')
+        await ctx.send(embed=embed)
         await self.bot.logout()
 
     @ commands.command(name='list_configs')

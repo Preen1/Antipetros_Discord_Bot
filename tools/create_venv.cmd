@@ -14,7 +14,7 @@ REM - post_setup_scripts.txt
 REM ----------------------------------------------------------------------------------------------------
 
 
-SET PROJECT_NAME=ANTIPETROS_DISCORD_BOT
+SET PROJECT_NAME=ANTIPETROS_DISCORDBOT
 
 SET TOOLS_FOLDER=%~dp0
 SET WORKSPACE_FOLDER=%TOOLS_FOLDER%\..
@@ -110,7 +110,7 @@ ECHO.
 
 
 ECHO ################# Installing flit
-CALL pip install --force-reinstall --no-cache-dir --upgrade --pre flit
+CALL pip install --no-cache-dir --upgrade --pre flit
 ECHO.
 
 ECHO.
@@ -139,7 +139,7 @@ FOR /F "tokens=1 delims=," %%A in (.\venv_setup_settings\required_misc.txt) do (
 ECHO.
 ECHO -------------------------- Installing %%A --------------^>
 ECHO.
-CALL pip install --upgrade %%A
+CALL pip install --upgrade --no-cache-dir %%A
 ECHO.
 )
 
@@ -152,7 +152,7 @@ FOR /F "tokens=1 delims=," %%A in (.\venv_setup_settings\required_Qt.txt) do (
 ECHO.
 ECHO -------------------------- Installing %%A --------------^>
 ECHO.
-CALL pip install --upgrade %%A
+CALL pip install --upgrade --no-cache-dir %%A
 ECHO.
 )
 
@@ -165,7 +165,7 @@ FOR /F "tokens=1 delims=," %%A in (.\venv_setup_settings\required_from_github.tx
 ECHO.
 ECHO -------------------------- Installing %%A --------------^>
 ECHO.
-CALL call pip install --upgrade git+%%A
+CALL call pip install --upgrade --no-cache-dir git+%%A
 ECHO.
 )
 
@@ -178,7 +178,7 @@ FOR /F "tokens=1 delims=," %%A in (.\venv_setup_settings\required_test.txt) do (
 ECHO.
 ECHO -------------------------- Installing %%A --------------^>
 ECHO.
-CALL pip install --upgrade %%A
+CALL pip install --upgrade --no-cache-dir %%A
 ECHO.
 )
 

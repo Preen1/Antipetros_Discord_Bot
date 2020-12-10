@@ -8,29 +8,6 @@ Checks against a blacklist of urls and a blacklist of words, to not store malici
 
 cogs_config.ini section: self.config_name
 
-currently implemented config options:
-
-- 'allowed_roles' --> comma-seperated-list of role names
-(eg: Dev_helper, Admin) !names have to match completely and are case-sensitive!
-
-- 'allowed_channels' --> comma-seperated-list of channel names
-(eg: bot-development-and-testing, general-dev-stuff) !names have to match completely and are case-sensitive!
-
-- 'link_channel' --> channel id for the channel that is used as 'storage', where the bot posts the saved links for the time period
-(eg: 645930607683174401)
-
-- 'delete_all_allowed_roles' --> comma-seperated-list of role names that are allowed to clear the link Database, all links will be lost.
-will propably be turned into user id list
-
-- bad_link_image_path/bad_link_image_name --> file_path or appdata file name to an image to use when answering to an forbidden link (None means no image)
-
-
-- default_storage_days --> integer of days to default to if user does not specifiy amount of time to keep link
-(eg: 7)
-
-- member_to_notifiy_bad_link --> comma-seperated-list of user_ids of users that should be notified per DM when an bad link is posted.
-
-- notify_with_link --> boolean if the notification DM should include the bad link
 """
 
 
@@ -201,7 +178,6 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Properties]
 
-
     @property
     def link_channel(self):
         return self.bot.get_channel(COGS_CONFIG.getint(self.config_name, 'link_channel'))
@@ -222,21 +198,6 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 # region [Listener]
 
 
-    @commands.Cog.listener(name='on_ready')
-    async def _extra_cog_setup(self):
-        """
-        Setup methods that run if the Bot Connects successfully.
-
-        Currently it:
-            - creates a fresh forbidden_link_list json
-            - retrieves the channel to save the links to from the config
-
-        ! DOES NOT EXECUTE WHEN COG IS RELOADED !
-        """
-
-        await self._create_forbidden_link_list()
-        log.info(f"{self} Cog ----> finished extra setup")
-
 # endregion [Listener]
 
 # region [Commands]
@@ -245,6 +206,14 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'delete_all_allowed_roles'))
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def clear_all_links(self, ctx, sure=False):
+        """
+        Clears the datastorage (currently database) and sets it up empty again.
+        Back up the database (keeps 3 newest backups)
+
+        Args:
+            sure (bool, optional): skip the confirmation dialog. Defaults to False.
+
+        """
         if ctx.channel.name not in self.allowed_channels:
             return
         if sure is False:
@@ -270,25 +239,28 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def get_link(self, ctx, name):
         """
-        Get a previously saved link by name.
+        Get a previously saved link by name. Name will be fuzzymatched to saved links names.
 
         Args:
             name (str): link name
         """
-        log.debug("command was triggered in %s", ctx.channel.name)
+        log.debug("command was triggered in '%s', by '%s'", ctx.channel.name, ctx.author.name)
         if ctx.channel.name not in self.allowed_channels:
             log.debug("channel not is 'allowed channel'")
             return
         log.info("Link with Link name '%s' was requested", name)
-        _link = self.data_storage_handler.get_link(name)
-        # TODO: make as embed, also change to only get raw data from datastoragehandler
-        await ctx.send(_link)
+        _name, _link = self.data_storage_handler.get_link(name)
+        if _name is None:
+            await ctx.send(embed=await self.bot.make_basic_embed(title="Not Found!", text=f"I could not find a Link with the Name of '{name}', or any similar Name!", symbol='not_possible'), delete_after=60)
+            log.warning("not able to find link with name '%s'", name)
+            return
+        await ctx.send(embed=await self.bot.make_basic_embed(title='Retrieved link!', text='Link was successfully retrieved from storage', symbol='link', **{'available for the next': '1 Hour', _name: _link}), delete_after=60 * 60)
         log.info("retrieve link '%s'", _link)
         await self.bot.did_command()
 
-    @commands.command(hidden=False)
-    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
-    @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
+    @ commands.command(hidden=False)
+    @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def get_all_links(self, ctx, in_format='txt'):
         """
         Get a list of all previously saved links, as a file.
@@ -327,9 +299,9 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
             await ctx.send(file=_file)
         await self.bot.did_command()
 
-    @commands.command(hidden=False)
-    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
-    @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
+    @ commands.command(hidden=False)
+    @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def save_link(self, ctx, link: str, link_name: str = None, days_to_hold: int = None):
         """
         Save a link to the DataStorage and posts it for a certain time to an storage channel.
@@ -419,12 +391,12 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
                 log.debug("notified '%s' about the offending link", user.name)
         await self.bot.did_command()
 
-    @commands.command(hidden=False)
-    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
-    @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
+    @ commands.command(hidden=False)
+    @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def get_forbidden_list(self, ctx, file_format='json'):
         """
-        command to get the forbidden link list as an file.
+        Get the forbidden link list as an file.
 
         Args:
             file_format (str, optional): format the list file should have(currently possible: 'json'). Defaults to 'json'.
@@ -443,11 +415,19 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
                 log.info("send forbidden link list to '%s'", ctx.author.name)
         await self.bot.did_command()
 
-    @commands.command()
-    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
-    @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
+    @ commands.command()
+    @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def delete_link(self, ctx, name, scope='channel'):
-        # TODO: Docstring
+        """
+        Deletes an link by name (name will be fuzzy matched).
+
+        [extended_summary]
+
+        Args:
+            name (str): name of the link to delete
+            scope (str, optional): if 'channel' it will only delete the link in the channel but keeps it in the Database, if 'full' tries to delete both in channel and in database. Defaults to 'channel'.
+        """
         log.debug("command was triggered in %s", ctx.channel.name)
         if ctx.channel.name not in self.allowed_channels:
             log.debug("command called from outside 'allowed channels', channel: '%s'", ctx.channel.name)
@@ -506,6 +486,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 # endregion [DataStorage]
 
 # region [Embeds]
+
 
     async def _answer_embed(self, link_item):
         """
@@ -579,6 +560,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
 
 # region [HelperMethods]
+
 
     async def _get_bad_link_image(self):
         """
@@ -678,7 +660,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
             for link_id in self.data_storage_handler.get_all_posted_links():
                 msg = await self.link_channel.fetch_message(link_id)
                 await msg.delete()
-            await self.bot.execute_in_thread(self.data_storage_handler.clear)
+            self.data_storage_handler.clear()
             await ctx.send(embed=await self.bot.make_basic_embed(title="Link data deleted", text="The link data storage was deleted an initialized again, it is ready for new input", symbol='trash'))
 
         elif answer.casefold() == 'no':
@@ -688,7 +670,6 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

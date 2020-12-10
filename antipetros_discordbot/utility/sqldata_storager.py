@@ -16,6 +16,8 @@ import gidlogger as glog
 from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
 from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG
 from antipetros_discordbot.utility.gidtools_functions import timenamemaker, limit_amount_files_absolute, pathmaker
+from antipetros_discordbot.utility.misc import sync_to_async
+
 
 DB_LOC_LINKS = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\sqlite_data\save_link_db.db"
 SCRIPT_LOC_LINKS = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\sqlite_data\sql_procedures\save_link_sql"
@@ -103,11 +105,11 @@ class LinkDataStorageSQLite:
     def get_link(self, name):
         _name = fuzzprocess.extractOne(name, self.all_link_names)
         if _name is None:
-            return f"no link found with name '{name}'"
+            return None, None
         _name = _name[0]
         _out = self.db.reader.query(self.db.scripter['get_link'], (_name,))[0]
 
-        return _out[0] + ' --> ' + _out[1]
+        return _out[0], _out[1]
 
     def get_all_links(self, in_format='plain'):
         if in_format == 'json':

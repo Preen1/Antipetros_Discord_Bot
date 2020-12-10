@@ -116,13 +116,65 @@ class GeneralDebug(commands.Cog):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('general_debug', 'allowed_roles'))
+    async def guild(self, ctx, rolelist=False):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        if rolelist is False:
+            await ctx.send(str(ctx.guild.name))
+        else:
+            li = []
+            for role in ctx.guild.roles:
+                li.append(role.name.replace('@', ''))
+            await ctx.send('\n'.join(li))
+
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('general_debug', 'allowed_roles'))
+    async def members_list(self, ctx, member_role=None):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        chans = []
+        if member_role is None:
+            for channel in ctx.guild.members:
+                chans.append(channel.name)
+
+            await ctx.send(', '.join(chans))
+        else:
+            role = discord.utils.get(ctx.guild.roles, name=member_role)
+            li = []
+            for member in role.members:
+                li.append(member.name)
+
+            await ctx.send('\n'.join(li))
+
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('general_debug', 'allowed_roles'))
+    async def is_a_channel(self, ctx, channel_name):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        channel = discord.utils.get(ctx.guild.channels, name=channel_name)
+        await ctx.send(str(channel.name) + ' ' + str(channel.id))
+
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('general_debug', 'allowed_roles'))
+    async def channel_name(self, ctx):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        chans = []
+        for channel in ctx.guild.channels:
+            chans.append(channel.name)
+        chans = sorted(chans, key=lambda x: x.casefold())
+        await ctx.send('\n'.join(chans))
+
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('general_debug', 'allowed_roles'))
     async def last_message(self, ctx, channel_name):
         if ctx.channel.name not in self.allowed_channels:
             return
         try:
             channel = await self.bot.channel_from_name(channel_name)
+            print(channel)
             last_message_id = channel.last_message_id
-            msg = await self.bot.bot_member.fetch_message(last_message_id)
+            msg = await channel.fetch_message(last_message_id)
 
             await ctx.send(f"**Message Content:**\n\n```\n{msg.content}\n```")
         except Exception as error:

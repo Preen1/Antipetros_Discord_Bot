@@ -61,7 +61,9 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
     suggestion_name_regex = re.compile(r"(?P<name>(?<=#).*)")
     config_name = 'save_suggestions'
     jinja_env = Environment(loader=FileSystemLoader(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\templates\reports"))
-    css_files = {"basic_report_style": (r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\templates\reports\basic_report_style.css", "basic_report_style.css")}
+    css_files = {"basic_report_style": (r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\templates\reports\basic_report_style.css", "basic_report_style.css"),
+                 'exp_report_stylesheet': (r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\templates\reports\style.css", "style.css")}
+    auto_accept_user_file = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\json_data\auto_accept_suggestion_users.json"
 # endregion [ClassAttributes]
 
 # region [Init]
@@ -125,13 +127,13 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
     def std_datetime_format(self):
         return BASE_CONFIG.get('datetime', 'std_format')
 
+    @property
+    def auto_accept_user_dict(self):
+        return loadjson(self.auto_accept_user_file)
+
 # endregion [Properties]
 
 # region [Listener]
-
-    @commands.Cog.listener(name='on_ready')
-    async def extra_cog_setup(self):
-        log.info(f"{self} Cog ----> nothing to set up")
 
     @ commands.Cog.listener()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
@@ -147,8 +149,13 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
         if emoji_name == self.command_emojis['save']:
             await self._new_suggestion(channel, message, payload.guild_id, reaction_user)
-            # TODO: make as embed
-            await message.author.send(f"The Dev team has saved one of your suggestions to their Database.\n\nIf you don't want this, DM me `[AT]AntiPetros unsave_suggestion {message.id}`")
+            if message.author.id not in self.auto_accept_user_dict:
+                await message.author.send(embed=await self.bot.make_basic_embed(title='Your Suggestion was saved by the Devs!',
+                                                                                text='The devs have saved your in their Database to locate it more easily',
+                                                                                if_you_do_not_want_this=f'DM me: `@Antipetros unsave_suggestion {message.id}`',
+                                                                                if_you_want_to_see_all_data_saved_from_you='DM me: `@Antipetros request_my_data`',
+                                                                                if_you_want_to_have_all_data_saved_from_you_deleted='DM me: `@Antipetros remove_all_userdata`'),
+                                          footer='If you dont want to receive this message anymore íf your suggestion is saved, DM me: `@AntiPetros auto_accept_suggestions')
 
         elif emoji_name in self.categories and message.id in self.saved_messages:
             await self._change_category(channel, message, emoji_name)
@@ -161,14 +168,13 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Commands]
 
-
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
     async def clear_all_suggestions(self, ctx, sure=False):
         if ctx.channel.name not in self.allowed_channels:
             return
         if sure is False:
-            await ctx.send("Do you really want to delete all saved suggestions?\n\nANSWER **YES** in the next __30 SECONDS__")
+            question_msg = await ctx.send("Do you really want to delete all saved suggestions?\n\nANSWER **YES** in the next __30 SECONDS__")
             user = ctx.author
             channel = ctx.channel
 
@@ -178,17 +184,33 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
                 msg = await self.bot.wait_for('message', check=check, timeout=30.0)
                 await self._clear_suggestions(ctx, msg.content)
             except asyncio.TimeoutError:
-                # TODO: make as embed
-                await ctx.send('No answer received, canceling request to delete Database, nothing was deleted')
+                await ctx.send(embed=await self.bot.make_basic_embed(title='No answer received', text='canceling request to delete Database, nothing was deleted', symbol='cancelled'))
+                await question_msg.delete()
         else:
             await self._clear_suggestions(ctx, 'yes')
+
+    @ commands.command()
+    @commands.dm_only()
+    async def auto_accept_suggestions(self, ctx):
+        if ctx.user.id in self.auto_accept_user_dict:
+            # Todo: make as embed
+            await ctx.send("you are already in the auto accept suggestion list")
+            return
+        auto_accept_dict = loadjson(self.auto_accept_user_file)
+        auto_accept_dict[ctx.user.id] = ctx.user.name
+        writejson(auto_accept_dict, self.auto_accept_user_file)
+        # Todo: make as embed
+        await ctx.send("I added you to the auto accept suggestion list")
 
     @commands.command(name='unsave_suggestion')
     @commands.dm_only()
     async def user_delete_suggestion(self, ctx, suggestion_id: int):
         if suggestion_id not in self.saved_messages:
-            # TODO: make as embed
-            await ctx.send('We have no message saved with this ID | if you feel like this is an error please contact: ' + self.notify_contact_member)
+
+            await ctx.send(embed=await self.bot.make_basic_embed(title=f'ID {suggestion_id} not found',
+                                                                 text='We have no message saved with this ID',
+                                                                 symbol='not_possible',
+                                                                 if_you_feel_like_this_is_an_error_please_contact=self.notify_contact_member))
             return
         suggestion = self.data_storage_handler.get_suggestion_by_id(suggestion_id)
         if ctx.author.name != suggestion['author_name']:
@@ -233,7 +255,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
         min_date = datetime.strptime(min_date + '_01:01:01', "%Y-%m-%d_%H:%M:%S") if min_date is not None else datetime.utcnow() - timedelta(days=7)
         log.debug('min_date is %s', min_date)
         log.debug('querying data')
-        query = await self.bot.execute_in_thread(self.data_storage_handler.get_all_suggestion_by_timeframe, min_date)
+        query = self.data_storage_handler.get_all_suggestion_by_timeframe(min_date)
         var_dict = {"from_date": min_date.strftime(self.std_datetime_format),
                     "to_date": datetime.utcnow().strftime(self.std_datetime_format),
                     "all_suggestions": query}
@@ -245,12 +267,12 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
             pdf_path = pathmaker(tempfold, 'suggestion_report.pdf')
             log.debug('rendering template and writing to file')
             writeit(html_path, await self.bot.execute_in_thread(template.render, var_dict))
+
             log.debug('copying stylesheet')
-            shutil.copyfile(self.css_files.get('basic_report_style')[0], pathmaker(tempfold, self.css_files.get('basic_report_style')[1]))
+            shutil.copyfile(self.css_files.get('exp_report_stylesheet')[0], pathmaker(tempfold, self.css_files.get('exp_report_stylesheet')[1]))
             log.debug('transforming html to pdf')
 
             weasy_html = HTML(filename=html_path)
-            weasy_html.write_png('test_report.png')
             weasy_html.write_pdf(pdf_path)
 
             file = discord.File(pdf_path, filename='suggestion_report.pdf')
@@ -337,7 +359,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
         if answer.casefold() == 'yes':
             # TODO: make as embed
             await ctx.send('deleting Database')
-            await self.bot.execute_in_thread(self.data_storage_handler.clear)
+            self.data_storage_handler.clear()
             # TODO: make as embed
             await ctx.send('Database was cleared, ready for input again')
 
@@ -349,7 +371,6 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 # endregion [DataStorage]
 
 # region [Embeds]
-
 
     async def make_add_success_embed(self, suggestion_item: SUGGESTION_DATA_ITEM):
         _filtered_content = []
@@ -391,7 +412,6 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 # endregion [Embeds]
 
 # region [HelperMethods]
-
 
     async def collect_title(self, content):
         name_result = self.suggestion_name_regex.search(content)

@@ -65,7 +65,15 @@ still WiP
 
 - > all_info_from_command_trigger
 
+- > channel_name
+
+- > guild
+
+- > is_a_channel
+
 - > last_message
+
+- > members_list
 
 - > message_by_id
 
@@ -87,8 +95,6 @@ still WiP
 - > antistasify
 
 - > available_stamps
-
-- > flag_test
 
 - > member_avatar
 
@@ -169,11 +175,11 @@ will propably be turned into user id list
 
 - > clear_all_suggestions
 
+- > get_all_suggestions
+
 - > remove_all_my_data
 
 - > request_my_data
-
-- > retrieve_all
 
 - > unsave_suggestion
 
@@ -224,11 +230,13 @@ will propably be turned into user id list
 
 **Developed with Python Version `3.8.6`**
 
-- discord_flags<=`2.1.1`
-- aiohttp<=`3.7.3`
 - fuzzywuzzy<=`0.18.0`
+- pdfkit<=`0.6.1`
 - async_property<=`0.2.1`
 - Jinja2<=`2.11.2`
+- aiohttp<=`3.7.3`
+- discord_flags<=`2.1.1`
+- WeasyPrint<=`52.2`
 - watchgod<=`0.6`
 - discord<=`1.0.1`
 - gidconfig<=`0.1.2`
@@ -251,76 +259,61 @@ MIT
 
 <details><summary><b>TODOS FROM CODE</b></summary>
 
-#### todo [\_\_main\_\_.py](/antipetros_discordbot/__main__.py): ####
-
-
-- [ ] [\_\_main\_\_.py line 49:](/antipetros_discordbot/__main__.py#L49) `maybe put these functions into the Bot class or make an bot builder class`
-
-
-- [ ] [\_\_main\_\_.py line 70:](/antipetros_discordbot/__main__.py#L70) `Deal wit the tripple or quadrouple redundancy in regards to the env file`
-
-
-- [ ] [\_\_main\_\_.py line 121:](/antipetros_discordbot/__main__.py#L121) `make as embed`
-
-
----
-
-
 #### todo [admin_cog.py](/antipetros_discordbot/cogs/admin_cog.py): ####
 
 
 - [ ] [admin_cog.py line 185:](/antipetros_discordbot/cogs/admin_cog.py#L185) `make as embed`
 
 
-- [ ] [admin_cog.py line 205:](/antipetros_discordbot/cogs/admin_cog.py#L205) `make as embed`
+- [ ] [admin_cog.py line 207:](/antipetros_discordbot/cogs/admin_cog.py#L207) `make as embed`
 
 
-- [ ] [admin_cog.py line 224:](/antipetros_discordbot/cogs/admin_cog.py#L224) `make as embed`
+- [ ] [admin_cog.py line 226:](/antipetros_discordbot/cogs/admin_cog.py#L226) `make as embed`
 
 
-- [ ] [admin_cog.py line 230:](/antipetros_discordbot/cogs/admin_cog.py#L230) `make as embed`
+- [ ] [admin_cog.py line 232:](/antipetros_discordbot/cogs/admin_cog.py#L232) `make as embed`
 
 
-- [ ] [admin_cog.py line 240:](/antipetros_discordbot/cogs/admin_cog.py#L240) `make as embed`
+- [ ] [admin_cog.py line 242:](/antipetros_discordbot/cogs/admin_cog.py#L242) `make as embed`
 
 
-- [ ] [admin_cog.py line 246:](/antipetros_discordbot/cogs/admin_cog.py#L246) `make as embed`
+- [ ] [admin_cog.py line 248:](/antipetros_discordbot/cogs/admin_cog.py#L248) `make as embed`
 
 
-- [ ] [admin_cog.py line 252:](/antipetros_discordbot/cogs/admin_cog.py#L252) `make as embed`
+- [ ] [admin_cog.py line 254:](/antipetros_discordbot/cogs/admin_cog.py#L254) `make as embed`
 
 
-- [ ] [admin_cog.py line 262:](/antipetros_discordbot/cogs/admin_cog.py#L262) `make as embed`
+- [ ] [admin_cog.py line 264:](/antipetros_discordbot/cogs/admin_cog.py#L264) `make as embed`
 
 
-- [ ] [admin_cog.py line 266:](/antipetros_discordbot/cogs/admin_cog.py#L266) `make as embed`
+- [ ] [admin_cog.py line 268:](/antipetros_discordbot/cogs/admin_cog.py#L268) `make as embed`
 
 
-- [ ] [admin_cog.py line 274:](/antipetros_discordbot/cogs/admin_cog.py#L274) `make as embed`
-
-
-- [ ] [admin_cog.py line 277:](/antipetros_discordbot/cogs/admin_cog.py#L277) `make as embed`
+- [ ] [admin_cog.py line 276:](/antipetros_discordbot/cogs/admin_cog.py#L276) `make as embed`
 
 
 - [ ] [admin_cog.py line 279:](/antipetros_discordbot/cogs/admin_cog.py#L279) `make as embed`
 
 
-- [ ] [admin_cog.py line 289:](/antipetros_discordbot/cogs/admin_cog.py#L289) `make as embed`
+- [ ] [admin_cog.py line 281:](/antipetros_discordbot/cogs/admin_cog.py#L281) `make as embed`
 
 
-- [ ] [admin_cog.py line 294:](/antipetros_discordbot/cogs/admin_cog.py#L294) `make as embed`
+- [ ] [admin_cog.py line 291:](/antipetros_discordbot/cogs/admin_cog.py#L291) `make as embed`
 
 
-- [ ] [admin_cog.py line 306:](/antipetros_discordbot/cogs/admin_cog.py#L306) `make as embed`
+- [ ] [admin_cog.py line 296:](/antipetros_discordbot/cogs/admin_cog.py#L296) `make as embed`
 
 
-- [ ] [admin_cog.py line 309:](/antipetros_discordbot/cogs/admin_cog.py#L309) `make as embed`
+- [ ] [admin_cog.py line 308:](/antipetros_discordbot/cogs/admin_cog.py#L308) `make as embed`
 
 
 - [ ] [admin_cog.py line 311:](/antipetros_discordbot/cogs/admin_cog.py#L311) `make as embed`
 
 
-- [ ] [admin_cog.py line 322:](/antipetros_discordbot/cogs/admin_cog.py#L322) `make as embed`
+- [ ] [admin_cog.py line 313:](/antipetros_discordbot/cogs/admin_cog.py#L313) `make as embed`
+
+
+- [ ] [admin_cog.py line 324:](/antipetros_discordbot/cogs/admin_cog.py#L324) `make as embed`
 
 
 ---
@@ -347,34 +340,19 @@ MIT
 - [ ] [image_manipulation_cog.py line 49:](/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py#L49) `Document and Docstrings`
 
 
-- [ ] [image_manipulation_cog.py line 233:](/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py#L233) `make as embed`
+- [ ] [image_manipulation_cog.py line 244:](/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py#L244) `make as embed`
 
 
-- [ ] [image_manipulation_cog.py line 243:](/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py#L243) `make as embed`
+- [ ] [image_manipulation_cog.py line 248:](/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py#L248) `make as embed`
 
 
-- [ ] [image_manipulation_cog.py line 247:](/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py#L247) `make as embed`
+- [ ] [image_manipulation_cog.py line 255:](/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py#L255) `make as embed`
 
 
-- [ ] [image_manipulation_cog.py line 254:](/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py#L254) `make as embed`
+- [ ] [image_manipulation_cog.py line 259:](/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py#L259) `maybe make extra attribute for input format, check what is possible and working. else make a generic format list`
 
 
-- [ ] [image_manipulation_cog.py line 258:](/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py#L258) `maybe make extra attribute for input format, check what is possible and working. else make a generic format list`
-
-
-- [ ] [image_manipulation_cog.py line 272:](/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py#L272) `make as embed`
-
-
-- [ ] [image_manipulation_cog.py line 279:](/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py#L279) `remove this, or move to debug`
-
-
-- [ ] [image_manipulation_cog.py line 286:](/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py#L286) `make as embed`
-
-
-- [ ] [image_manipulation_cog.py line 289:](/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py#L289) `make as embed`
-
-
-- [ ] [image_manipulation_cog.py line 307:](/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py#L307) `make as embed`
+- [ ] [image_manipulation_cog.py line 273:](/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py#L273) `make as embed`
 
 
 ---
@@ -395,34 +373,31 @@ MIT
 - [ ] [save_link_cog.py line 87:](/antipetros_discordbot/cogs/general_cogs/save_link_cog.py#L87) `check if everything is documented`
 
 
-- [ ] [save_link_cog.py line 251:](/antipetros_discordbot/cogs/general_cogs/save_link_cog.py#L251) `make as embed`
+- [ ] [save_link_cog.py line 249:](/antipetros_discordbot/cogs/general_cogs/save_link_cog.py#L249) `make as embed`
 
 
-- [ ] [save_link_cog.py line 262:](/antipetros_discordbot/cogs/general_cogs/save_link_cog.py#L262) `make as embed`
+- [ ] [save_link_cog.py line 260:](/antipetros_discordbot/cogs/general_cogs/save_link_cog.py#L260) `make as embed`
 
 
-- [ ] [save_link_cog.py line 284:](/antipetros_discordbot/cogs/general_cogs/save_link_cog.py#L284) `make as embed, also change to only get raw data from datastoragehandler`
+- [ ] [save_link_cog.py line 310:](/antipetros_discordbot/cogs/general_cogs/save_link_cog.py#L310) `make as embed`
 
 
-- [ ] [save_link_cog.py line 309:](/antipetros_discordbot/cogs/general_cogs/save_link_cog.py#L309) `make as embed`
+- [ ] [save_link_cog.py line 320:](/antipetros_discordbot/cogs/general_cogs/save_link_cog.py#L320) `make as embed`
 
 
-- [ ] [save_link_cog.py line 319:](/antipetros_discordbot/cogs/general_cogs/save_link_cog.py#L319) `make as embed`
+- [ ] [save_link_cog.py line 343:](/antipetros_discordbot/cogs/general_cogs/save_link_cog.py#L343) `refractor that monster of an function`
 
 
-- [ ] [save_link_cog.py line 342:](/antipetros_discordbot/cogs/general_cogs/save_link_cog.py#L342) `refractor that monster of an function`
+- [ ] [save_link_cog.py line 365:](/antipetros_discordbot/cogs/general_cogs/save_link_cog.py#L365) `make as embed`
 
 
-- [ ] [save_link_cog.py line 364:](/antipetros_discordbot/cogs/general_cogs/save_link_cog.py#L364) `make as embed`
+- [ ] [save_link_cog.py line 390:](/antipetros_discordbot/cogs/general_cogs/save_link_cog.py#L390) `make as embed`
 
 
-- [ ] [save_link_cog.py line 389:](/antipetros_discordbot/cogs/general_cogs/save_link_cog.py#L389) `make as embed`
+- [ ] [save_link_cog.py line 451:](/antipetros_discordbot/cogs/general_cogs/save_link_cog.py#L451) `Docstring`
 
 
-- [ ] [save_link_cog.py line 450:](/antipetros_discordbot/cogs/general_cogs/save_link_cog.py#L450) `Docstring`
-
-
-- [ ] [save_link_cog.py line 557:](/antipetros_discordbot/cogs/general_cogs/save_link_cog.py#L557) `Add logging`
+- [ ] [save_link_cog.py line 559:](/antipetros_discordbot/cogs/general_cogs/save_link_cog.py#L559) `Add logging`
 
 
 ---
@@ -431,67 +406,55 @@ MIT
 #### todo [save_suggestion_cog.py](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py): ####
 
 
-- [ ] [save_suggestion_cog.py line 48:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L48) `create report generator in different formats, at least json and Html, probably also as embeds and Markdown`
+- [ ] [save_suggestion_cog.py line 51:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L51) `create report generator in different formats, at least json and Html, probably also as embeds and Markdown`
 
 
-- [ ] [save_suggestion_cog.py line 50:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L50) `Document and Docstrings`
+- [ ] [save_suggestion_cog.py line 53:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L53) `Document and Docstrings`
 
 
-- [ ] [save_suggestion_cog.py line 144:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L144) `make as embed`
-
-
-- [ ] [save_suggestion_cog.py line 175:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L175) `make as embed`
-
-
-- [ ] [save_suggestion_cog.py line 184:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L184) `make as embed`
-
-
-- [ ] [save_suggestion_cog.py line 189:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L189) `make as embed`
-
-
-- [ ] [save_suggestion_cog.py line 201:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L201) `make as embed`
-
-
-- [ ] [save_suggestion_cog.py line 205:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L205) `make as embed`
-
-
-- [ ] [save_suggestion_cog.py line 209:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L209) `make as embed`
+- [ ] [save_suggestion_cog.py line 202:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L202) `make as embed`
 
 
 - [ ] [save_suggestion_cog.py line 214:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L214) `make as embed`
 
 
-- [ ] [save_suggestion_cog.py line 221:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L221) `make completly new for sqlite or dynamic datahandler`
+- [ ] [save_suggestion_cog.py line 218:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L218) `make as embed`
 
 
-- [ ] [save_suggestion_cog.py line 240:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L240) `make as embed`
+- [ ] [save_suggestion_cog.py line 222:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L222) `make as embed`
 
 
-- [ ] [save_suggestion_cog.py line 243:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L243) `make as embed`
+- [ ] [save_suggestion_cog.py line 227:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L227) `make as embed`
 
 
-- [ ] [save_suggestion_cog.py line 254:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L254) `make as embed`
+- [ ] [save_suggestion_cog.py line 273:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L273) `make as embed`
 
 
-- [ ] [save_suggestion_cog.py line 258:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L258) `make as embed`
+- [ ] [save_suggestion_cog.py line 276:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L276) `make as embed`
 
 
-- [ ] [save_suggestion_cog.py line 262:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L262) `make as embed`
+- [ ] [save_suggestion_cog.py line 287:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L287) `make as embed`
 
 
-- [ ] [save_suggestion_cog.py line 267:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L267) `make as embed`
+- [ ] [save_suggestion_cog.py line 291:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L291) `make as embed`
 
 
-- [ ] [save_suggestion_cog.py line 277:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L277) `make as embed`
+- [ ] [save_suggestion_cog.py line 295:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L295) `make as embed`
 
 
-- [ ] [save_suggestion_cog.py line 312:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L312) `make as embed`
+- [ ] [save_suggestion_cog.py line 300:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L300) `make as embed`
 
 
-- [ ] [save_suggestion_cog.py line 315:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L315) `make as embed`
+- [ ] [save_suggestion_cog.py line 310:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L310) `make as embed`
 
 
-- [ ] [save_suggestion_cog.py line 319:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L319) `make as embed`
+- [ ] [save_suggestion_cog.py line 345:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L345) `make as embed`
+
+
+- [ ] [save_suggestion_cog.py line 348:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L348) `make as embed`
+
+
+- [ ] [save_suggestion_cog.py line 352:](/antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py#L352) `make as embed`
 
 
 ---
@@ -509,16 +472,16 @@ MIT
 #### idea [antipetros_bot.py](/antipetros_discordbot/engine/antipetros_bot.py): ####
 
 
-- [ ] [antipetros_bot.py line 41:](/antipetros_discordbot/engine/antipetros_bot.py#L41) `Use an assistant class to hold some of the properties and then use the __getattr__ to make it look as one object, just for structuring`
+- [ ] [antipetros_bot.py line 42:](/antipetros_discordbot/engine/antipetros_bot.py#L42) `Use an assistant class to hold some of the properties and then use the __getattr__ to make it look as one object, just for structuring`
 
 
 #### todo [antipetros_bot.py](/antipetros_discordbot/engine/antipetros_bot.py): ####
 
 
-- [ ] [antipetros_bot.py line 39:](/antipetros_discordbot/engine/antipetros_bot.py#L39) `create regions for this file`
+- [ ] [antipetros_bot.py line 40:](/antipetros_discordbot/engine/antipetros_bot.py#L40) `create regions for this file`
 
 
-- [ ] [antipetros_bot.py line 40:](/antipetros_discordbot/engine/antipetros_bot.py#L40) `Document and Docstrings`
+- [ ] [antipetros_bot.py line 41:](/antipetros_discordbot/engine/antipetros_bot.py#L41) `Document and Docstrings`
 
 
 ---

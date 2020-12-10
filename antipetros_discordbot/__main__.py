@@ -18,6 +18,7 @@ from pprint import pprint, pformat
 import inspect
 import asyncio
 # * Third Party Imports -->
+import discord
 from dotenv import load_dotenv
 from discord.ext import commands
 from watchgod import awatch
@@ -29,6 +30,7 @@ from antipetros_discordbot.utility.exceptions import TokenError
 from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, CONFIG_DIR, COGS_CONFIG
 from antipetros_discordbot.utility.gidtools_functions import writejson
+from antipetros_discordbot.init_userdata.user_data_setup import APPDATA
 # endregion[Imports]
 
 # region [Logging]
@@ -43,31 +45,13 @@ if BASE_CONFIG.getboolean('logging', 'use_logging') is False:
 
 # region [Constants]
 
-
+print(APPDATA)
 # endregion [Constants]
-
-# TODO: maybe put these functions into the Bot class or make an bot builder class
 
 
 # region [Helper_Functions]
 
 
-def get_help_command():
-    """
-    loads help command from config, if not found sets it to 'antipetros_help"
-
-    Returns:
-        str: help_command
-    """
-    try:
-        _out = BASE_CONFIG.get('prefix', 'help_command')
-    except configparser.NoOptionError as error:
-        log.error(error)
-        _out = 'antipetros_help'
-    return _out
-
-
-# TODO: Deal wit the tripple or quadrouple redundancy in regards to the env file
 def get_token():
     """
     Reloads env file then reads and returns the Token.
@@ -97,7 +81,7 @@ def get_token():
 
 async def debug_function(bot):
     log.debug("debug function triggered")
-    log.warning('nothing set in debug function')
+    log.warning('nothing set in debug function for "%s"', bot.user.name)
 
 
 def main():
@@ -107,27 +91,22 @@ def main():
     creates the bot, loads the extensions and starts the bot with the Token.
     """
 
-    ANTI_PETROS_BOT = AntiPetrosBot(command_prefix='$$', HELP_COMMAND=get_help_command(), self_bot=False)
+    ANTI_PETROS_BOT = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config())
 
     @ANTI_PETROS_BOT.event
     async def on_ready():
-        log.info('trying to log on as %s!', ANTI_PETROS_BOT.user.name)
-
         log.info('%s has connected to Discord!', ANTI_PETROS_BOT.user.name)
 
         channel = ANTI_PETROS_BOT.get_channel(BASE_CONFIG.getint('startup_message', 'channel'))
-        if BASE_CONFIG.getboolean('startup_message', 'use_startup_message') is True:
+        if ANTI_PETROS_BOT.startup_message is not None:
             delete_time = 15 if ANTI_PETROS_BOT.is_debug is True else 60
-            # TODO: make as embed
-            await channel.send(BASE_CONFIG.get('startup_message', 'message'), delete_after=delete_time)
+            await ANTI_PETROS_BOT.get_channel(ANTI_PETROS_BOT.startup_message[0]).send(ANTI_PETROS_BOT.startup_message[1], delete_after=delete_time)
         await asyncio.sleep(5)
         if ANTI_PETROS_BOT.is_debug:
             await debug_function(ANTI_PETROS_BOT)
-        async for change in awatch(CONFIG_DIR):
-            log.debug(change)
-            BASE_CONFIG.read()
-            COGS_CONFIG.read()
+
     if len(sys.argv) == 1 or sys.argv[1] != 'get_info_run':
+        log.info('trying to log on as %s!', str(ANTI_PETROS_BOT))
         ANTI_PETROS_BOT.run(get_token(), bot=True, reconnect=True)
 
 

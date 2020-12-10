@@ -1,8 +1,6 @@
 Jinja2
-requests
 natsort
 beautifulsoup4
-pdfkit
 checksumdir
 click
 marshmallow
@@ -12,16 +10,13 @@ jsonpickle
 fuzzywuzzy
 fuzzysearch
 python-Levenshtein
-Pillow
+Pillow==8.0.0
 PyGithub
 discord
 discord_flags
 discord.py-stubs
-fpdf2
 url-normalize
 async-property
 watchgod
 json-tricks
-aiohttp
-pdfkit
 weasyprint

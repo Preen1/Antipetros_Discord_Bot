@@ -12,16 +12,6 @@ import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.utility.gidtools_functions import pathmaker
 
-# import requests
-# import pyperclip
-# import matplotlib.pyplot as plt
-# from bs4 import BeautifulSoup
-# from dotenv import load_dotenv
-# from github import Github, GithubException
-# from jinja2 import BaseLoader, Environment
-# from natsort import natsorted
-# from fuzzywuzzy import fuzz, process
-
 
 # endregion[Imports]
 

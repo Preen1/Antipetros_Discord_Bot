@@ -1,11 +1,14 @@
 # region [Imports]
 
 # * Standard Library Imports -->
+import os
 from datetime import datetime
 from collections import namedtuple
-
+import traceback
 # * Third Party Imports -->
 from discord.ext import commands, tasks
+import discord
+
 from async_property import async_property
 from discord import Embed, File
 from watchgod import awatch
@@ -18,6 +21,7 @@ import gidlogger as glog
 from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG
 from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
+from antipetros_discordbot.utility.misc import sync_to_async
 # endregion[Imports]
 
 
@@ -33,6 +37,8 @@ glog.import_notification(log, __name__)
 # endregion[Logging]
 
 # region [Constants]
+
+THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[Constants]
 
@@ -54,6 +60,10 @@ class AntiPetrosBot(commands.Bot):
         self.commands_executed = 0
         self.bot_member = None
         self.all_bot_roles = []
+        if BASE_CONFIG.getboolean('startup_message', 'use_startup_message') is True:
+            self.startup_message = (BASE_CONFIG.getint('startup_message', 'channel'), BASE_CONFIG.get('startup_message', 'message'))
+        else:
+            self.startup_message = None
         self.setup()
 
         glog.class_init_notification(log, self)
@@ -73,16 +83,31 @@ class AntiPetrosBot(commands.Bot):
                 log.debug("loaded extension-cog: '%s' from '%s'", name, full_import_path)
         log.info("extensions-cogs loaded: %s", ', '.join([_ex_cog for _ex_cog in self.cogs]))
 
-    # async def on_command_error(self, ctx, error):
-    #     if isinstance(error, commands.MaxConcurrencyReached):
-    #         await ctx.channel.send(f'{ctx.author.mention} Sorry,Bot is busy! Please retry in a minute')
-    #         return
-    #     elif isinstance(error, commands.CommandOnCooldown):
-    #         await ctx.channel.send(f'{ctx.author.mention} I have recently used this command and it is on cooldown still.')
-    #     else:
-    #         log.error(error)
+    @staticmethod
+    def activity_from_config(option='standard_activity'):
+        activity_dict = {'playing': discord.ActivityType.playing,
+                         'watching': discord.ActivityType.watching,
+                         'listening': discord.ActivityType.listening,
+                         'streaming': discord.ActivityType.streaming}
+        text, activity_type = BASE_CONFIG.getlist('activity', option)
+        if activity_type not in activity_dict:
+            log.critical("'%s' is not an Valid ActivityType, aborting activity change")
+            return
+        activity_type = activity_dict.get(activity_type)
 
-    @tasks.loop(minutes=10, reconnect=True)
+        return discord.Activity(name=text, type=activity_type)
+
+    async def on_command_error(self, ctx, error):
+        if isinstance(error, commands.MaxConcurrencyReached):
+            await ctx.channel.send(f'{ctx.author.mention} Sorry,Bot is busy! Please retry in a minute')
+            return
+        elif isinstance(error, commands.CommandOnCooldown):
+            await ctx.channel.send(f'{ctx.author.mention} I have recently used this command and it is on cooldown still.')
+        else:
+            log.error('Ignoring exception in command {}:'.format(ctx.command))
+            log.error(str(error), exc_info=True)
+
+    @tasks.loop(minutes=30, reconnect=True)
     async def get_bot_roles_loop(self):
         log.info('Starting Refreshing Bot Roles')
         self.all_bot_roles = []
@@ -155,12 +180,12 @@ class AntiPetrosBot(commands.Bot):
                 _out = ''
         await ctx.send(_out)
 
-    async def channel_from_name(self, channel_name):
-        for channel in self.antistasi_guild.channels:
-            if channel.name.casefold() == channel_name.casefold():
-                return channel
+    @sync_to_async
+    def channel_from_name(self, channel_name):
+        return discord.utils.get(self.antistasi_guild.channels, name=channel_name)
 
-    async def member_by_name(self, member_name):
+    @sync_to_async
+    def member_by_name(self, member_name):
         member_name = member_name.casefold()
         for member in self.antistasi_guild.members:
             print(member.name)
@@ -189,9 +214,9 @@ class AntiPetrosBot(commands.Bot):
         if footer is not None:
             if isinstance(footer, tuple):
                 footer_icon_url = self.embed_symbols.get(footer[1].casefold(), None)
-                basic_embed.set_footer(str(footer[0]), icon_url=footer_icon_url)
+                basic_embed.set_footer(text=str(footer[0]), icon_url=footer_icon_url)
             else:
-                basic_embed.set_footer(str(footer))
+                basic_embed.set_footer(text=str(footer))
         return basic_embed
 
     def __repr__(self):
