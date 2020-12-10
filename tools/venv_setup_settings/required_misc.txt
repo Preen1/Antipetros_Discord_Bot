@@ -20,3 +20,4 @@ async-property
 watchgod
 json-tricks
 weasyprint
+pdfkit

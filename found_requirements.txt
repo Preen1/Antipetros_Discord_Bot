@@ -1,0 +1,13 @@
+aiohttp>=3.6.3
+pdfkit>=0.6.1
+dpytest>=0.0.22
+watchgod>=0.6
+WeasyPrint>=52.2
+fuzzywuzzy>=0.18.0
+async_property>=0.2.1
+Jinja2>=2.11.2
+discord>=1.0.1
+gidconfig>=0.1.2
+gidlogger>=0.1.2
+Pillow>=8.0.1
+python-dotenv>=0.15.0
