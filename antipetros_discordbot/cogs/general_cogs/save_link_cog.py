@@ -33,7 +33,7 @@ from antipetros_discordbot.utility.enums import RequestStatus
 from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
 from antipetros_discordbot.utility.sqldata_storager import LinkDataStorageSQLite
 from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
-from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG
+from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 
 # endregion [Imports]
 
@@ -45,7 +45,9 @@ glog.import_notification(log, __name__)
 # endregion[Logging]
 
 # region [Constants]
-
+APPDATA = SupportKeeper.get_appdata()
+BASE_CONFIG = SupportKeeper.get_config('base_config')
+COGS_CONFIG = SupportKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -84,8 +86,8 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
         self.data_storage_handler = LinkDataStorageSQLite()  # composition to make data storage modular, currently set up for an sqlite Database
 
-        self.forbidden_links = set(loadjson(pathmaker(THIS_FILE_DIR, r'..\..\data\data_storage\json_data\forbidden_link_list.json')))  # read previously saved blacklist, because extra_setup method does not run when the cog is only reloaded
-        self.forbidden_url_words_file = pathmaker(THIS_FILE_DIR, r'..\..\data\data_storage\json_data\forbidden_url_words.json')
+        self.forbidden_links = set(loadjson(APPDATA["forbidden_link_list.json"]))  # read previously saved blacklist, because extra_setup method does not run when the cog is only reloaded
+        self.forbidden_url_words_file = APPDATA['forbidden_url_words.json']
         if self.bot.is_debug:
             self.save_commands()
         self.fresh_blacklist_loop.start()
@@ -136,7 +138,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
                     _content = _content.decode('utf-8', errors='ignore')
                     self.forbidden_links = await self._process_raw_blocklist_content(_content)
                     self.forbidden_links = set(map(lambda x: urlparse('https://' + x).netloc.replace('www.', ''), self.forbidden_links))
-                    _path = pathmaker(THIS_FILE_DIR, r'..\..\data\data_storage\json_data\forbidden_link_list.json')
+                    _path = APPDATA["forbidden_link_list.json"]
                     writejson(list(map(lambda x: urlparse('https://' + x).netloc.replace('www.', ''), self.forbidden_links)), _path)  # converting to list as set is not json serializable
 
     def cog_unload(self):
