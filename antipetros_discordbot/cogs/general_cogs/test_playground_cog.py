@@ -16,7 +16,7 @@ from discord.ext import commands
 import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.data.fixed_data.faq_data import FAQ_BY_NUMBERS
-from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG
+from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import Bold, Cursive, CodeBlock, LineCode, UnderScore, BlockQuote
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 
@@ -27,6 +27,10 @@ glog.import_notification(log, __name__)
 
 # endregion[Logging]
 
+
+APPDATA = SupportKeeper.get_appdata()
+BASE_CONFIG = SupportKeeper.get_config('base_config')
+COGS_CONFIG = SupportKeeper.get_config('cogs_config')
 
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 

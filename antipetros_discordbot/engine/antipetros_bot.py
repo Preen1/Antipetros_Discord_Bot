@@ -53,7 +53,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 class AntiPetrosBot(commands.Bot):
     executor = ThreadPoolExecutor(3, thread_name_prefix='Bot_Thread')
     admin_cog_import_path = "antipetros_discordbot.cogs.admin_cogs.admin_cog"
-    embed_symbols = loadjson(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\json_data\embed_symbols.json")
+    embed_symbols = loadjson(APPDATA["embed_symbols.json"])
     cog_import_base_path = BASE_CONFIG.get('general_settings', 'cogs_location')
 
     def __init__(self, *args, ** kwargs):
