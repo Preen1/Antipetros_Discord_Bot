@@ -192,7 +192,7 @@ class Administration(commands.Cog):
     async def shutdown(self, ctx):
         if ctx.channel.name not in self.allowed_channels:
             return
-        log.debug('shutdown command received from "%s"', ctx.user.name)
+        log.debug('shutdown command received from "%s"', ctx.author.name)
         started_at = self.bot.start_time.strftime(self.bot.std_date_time_format)
         embed = await self.bot.make_basic_embed(title='cya!', text='AntiPetros is shutting down.', symbol='shutdown', was_online_since=started_at, commands_executed=str(self.bot.commands_executed))
         embed.set_image(url='https://media.discordapp.net/attachments/449481990513754114/785601325329023006/2d1ca5fea58e65277ac5c18788b21d03.gif')
