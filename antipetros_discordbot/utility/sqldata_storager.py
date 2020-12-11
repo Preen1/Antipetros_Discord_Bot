@@ -24,7 +24,7 @@ BASE_CONFIG = SupportKeeper.get_config('base_config')
 
 
 DB_LOC_LINKS = pathmaker(APPDATA['database'], 'save_link_db.db')
-SCRIPT_LOC_LINKS = APPDATA['save_suggestion_sql']
+SCRIPT_LOC_LINKS = APPDATA['save_link_sql']
 
 DB_LOC_SUGGESTIONS = pathmaker(APPDATA['database'], "save_suggestion.db")
 SCRIPT_LOC_SUGGESTIONS = APPDATA['save_suggestion_sql']

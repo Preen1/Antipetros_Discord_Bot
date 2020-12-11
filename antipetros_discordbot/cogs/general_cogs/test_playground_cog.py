@@ -15,7 +15,7 @@ from PIL import Image
 from discord.ext import commands
 import gidlogger as glog
 # * Local Imports -->
-from antipetros_discordbot.data.fixed_data.faq_data import FAQ_BY_NUMBERS
+
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import Bold, Cursive, CodeBlock, LineCode, UnderScore, BlockQuote
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
@@ -175,18 +175,18 @@ class TestPlayground(commands.Cog):
             self.bot.commands_executed += 1
             log.debug("finished 'map_changed' command")
 
-    @commands.command(name='FAQ_you')
-    async def get_faq_by_number(self, ctx, faq_number: int):
+    # @commands.command(name='FAQ_you')
+    # async def get_faq_by_number(self, ctx, faq_number: int):
 
-        if ctx.channel.name in self.allowed_channels:
-            _faq_dict = FAQ_BY_NUMBERS
-            _msg = _faq_dict.get(faq_number, None)
+    #     if ctx.channel.name in self.allowed_channels:
+    #         _faq_dict = FAQ_BY_NUMBERS
+    #         _msg = _faq_dict.get(faq_number, None)
 
-            if _msg is None:
-                _msg = "Canot find the requested FAQ"
-            else:
-                _msg = "**FAQ you too**\n\n" + _msg
-            await ctx.send(_msg)
+    #         if _msg is None:
+    #             _msg = "Canot find the requested FAQ"
+    #         else:
+    #             _msg = "**FAQ you too**\n\n" + _msg
+    #         await ctx.send(_msg)
 
     # @commands.Cog.listener()
     # async def on_message(self, message):
