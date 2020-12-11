@@ -129,7 +129,7 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
     def avatar_stamp(self):
         if self.bot.is_debug:
             COGS_CONFIG.read()
-        return self.stamps.get(COGS_CONFIG.get(IMAGE_MANIPULATION_CONFIG_NAME, 'avatar_stamp')).copy()
+        return self._get_stamp_image(COGS_CONFIG.get(IMAGE_MANIPULATION_CONFIG_NAME, 'avatar_stamp')).copy()
 
 # endregion[Properties]
 
@@ -138,11 +138,14 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
         for file in os.scandir(self.stamp_location):
             if os.path.isfile(file.path) is True and os.path.splitext(file.name)[1] in self.allowed_stamp_formats:
                 name = file.name.split('.')[0].replace(' ', '_').strip().upper()
-                image = Image.open(file.path)
-                alpha = image.split()[3]
-                alpha = ImageEnhance.Brightness(alpha).enhance(self.stamp_opacity)
-                image.putalpha(alpha)
-                self.stamps[name] = image
+                self.stamps[name] = file.path
+
+    def _get_stamp_image(self, stamp_name):
+        image = Image.open(self.stamps.get(stamp_name))
+        alpha = image.split()[3]
+        alpha = ImageEnhance.Brightness(alpha).enhance(self.stamp_opacity)
+        image.putalpha(alpha)
+        return image
 
     @staticmethod
     def _stamp_resize(input_image, stamp_image, factor):
@@ -262,7 +265,8 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
             for _file in ctx.message.attachments:
                 # TODO: maybe make extra attribute for input format, check what is possible and working. else make a generic format list
                 if any(_file.filename.endswith(allowed_ext) for allowed_ext in self.allowed_stamp_formats):
-                    _stamp = self.stamps.get(stamp).copy()
+                    _stamp = self.bot.execute_in_thread(self._get_stamp_image, stamp)
+                    _stamp = self.bot.execute_in_thread(_stamp.copy)
                     with TemporaryDirectory(prefix='temp') as temp_dir:
                         temp_file = Path(pathmaker(temp_dir, 'temp_file.png'))
                         log.debug("Tempfile '%s' created", temp_file)
@@ -331,7 +335,6 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
 
 
 # region [SpecialMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"
