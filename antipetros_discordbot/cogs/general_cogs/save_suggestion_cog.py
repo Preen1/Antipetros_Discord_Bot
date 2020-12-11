@@ -21,7 +21,7 @@ import pdfkit
 from weasyprint import HTML, CSS
 # * Gid Imports -->
 import gidlogger as glog
-
+from pprint import pprint, pformat
 # * Local Imports -->
 from antipetros_discordbot.utility.named_tuples import SUGGESTION_DATA_ITEM
 from antipetros_discordbot.utility.sqldata_storager import SuggestionDataStorageSQLite
@@ -149,7 +149,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
         if emoji_name == self.command_emojis['save']:
             await self._new_suggestion(channel, message, payload.guild_id, reaction_user)
-            if message.author.id not in self.auto_accept_user_dict:
+            if str(message.author.id) not in self.auto_accept_user_dict:
                 await message.author.send(embed=await self.bot.make_basic_embed(title='Your Suggestion was saved by the Devs!',
                                                                                 text='The devs have saved your in their Database to locate it more easily',
                                                                                 if_you_do_not_want_this=f'DM me: `@Antipetros unsave_suggestion {message.id}`',
@@ -167,6 +167,18 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 # endregion [Listener]
 
 # region [Commands]
+
+
+    @ commands.command()
+    @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_admin_roles'))
+    async def mark_discussed(self, ctx, *suggestion_ids: int):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        embed_dict = {}
+        for suggestion_id in suggestion_ids:
+            self.data_storage_handler.mark_discussed(suggestion_id)
+            embed_dict['message_with_id_' + str(suggestion_id)] = 'was marked as discussed'
+        await ctx.send(embed=await self.bot.make_basic_embed(title='Marked Suggestions as discussed', text='The following items were marked as discussed: ', symbol='update', ** embed_dict))
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
@@ -192,12 +204,12 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
     @ commands.command()
     @commands.dm_only()
     async def auto_accept_suggestions(self, ctx):
-        if ctx.user.id in self.auto_accept_user_dict:
+        if str(ctx.author.id) in self.auto_accept_user_dict:
             # Todo: make as embed
             await ctx.send("you are already in the auto accept suggestion list")
             return
         auto_accept_dict = loadjson(self.auto_accept_user_file)
-        auto_accept_dict[ctx.user.id] = ctx.user.name
+        auto_accept_dict[ctx.author.id] = ctx.author.name
         writejson(auto_accept_dict, self.auto_accept_user_file)
         # Todo: make as embed
         await ctx.send("I added you to the auto accept suggestion list")
@@ -245,20 +257,14 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
-    async def get_all_suggestions(self, ctx, min_date=None, report_template: str = "basic_report.html.jinja"):
+    async def get_all_suggestions(self, ctx, report_template: str = "basic_report.html.jinja"):
         log.debug('command was triggered')
         if ctx.channel.name not in self.allowed_channels:
             return
         log.debug('correct channel')
-
-        log.debug('getting min_date')
-        min_date = datetime.strptime(min_date + '_01:01:01', "%Y-%m-%d_%H:%M:%S") if min_date is not None else datetime.utcnow() - timedelta(days=7)
-        log.debug('min_date is %s', min_date)
         log.debug('querying data')
-        query = self.data_storage_handler.get_all_suggestion_by_timeframe(min_date)
-        var_dict = {"from_date": min_date.strftime(self.std_datetime_format),
-                    "to_date": datetime.utcnow().strftime(self.std_datetime_format),
-                    "all_suggestions": query}
+        query = self.data_storage_handler.get_all_suggestion_not_discussed()
+        var_dict = {'all_suggestions': query}
         log.debug('getting template')
         template = self.jinja_env.get_template(report_template)
         log.debug('creating Tempdir')

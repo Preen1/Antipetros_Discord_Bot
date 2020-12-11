@@ -1,14 +1,9 @@
 Jinja2
-natsort
-beautifulsoup4
 checksumdir
 click
-marshmallow
 regex
 parce
-jsonpickle
 fuzzywuzzy
-fuzzysearch
 python-Levenshtein
 Pillow==8.0.0
 PyGithub
@@ -18,6 +13,5 @@ discord.py-stubs
 url-normalize
 async-property
 watchgod
-json-tricks
 weasyprint
 pdfkit

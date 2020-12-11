@@ -131,9 +131,6 @@ class {{ cog_item.name }}(commands.Cog, command_attrs={{ "{" }}{% for com_attr_n
 
 # region [Listener]
 
-    @commands.Cog.listener(name='on_ready')
-    async def extra_cog_setup(self):
-        log.info(f"{self} Cog ----> finished extra setup")
 
     {% for listener in cog_item.all_listeners %}
     {{ listener.code }}

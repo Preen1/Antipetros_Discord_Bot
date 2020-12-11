@@ -212,14 +212,16 @@ class SuggestionDataStorageSQLite:
         self.db.write(sql_phrase, arguments)
         self.db.vacuum()
 
-    def get_all_suggestion_by_timeframe(self, min_time: datetime, max_time: datetime = datetime.utcnow()):
+    def get_all_suggestion_not_discussed(self):
         log.debug('querying all suggestions by time')
-        result = self.db.query('get_suggestions_by_timeframe', (min_time, max_time), row_factory=True)
+        result = self.db.query('get_suggestions_not_discussed', row_factory=True)
         none_id = 1
         _out = []
 
         for row in result:
-            item = {'name': row['name'],
+
+            item = {'sql_id': row['id'],
+                    'name': row['name'],
                     'utc_posted_time': row['utc_posted_time'],
                     'utc_saved_time': row['utc_saved_time'],
                     'upvotes': row['upvotes'],
@@ -238,6 +240,9 @@ class SuggestionDataStorageSQLite:
             item['utc_saved_time'] = item['utc_saved_time'].split('.')[0]
             _out.append(item)
         return _out
+
+    def mark_discussed(self, sql_id):
+        self.db.write('mark_discussed', (sql_id,))
 
     def clear(self):
         BASE_CONFIG.read()

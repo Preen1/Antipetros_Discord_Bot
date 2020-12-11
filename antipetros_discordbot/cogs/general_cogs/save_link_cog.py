@@ -59,8 +59,6 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # TODO: need help figuring out how to best check bad link or how to format/normalize it
 
-# TODO: Add Method to add forbidden url words and forbidden links
-
 # TODO: check if everything is documented
 
 # endregion [TODO]
@@ -68,10 +66,8 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class SaveLink(commands.Cog, command_attrs={'hidden': True}):
     """
-    Actual Cog Class for SaveLink features.
+    Cog Class for SaveLink features.
 
-    available_commands:
-        -
     """
 # region [ClassAttributes]
 
@@ -89,7 +85,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
         self.data_storage_handler = LinkDataStorageSQLite()  # composition to make data storage modular, currently set up for an sqlite Database
 
         self.forbidden_links = set(loadjson(pathmaker(THIS_FILE_DIR, r'..\..\data\data_storage\json_data\forbidden_link_list.json')))  # read previously saved blacklist, because extra_setup method does not run when the cog is only reloaded
-        self.forbidden_url_words = set(map(lambda x: str(x).casefold(), loadjson(pathmaker(THIS_FILE_DIR, r'..\..\data\data_storage\json_data\forbidden_url_words.json'))))
+        self.forbidden_url_words_file = pathmaker(THIS_FILE_DIR, r'..\..\data\data_storage\json_data\forbidden_url_words.json')
         if self.bot.is_debug:
             self.save_commands()
         self.fresh_blacklist_loop.start()
@@ -178,6 +174,11 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Properties]
 
+
+    @property
+    def forbidden_url_words(self):
+        return set(map(lambda x: str(x).casefold(), loadjson(self.forbidden_url_words_file)))
+
     @property
     def link_channel(self):
         return self.bot.get_channel(COGS_CONFIG.getint(self.config_name, 'link_channel'))
@@ -201,6 +202,33 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 # endregion [Listener]
 
 # region [Commands]
+
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_admin_roles'))
+    async def add_forbidden_word(self, ctx, word):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        if word.casefold() in self.forbidden_url_words:
+            await ctx.send(embed=await self.bot.make_basic_embed(title='Word already in list', text=f'The word "{word}" is allready in the forbidden url words list', symbol='not_possible'))
+            return
+        _forbidden_list = loadjson(self.forbidden_url_words_file)
+        _forbidden_list.append(word)
+        writejson(_forbidden_list, self.forbidden_url_words_file)
+        await ctx.send(embed=await self.bot.make_basic_embed(title='Added Word', text=f'The Word "{word}" was added to the forbidden url word list', symbol='update'))
+
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_admin_roles'))
+    async def remove_forbidden_word(self, ctx, word):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        if word.casefold() not in self.forbidden_url_words:
+            await ctx.send(embed=await self.bot.make_basic_embed(title='Word not in list', text=f'The word "{word}" is not found in the forbidden url words list', symbol='not_possible'))
+            return
+        _forbidden_list = loadjson(self.forbidden_url_words_file)
+        _new_list = [url_words for url_words in _forbidden_list if url_words.casefold() != word.casefold()]
+
+        writejson(_new_list, self.forbidden_url_words_file)
+        await ctx.send(embed=await self.bot.make_basic_embed(title='Removed Word', text=f'The Word "{word}" was removed from the forbidden url word list', symbol='update'))
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'delete_all_allowed_roles'))
