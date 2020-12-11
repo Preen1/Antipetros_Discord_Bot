@@ -26,7 +26,7 @@ from pprint import pprint, pformat
 from antipetros_discordbot.utility.named_tuples import SUGGESTION_DATA_ITEM
 from antipetros_discordbot.utility.sqldata_storager import SuggestionDataStorageSQLite
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, writeit
-from antipetros_discordbot.data.config.config_singleton import COGS_CONFIG, BASE_CONFIG
+from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 # endregion[Imports]
 
@@ -38,7 +38,9 @@ glog.import_notification(log, __name__)
 # endregion[Logging]
 
 # region [Constants]
-
+APPDATA = SupportKeeper.get_appdata()
+BASE_CONFIG = SupportKeeper.get_config('base_config')
+COGS_CONFIG = SupportKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -60,10 +62,11 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
     suggestion_name_regex = re.compile(r"(?P<name>(?<=#).*)")
     config_name = 'save_suggestions'
-    jinja_env = Environment(loader=FileSystemLoader(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\templates\reports"))
-    css_files = {"basic_report_style": (r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\templates\reports\basic_report_style.css", "basic_report_style.css"),
-                 'exp_report_stylesheet': (r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\templates\reports\style.css", "style.css")}
-    auto_accept_user_file = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\json_data\auto_accept_suggestion_users.json"
+    jinja_env = Environment(loader=FileSystemLoader(APPDATA["reports"]))
+    css_files = {"basic_report_style": (APPDATA["basic_report_style.css"], "basic_report_style.css"),
+                 'exp_report_stylesheet': (APPDATA["style.css"], "style.css")}
+    auto_accept_user_file = APPDATA["auto_accept_suggestion_users.json"]
+
 # endregion [ClassAttributes]
 
 # region [Init]
