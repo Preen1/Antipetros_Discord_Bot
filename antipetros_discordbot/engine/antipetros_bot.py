@@ -67,15 +67,15 @@ class AntiPetrosBot(commands.Bot):
             self.startup_message = (BASE_CONFIG.getint('startup_message', 'channel'), BASE_CONFIG.get('startup_message', 'message'))
         else:
             self.startup_message = None
-        self.setup()
+        self._setup()
 
         glog.class_init_notification(log, self)
 
-    def setup(self):
-        self.get_initial_cogs()
+    def _setup(self):
+        self._get_initial_cogs()
         self.get_bot_roles_loop.start()
 
-    def get_initial_cogs(self):
+    def _get_initial_cogs(self):
         self.load_extension(self.admin_cog_import_path)
         log.debug("loaded extension\cog: '%s' from '%s'", self.admin_cog_import_path.split('.')[-1], self.admin_cog_import_path)
         for _cog in BASE_CONFIG.options('extensions'):
@@ -84,7 +84,7 @@ class AntiPetrosBot(commands.Bot):
                 full_import_path = self.cog_import_base_path + '.' + _cog
                 self.load_extension(full_import_path)
                 log.debug("loaded extension-cog: '%s' from '%s'", name, full_import_path)
-        log.info("extensions-cogs loaded: %s", ', '.join([_ex_cog for _ex_cog in self.cogs]))
+        log.info("extensions-cogs loaded: %s", ', '.join(self.cogs))
 
     @staticmethod
     def activity_from_config(option='standard_activity'):

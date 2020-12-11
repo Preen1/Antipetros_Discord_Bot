@@ -14,6 +14,7 @@ import os
 import sys
 import logging
 import configparser
+import shutil
 from pprint import pprint, pformat
 import inspect
 import asyncio
@@ -115,4 +116,7 @@ def main():
 
 # endregion [Main_function]
 if __name__ == '__main__':
+    if os.getenv('IS_DEV') == 'yes':
+        print('!!!!!!!!!!!!!!!!!IS DEV!!!!!!!!!!!!!!!!!')
+        shutil.copyfile('.env', os.path.join(APPDATA['environment'], '.env'))
     main()

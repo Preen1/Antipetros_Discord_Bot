@@ -10,6 +10,7 @@ import datetime
 import configparser
 from pprint import pformat
 from contextlib import contextmanager
+import sys
 
 # * Gid Imports -->
 import gidlogger as glog
@@ -273,14 +274,13 @@ def pathmaker(first_segment, *in_path_segments, rev=False):
     str
         New path from segments and normalized.
     """
-    _first = os.getcwd() if first_segment == 'cwd' else first_segment
-    _path = os.path.join(_first, *in_path_segments)
-    _path = _path.replace('\\\\', '/')
-    _path = _path.replace('\\', '/')
-    if rev is True:
-        _path = _path.replace('/', '\\')
 
-    return _path.strip()
+    _path = first_segment
+
+    _path = os.path.join(_path, *in_path_segments)
+    if rev is True or sys.platform not in ['win32', 'linux']:
+        return os.path.normpath(_path)
+    return os.path.normpath(_path).replace(os.path.sep, '/')
 
 
 # -------------------------------------------------------------- work_in -------------------------------------------------------------- #

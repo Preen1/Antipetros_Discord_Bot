@@ -29,7 +29,7 @@ def create_project_devmeta_env_file():
         envfile.write(f'MAIN_SCRIPT_FILE={_main_script_file}\n')
         envfile.write(f'PROJECT_NAME={PROJECT_NAME}\n')
         envfile.write(f'PROJECT_AUTHOR={PROJECT_AUTHOR}\n')
-        envfile.write('# PYTHONDEVMODE=true\n')
+        envfile.write('IS_DEV=true')
 
 
 def create_project_meta_env_file():

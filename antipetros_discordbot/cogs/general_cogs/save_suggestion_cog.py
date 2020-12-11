@@ -154,7 +154,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
             await self._new_suggestion(channel, message, payload.guild_id, reaction_user)
             if str(message.author.id) not in self.auto_accept_user_dict:
                 await message.author.send(embed=await self.bot.make_basic_embed(title='Your Suggestion was saved by the Devs!',
-                                                                                text='The devs have saved your in their Database to locate it more easily',
+                                                                                text='The devs have saved your suggestion in their Database to locate it more easily',
                                                                                 if_you_do_not_want_this=f'DM me: `@Antipetros unsave_suggestion {message.id}`',
                                                                                 if_you_want_to_see_all_data_saved_from_you='DM me: `@Antipetros request_my_data`',
                                                                                 if_you_want_to_have_all_data_saved_from_you_deleted='DM me: `@Antipetros remove_all_userdata`'),
