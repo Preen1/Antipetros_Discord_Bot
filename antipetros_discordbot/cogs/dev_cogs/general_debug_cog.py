@@ -22,7 +22,7 @@ from antipetros_discordbot.utility.enums import RequestStatus
 from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
 from antipetros_discordbot.utility.sqldata_storager import LinkDataStorageSQLite
 from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
-from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG
+from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 
 # endregion [Imports]
 
@@ -34,7 +34,9 @@ glog.import_notification(log, __name__)
 # endregion[Logging]
 
 # region [Constants]
-
+APPDATA = SupportKeeper.get_appdata()
+BASE_CONFIG = SupportKeeper.get_config('base_config')
+COGS_CONFIG = SupportKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 

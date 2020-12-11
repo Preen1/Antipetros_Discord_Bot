@@ -21,7 +21,7 @@ import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.utility.enums import WATERMARK_COMBINATIONS, WatermarkPosition
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
-from antipetros_discordbot.data.config.config_singleton import COGS_CONFIG
+from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 
 # endregion[Imports]
@@ -39,7 +39,9 @@ glog.import_notification(log, __name__)
 # endregion[Logging]
 
 # region [Constants]
-
+APPDATA = SupportKeeper.get_appdata()
+BASE_CONFIG = SupportKeeper.get_config('base_config')
+COGS_CONFIG = SupportKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 IMAGE_MANIPULATION_CONFIG_NAME = 'image_manipulation'
@@ -54,7 +56,7 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
 
     # region [ClassAttributes]
 
-    allowed_stamp_formats = set(loadjson(pathmaker(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\json_data\image_file_extensions.json")))
+    allowed_stamp_formats = set(loadjson(APPDATA["image_file_extensions.json"]))
     stamp_positions = {'top': WatermarkPosition.Top, 'bottom': WatermarkPosition.Bottom, 'left': WatermarkPosition.Left, 'right': WatermarkPosition.Right, 'center': WatermarkPosition.Center}
 
 # endregion[ClassAttributes]
@@ -63,7 +65,7 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
 
     def __init__(self, bot):
         self.bot = bot
-        self.stamp_location = pathmaker(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\images\stamps")
+        self.stamp_location = APPDATA['stamps']
         self.stamps = {}
         self.stamp_pos_functions = {WatermarkPosition.Right | WatermarkPosition.Bottom: self._to_bottom_right,
                                     WatermarkPosition.Right | WatermarkPosition.Top: self._to_top_right,
