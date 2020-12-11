@@ -14,7 +14,6 @@ import json
 import lzma
 import time
 import queue
-import logging
 import platform
 import subprocess
 from enum import Enum, Flag, auto
@@ -61,15 +60,13 @@ from fuzzywuzzy import process as fuzzprocess
 # * Gid Imports -->
 
 import gidlogger as glog
-from gidtools.gidfiles import (QuickFile, readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
-                               dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
 
 
 # * Local Imports -->
-from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG, CONFIG_DIR
+from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
 from antipetros_discordbot.utility.misc import seconds_to_pretty
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 
 # endregion[Imports]
 
@@ -92,7 +89,9 @@ glog.import_notification(log, __name__)
 # endregion[Logging]
 
 # region [Constants]
-
+APPDATA = SupportKeeper.get_appdata()
+BASE_CONFIG = SupportKeeper.get_config('base_config')
+COGS_CONFIG = SupportKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[Constants]
@@ -110,7 +109,7 @@ class Administration(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.all_configs = [BASE_CONFIG, COGS_CONFIG]
-        self.config_dir = CONFIG_DIR
+        self.config_dir = APPDATA['config']
         if self.bot.is_debug:
             self.save_commands()
         glog.class_init_notification(log, self)

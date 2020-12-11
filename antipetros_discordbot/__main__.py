@@ -26,27 +26,30 @@ from watchgod import awatch
 import gidlogger as glog
 
 # * Local Imports -->
+from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.exceptions import TokenError
 from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, CONFIG_DIR, COGS_CONFIG
+
 from antipetros_discordbot.utility.gidtools_functions import writejson
-from antipetros_discordbot.init_userdata.user_data_setup import APPDATA
+
 # endregion[Imports]
+
+# region [Constants]
+
+APPDATA = SupportKeeper.get_appdata()
+BASE_CONFIG = SupportKeeper.get_config('base_config')
+
+# endregion [Constants]
 
 # region [Logging]
 
-_log_file = glog.log_folderer(__name__)
+_log_file = glog.log_folderer(__name__, APPDATA)
 log = glog.main_logger(_log_file, BASE_CONFIG.get('logging', 'logging_level'), other_logger_names=['asyncio', 'gidsql', 'gidfiles'])
 log.info(glog.NEWRUN())
 if BASE_CONFIG.getboolean('logging', 'use_logging') is False:
     logging.disable(logging.CRITICAL)
 
 # endregion[Logging]
-
-# region [Constants]
-
-print(APPDATA)
-# endregion [Constants]
 
 
 # region [Helper_Functions]
@@ -66,7 +69,7 @@ def get_token():
         str: Token
     """
 
-    load_dotenv()
+    load_dotenv(APPDATA['.env'])
     _temp_token = os.getenv('DISCORD_TOKEN')
     if _temp_token not in [None, '', 'xxxx']:
         return _temp_token

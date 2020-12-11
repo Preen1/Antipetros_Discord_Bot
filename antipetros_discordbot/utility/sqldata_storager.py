@@ -14,18 +14,22 @@ from gidtools.gidsql.facade import GidSqliteDatabase, Fetch
 import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
-from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG
+from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.gidtools_functions import timenamemaker, limit_amount_files_absolute, pathmaker
 from antipetros_discordbot.utility.misc import sync_to_async
 
 
-DB_LOC_LINKS = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\sqlite_data\save_link_db.db"
-SCRIPT_LOC_LINKS = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\sqlite_data\sql_procedures\save_link_sql"
+APPDATA = SupportKeeper.get_appdata()
+BASE_CONFIG = SupportKeeper.get_config('base_config')
 
-DB_LOC_SUGGESTIONS = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\sqlite_data\save_suggestion.db"
-SCRIPT_LOC_SUGGESTIONS = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\sqlite_data\sql_procedures\save_suggestion_sql"
 
-ARCHIVE_LOCATION = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\archive"
+DB_LOC_LINKS = pathmaker(APPDATA['database'], 'save_link_db.db')
+SCRIPT_LOC_LINKS = APPDATA['save_suggestion_sql']
+
+DB_LOC_SUGGESTIONS = pathmaker(APPDATA['database'], "save_suggestion.db")
+SCRIPT_LOC_SUGGESTIONS = APPDATA['save_suggestion_sql']
+
+ARCHIVE_LOCATION = APPDATA['archive']
 
 
 # TODO: create regions for this file

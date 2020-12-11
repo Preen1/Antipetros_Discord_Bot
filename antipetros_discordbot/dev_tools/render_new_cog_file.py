@@ -35,7 +35,7 @@ from jinja2 import BaseLoader, Environment, FileSystemLoader
 import gidlogger as glog
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writeit, readit, readbin, writebin, appendwriteit, linereadit, writejson, loadjson, pickleit, get_pickled
 
-from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG
+from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.named_tuples import NEW_COG_ITEM, NEW_COMMAND_ITEM, NEW_LISTENER_ITEM, NEW_LOOP_ITEM
 # endregion[Imports]
 
@@ -52,8 +52,10 @@ log.info(glog.imported(__name__))
 # endregion[Logging]
 
 # region [Constants]
-
-TEMPLATE_PATH = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\templates\python"
+APPDATA = SupportKeeper.get_appdata()
+BASE_CONFIG = SupportKeeper.get_config('base_config')
+COGS_CONFIG = SupportKeeper.get_config('cogs_config')
+TEMPLATE_PATH = APPDATA['python']
 
 ENV = Environment(loader=FileSystemLoader(TEMPLATE_PATH, encoding='utf-8'))
 

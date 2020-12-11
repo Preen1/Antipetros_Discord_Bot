@@ -1,11 +1,12 @@
 from discord.ext.commands import when_mentioned
-from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG
+from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 import gidlogger as glog
 # region [Logging]
 
 log = glog.aux_logger(__name__)
 glog.import_notification(log, __name__)
 
+BASE_CONFIG = SupportKeeper.get_config('base_config')
 # endregion[Logging]
 
 

@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG
+from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.utility.misc import sync_to_async
@@ -37,6 +37,9 @@ glog.import_notification(log, __name__)
 # endregion[Logging]
 
 # region [Constants]
+
+APPDATA = SupportKeeper.get_appdata()
+BASE_CONFIG = SupportKeeper.get_config('base_config')
 
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
