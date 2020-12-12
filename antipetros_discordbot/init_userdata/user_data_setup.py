@@ -14,5 +14,5 @@ if os.path.isfile(CONSTRUCTION_INFO_FILE):
     dotenv.load_dotenv(CONSTRUCTION_INFO_FILE)
 
 if os.path.isfile(DEV_TRIGGER_FILE) is True:
-    SupportKeeper.set_dev(True, DATA_DIR, os.getenv('WORKSPACE'))
+    SupportKeeper.set_dev(True, DATA_DIR, os.getenv('WORKSPACEDIR'))
 SupportKeeper.set_archive_data(bin_archive_data)

@@ -45,7 +45,8 @@ BASE_CONFIG = SupportKeeper.get_config('base_config')
 # region [Logging]
 
 _log_file = glog.log_folderer(__name__, APPDATA)
-log = glog.main_logger(_log_file, BASE_CONFIG.get('logging', 'logging_level'), other_logger_names=['asyncio', 'gidsql', 'gidfiles'])
+log_stdout = 'both' if BASE_CONFIG.getboolean('logging', 'log_also_to_stdout') is True else 'file'
+log = glog.main_logger(_log_file, BASE_CONFIG.get('logging', 'logging_level'), other_logger_names=['asyncio', 'gidsql', 'gidfiles'], log_to=log_stdout)
 log.info(glog.NEWRUN())
 if BASE_CONFIG.getboolean('logging', 'use_logging') is False:
     logging.disable(logging.CRITICAL)
@@ -54,6 +55,19 @@ if BASE_CONFIG.getboolean('logging', 'use_logging') is False:
 
 
 # region [Helper_Functions]
+
+
+def get_intents():
+    if BASE_CONFIG.get('intents', 'convenience_setting') == 'all':
+        intents = discord.Intents.all()
+    elif BASE_CONFIG.get('intents', 'convenience_setting') == 'default':
+        intents = discord.Intents.default()
+    else:
+        intents = discord.Intents.none()
+        for sub_intent in BASE_CONFIG.options('intents'):
+            if sub_intent != "convenience_setting":
+                setattr(intents, sub_intent, BASE_CONFIG.getboolean('intents', sub_intent))
+    return intents
 
 
 def get_token():
@@ -69,8 +83,11 @@ def get_token():
     Returns:
         str: Token
     """
-
-    load_dotenv(APPDATA['.env'])
+    target = APPDATA['.env']
+    if os.getenv('IS_DEV') == 'yes':
+        log.warning('!!!!!!!!!!!!!!!!!IS DEV!!!!!!!!!!!!!!!!!')
+        target = '.env'
+    load_dotenv(target)
     _temp_token = os.getenv('DISCORD_TOKEN')
     if _temp_token not in [None, '', 'xxxx']:
         return _temp_token
@@ -95,7 +112,7 @@ def main():
     creates the bot, loads the extensions and starts the bot with the Token.
     """
 
-    ANTI_PETROS_BOT = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config())
+    ANTI_PETROS_BOT = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
 
     @ANTI_PETROS_BOT.event
     async def on_ready():
@@ -116,7 +133,5 @@ def main():
 
 # endregion [Main_function]
 if __name__ == '__main__':
-    if os.getenv('IS_DEV') == 'yes':
-        print('!!!!!!!!!!!!!!!!!IS DEV!!!!!!!!!!!!!!!!!')
-        shutil.copyfile('.env', os.path.join(APPDATA['environment'], '.env'))
+
     main()

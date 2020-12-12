@@ -67,7 +67,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
 from antipetros_discordbot.utility.misc import seconds_to_pretty
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
-
+from antipetros_discordbot.utility.data_gathering import gather_data
 # endregion[Imports]
 
 # region [TODO]
@@ -341,6 +341,12 @@ class Administration(commands.Cog):
 
     def __str__(self):
         return self.__class__.__name__
+
+    @commands.command()
+    @commands.is_owner()
+    async def write_data(self, ctx):
+        await gather_data(self.bot)
+        await ctx.send(embed=await self.bot.make_basic_embed(title='Data Collected', text='Data was gathered and written to the assigned files', symbol='save', collected_data='This command only collected fixed data like role_ids, channel_ids,...\n', reason='Data is collected and saved to a json file so to not relying on getting it at runtime, as this kind of data is unchanging', if_it_changes='then this command can just be run again'))
 
 
 def setup(bot):

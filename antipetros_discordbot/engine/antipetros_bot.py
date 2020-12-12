@@ -122,6 +122,7 @@ class AntiPetrosBot(commands.Bot):
             self.command_prefix = when_mentioned_or_roles_or(BASE_CONFIG.get('prefix', 'command_prefix'))
         else:
             self.command_prefix = BASE_CONFIG.get('prefix', 'command_prefix')
+
         log.info('Finished Refreshing Bot Roles')
 
     @get_bot_roles_loop.before_loop
@@ -129,8 +130,12 @@ class AntiPetrosBot(commands.Bot):
         await self.wait_until_ready()
 
     @property
+    def general_data(self):
+        return loadjson(APPDATA['general_data.json'])
+
+    @property
     def antistasi_guild(self):
-        return self.get_guild(BASE_CONFIG.getint('general_settings', 'antistasi_guild_id'))
+        return self.get_guild(self.antistasi_guild_id)
 
     @property
     def id(self):
@@ -227,3 +232,9 @@ class AntiPetrosBot(commands.Bot):
 
     def __str__(self):
         return self.__class__.__name__
+
+    def __getattr__(self, name):
+        _out = self.general_data.get(name, None)
+        if _out is None:
+            raise AttributeError
+        return _out

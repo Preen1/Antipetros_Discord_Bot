@@ -227,6 +227,17 @@ class GeneralDebug(commands.Cog):
             embed.add_field(name=f"__{_name.title()}:__", value=f"`{str(_value)}`", inline=False)
         await ctx.send(embed=embed)
 
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('general_debug', 'allowed_roles'))
+    async def tell_member_amount(self, ctx, role=None):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        if role is None:
+            await ctx.send(embed=await self.bot.make_basic_embed(title='Amount of Members', text='This is the amount of discord Members which is an attribute of discord', symbol="update", amount_of_members=len(self.bot.antistasi_guild.members)))
+        else:
+            _role = discord.utils.get(self.bot.antistasi_guild.roles, name=role)
+            await ctx.send(embed=await self.bot.make_basic_embed(title=f'Amount of Members with role {role}', text=f'This is the amount of discord Members with the role "{role}"', symbol="update", amount_of_members=len(_role.members)))
+
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"
 
