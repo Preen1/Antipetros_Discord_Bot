@@ -7,7 +7,7 @@ from time import time
 
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
-
+import random
 import asyncio
 # * Third Party Imports -->
 import discord
@@ -259,6 +259,7 @@ class TestPlayground(commands.Cog):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @commands.cooldown(1, 30, commands.BucketType.channel)
     async def furthermore_do_you_want_to_say_something(self, ctx):
         if ctx.channel.name not in self.allowed_channels:
             return
@@ -266,6 +267,7 @@ class TestPlayground(commands.Cog):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @commands.cooldown(1, 30, commands.BucketType.channel)
     async def big_message(self, ctx, amount: int):
         if ctx.channel.name not in self.allowed_channels:
             return
@@ -279,6 +281,7 @@ class TestPlayground(commands.Cog):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @commands.cooldown(1, 30, commands.BucketType.channel)
     async def request_server_restart(self, ctx):
         if ctx.channel.name not in self.allowed_channels:
             return
@@ -327,7 +330,24 @@ class TestPlayground(commands.Cog):
             await ctx.send('No answer received, aborting request, you can always try again')
             return
 
+    @commands.command(aliases=["tombquote"])
+    async def combquote(self, ctx, number: int = None):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        if ctx.author.id not in [699922947086745601, 576522029470056450]:
+            return
+
+        _quotes_dict = loadjson(APPDATA["combo_quotes.json"])
+        number = random.randint(1, len(_quotes_dict) + 1) if number is None else number
+        _out = _quotes_dict.get(str(number), None)
+        if _out is None:
+            return
+
+        await ctx.send(embed=await self.bot.make_basic_embed(title="ComboTombos School of Quotes", text='The Holy Book of Quotes', symbol='combo', **{'Quote Number ' + str(number): _out}))
+
+
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

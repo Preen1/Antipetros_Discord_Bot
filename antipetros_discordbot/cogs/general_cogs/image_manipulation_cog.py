@@ -286,6 +286,7 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
     @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_roles'))
     @commands.cooldown(1, 120, commands.BucketType.channel)
     async def available_stamps(self, ctx):
+        # TODO: FIX COMMAND!
         if ctx.channel.name not in self.allowed_channels:
             return
 
@@ -307,6 +308,7 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
     @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_avatar_roles'))
     @commands.cooldown(1, 60 * 5, commands.BucketType.member)
     async def member_avatar(self, ctx, target_id: int = None):
+        # TODO: FIX COMMAND!
         if ctx.channel.name not in self.allowed_channels:
             return
         if target_id is None:

@@ -331,7 +331,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
     @ commands.command(hidden=False)
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
-    @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
+    @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def save_link(self, ctx, link: str, link_name: str = None, days_to_hold: int = None):
         """
         Save a link to the DataStorage and posts it for a certain time to an storage channel.

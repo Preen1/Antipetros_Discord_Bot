@@ -102,10 +102,12 @@ class AntiPetrosBot(commands.Bot):
 
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.MaxConcurrencyReached):
-            await ctx.channel.send(f'{ctx.author.mention} Sorry,Bot is busy! Please retry in a minute')
+            await ctx.channel.send(f'{ctx.author.mention} your mother was a hamster and your father smelt of elderberries, STOP SPAMMING!', delete_after=30)
+            await ctx.message.delete()
             return
         elif isinstance(error, commands.CommandOnCooldown):
-            await ctx.channel.send(f'{ctx.author.mention} I have recently used this command and it is on cooldown still.')
+            await ctx.channel.send(f'{ctx.author.mention} your mother was a hamster and your father smelt of elderberries, STOP SPAMMING!', delete_after=30)
+            await ctx.message.delete()
         else:
             log.error('Ignoring exception in command {}:'.format(ctx.command))
             log.error(str(error), exc_info=True)
