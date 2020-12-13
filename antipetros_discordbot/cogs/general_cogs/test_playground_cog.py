@@ -330,7 +330,16 @@ class TestPlayground(commands.Cog):
             await ctx.send('No answer received, aborting request, you can always try again')
             return
 
-    @commands.command(aliases=["tombquote"])
+    async def highlight_member(self, text):
+        for name in loadjson(APPDATA['special_names.json']):
+            text = text.replace(name, f'__**{name}**__')
+        # text = text.replace('"', '`\n')
+        # if text.startswith('`\n'):
+        #     text = '`' + text.lstrip('`\n')
+        text = text.replace('"', '```\n')
+        return text
+
+    @commands.command(aliases=["tombquote", "Tombquote", "Combquote"])
     async def combquote(self, ctx, number: int = None):
         if ctx.channel.name not in self.allowed_channels:
             return
@@ -343,11 +352,22 @@ class TestPlayground(commands.Cog):
         if _out is None:
             return
 
-        await ctx.send(embed=await self.bot.make_basic_embed(title="ComboTombos School of Quotes", text='The Holy Book of Quotes', symbol='combo', **{'Quote Number ' + str(number): _out}))
+        _out = await self.highlight_member(_out)
+        file = discord.File(APPDATA['comboavatar.jpg'], 'comboavatar.jpg')
+        await ctx.send(embed=await self.bot.make_basic_embed(title="ComboTombos School of Quotes", text='The Holy Book of Quotes', symbol='combo', **{'QUOTE #' + str(number): _out}), file=file)
 
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    async def add_special_name(self, ctx, name):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        spec_names = loadjson(APPDATA['special_names.json'])
+        if name not in spec_names:
+            spec_names.append(name)
+        writejson(spec_names, APPDATA['special_names.json'])
+        await ctx.send(f'added "{name}" to special names')
 
 # region [SpecialMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"
