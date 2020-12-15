@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>638</width>
+    <width>755</width>
     <height>408</height>
    </rect>
   </property>
@@ -37,7 +37,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QListView" name="commands_listView">
+         <widget class="BaseCogPartsView" name="commands_listView">
           <property name="minimumSize">
            <size>
             <width>201</width>
@@ -65,7 +65,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QListView" name="listener_listView">
+         <widget class="BaseCogPartsView" name="listener_listView">
           <property name="minimumSize">
            <size>
             <width>202</width>
@@ -93,7 +93,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QListView" name="loops_listView">
+         <widget class="BaseCogPartsView" name="loops_listView">
           <property name="minimumSize">
            <size>
             <width>201</width>
@@ -167,13 +167,20 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>638</width>
+     <width>755</width>
      <height>21</height>
     </rect>
    </property>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>BaseCogPartsView</class>
+   <extends>QListView</extends>
+   <header>antipetros_discordbot.dev_tools.gui.views.base_view</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../../antipetros_discordbot/dev_tools/gui/create_cog_resources.qrc"/>
  </resources>

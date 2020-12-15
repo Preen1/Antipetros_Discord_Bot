@@ -26,7 +26,7 @@ from configparser import ConfigParser
 # * Third Party Imports -->
 # import pyperclip
 # from dotenv import load_dotenv
-from jinja2 import BaseLoader, Environment, FileSystemLoader
+from jinja2 import BaseLoader, Environment, FileSystemLoader, ModuleLoader
 # from natsort import natsorted
 # from fuzzywuzzy import fuzz, process
 
@@ -55,7 +55,9 @@ log.info(glog.imported(__name__))
 APPDATA = SupportKeeper.get_appdata()
 BASE_CONFIG = SupportKeeper.get_config('base_config')
 COGS_CONFIG = SupportKeeper.get_config('cogs_config')
-TEMPLATE_PATH = APPDATA['python']
+THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
+TEMPLATE_PATH = pathmaker(THIS_FILE_DIR, 'templates')
+
 
 ENV = Environment(loader=FileSystemLoader(TEMPLATE_PATH, encoding='utf-8'))
 

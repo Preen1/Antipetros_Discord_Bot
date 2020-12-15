@@ -7,7 +7,7 @@ fuzzywuzzy
 python-Levenshtein
 Pillow==8.0.0
 PyGithub
-discord
+discord.py
 discord_flags
 discord.py-stubs
 url-normalize
@@ -15,3 +15,6 @@ async-property
 watchgod
 weasyprint
 pdfkit
+gidlogger
+gidconfig
+gidappdata

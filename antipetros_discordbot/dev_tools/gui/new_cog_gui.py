@@ -26,7 +26,7 @@ from functools import wraps, lru_cache, singledispatch, total_ordering, partial
 from contextlib import contextmanager
 from collections import Counter, ChainMap, deque, namedtuple, defaultdict
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-
+from pprint import pprint, pformat
 
 # * Third Party Imports -->
 
@@ -51,20 +51,19 @@ from PyQt5.QtWidgets import (QMenu, QFrame, QLabel, QDialog, QLayout, QWidget, Q
                              QFormLayout, QGridLayout, QHBoxLayout, QHeaderView, QListWidget, QMainWindow, QMessageBox, QPushButton,
                              QSizePolicy, QSpacerItem, QToolButton, QVBoxLayout, QWizardPage, QApplication, QButtonGroup, QRadioButton,
                              QFontComboBox, QStackedWidget, QListWidgetItem, QTreeWidgetItem, QDialogButtonBox, QAbstractItemView,
-                             QCommandLinkButton, QAbstractScrollArea, QGraphicsOpacityEffect, QTreeWidgetItemIterator, QAction, QSystemTrayIcon)
+                             QCommandLinkButton, QAbstractScrollArea, QGraphicsOpacityEffect, QTreeWidgetItemIterator, QAction, QSystemTrayIcon, QInputDialog)
 
 
 # * Gid Imports -->
 
 import gidlogger as glog
-from gidtools.gidfiles import (QuickFile, readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
-                               dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
 
 
 # * Local Imports -->
 from antipetros_discordbot.dev_tools.gui.converted.Ui_create_cog_main_window import Ui_CreateCogMainWindow
-
-
+from antipetros_discordbot.dev_tools.gui.commands.commands_model import CommandsListModel
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, writeit, readit, readbin, writebin, writejson, loadjson, pickleit, get_pickled, work_in
+import antipetros_discordbot
 # endregion[Imports]
 
 # region [TODO]
@@ -93,6 +92,77 @@ class CreateNewCogMainWindow(Ui_CreateCogMainWindow, QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         super().setupUi(self)
+        self.package_basefolder = pathmaker(os.path.dirname(antipetros_discordbot.__file__))
+        self.cogs_folder = self._find_cogs_folder()
+        self.setup()
+        self.actions()
+
+    def setup(self):
+        self.category_setup()
+        self.view_setup()
+
+    def view_setup(self):
+        self.commands_listView.setModel(CommandsListModel())
+
+    def category_setup(self):
+        self.cog_category_combo.clear()
+        categories = [cat.replace('_cogs', '').title() for cat in self.cog_categories]
+        self.cog_category_combo.addItems(categories)
+        self.cog_category_combo.addItem('New Category...')
+
+    def actions(self):
+        self.add_command_pushButton.pressed.connect(self.commands_listView.model().add_command)
+        self.cog_category_combo.currentTextChanged.connect(self.add_new_category)
+
+    def add_new_category(self, text):
+        if text != 'New Category...':
+            return
+        _name, _ok = QInputDialog.getText(None, "Add New Category", "New Category Name", QLineEdit.Normal)
+        if _ok:
+            foldername = _name.replace(' ', '_').lower()
+            if not foldername.endswith('_cogs'):
+                foldername = foldername + '_cogs'
+            path = pathmaker(self.cogs_folder, foldername)
+            if os.path.isdir(path) is False:
+                os.makedirs(path)
+                writeit(pathmaker(path, '__init__.py'), '')
+        self.category_setup()
+
+    @property
+    def cog_categories(self):
+        _out = []
+        for item in os.scandir(self.cogs_folder):
+            if os.path.isdir(item.path) and not item.name.startswith('__'):
+                _out.append(item.name)
+        return _out
+
+    def existing_cogs(self, typus='raw'):
+        _out = []
+        for dirname, folderlist, filelist in os.walk(self.cogs_folder):
+            for file in filelist:
+                if file.endswith('_cog.py'):
+                    _out.append(file)
+        if typus == 'raw':
+            return _out
+
+        elif typus == 'purename':
+            return list(map(lambda x: x.replace('.py', ''), _out))
+
+        elif typus == 'classname':
+            return list(map(lambda x: x.replace('.py', '').replace('_', ' ').title().replace(' ', ''), _out))
+
+    def _find_cogs_folder(self):
+        for dirname, folderlist, filelist in os.walk(self.package_basefolder):
+            for folder in folderlist:
+                if folder == 'cogs':
+                    return pathmaker(dirname, folder)
+
+    def print_cogs(self):
+        pprint(self.existing_cogs())
+        print('##################')
+        pprint(self.existing_cogs('purename'))
+        print('##################')
+        pprint(self.existing_cogs('classname'))
 
 
 def new_cog_ui():

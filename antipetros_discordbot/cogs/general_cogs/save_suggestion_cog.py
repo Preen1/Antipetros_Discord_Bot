@@ -56,7 +56,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[TODO]
 
-class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
+class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
 
     # region [ClassAttributes]
 
@@ -75,10 +75,10 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
         self.bot = bot
         self.data_storage_handler = SuggestionDataStorageSQLite()
         if self.bot.is_debug:
-            self.save_commands()
+            self._save_commands()
         glog.class_init_notification(log, self)
 
-    def save_commands(self):
+    def _save_commands(self):
         command_json_file = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\docs\commands.json"
         command_json = loadjson(command_json_file)
         command_json[str(self)] = {'file_path': pathmaker(os.path.abspath(__file__)),
@@ -298,7 +298,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
             await ctx.send("We have no data stored from you | if you feel like this is an error please contact: " + self.notify_contact_member)
             return
             # TODO: make as embed
-        await ctx.send(f"Do you really all your suggestion stored by the dev team deleted from the Database?\n\nPossible Answers: YES, NO\nTime to answer: 30sec")
+        await ctx.send("Do you really all your suggestion stored by the dev team deleted from the Database?\n\nPossible Answers: YES, NO\nTime to answer: 30sec")
 
         def check(m):
             return m.author.name == ctx.author.name and m.channel == ctx.channel
@@ -343,7 +343,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
 # region [DataStorage]
 
-    async def add_suggestion(self, suggestion_item: SUGGESTION_DATA_ITEM, extra_data=None):
+    async def _add_suggestion(self, suggestion_item: SUGGESTION_DATA_ITEM, extra_data=None):
         if extra_data is not None:
             _path = pathmaker(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\images\suggestion_extra_data", extra_data[0])
             with open(_path, 'wb') as extra_data_file:
@@ -356,7 +356,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
             log.error(error)
             return False, suggestion_item
 
-    async def set_category(self, category, message_id):
+    async def _set_category(self, category, message_id):
         try:
             self.data_storage_handler.update_category(category, message_id)
             return True
@@ -422,7 +422,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
 
 # region [HelperMethods]
 
-    async def collect_title(self, content):
+    async def _collect_title(self, content):
         name_result = self.suggestion_name_regex.search(content)
         if name_result:
             name = name_result.group('name')
@@ -444,12 +444,12 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
         message_member = await self.bot.retrieve_member(guild_id, message.author.id)
         reaction_member = await self.bot.retrieve_member(guild_id, reaction_user.id)
         now_time = datetime.utcnow()
-        name = await self.collect_title(message.content)
+        name = await self._collect_title(message.content)
         extra_data = (message.attachments[0].filename, await message.attachments[0].read()) if len(message.attachments) != 0 else None
 
         suggestion_item = SUGGESTION_DATA_ITEM(name, message_member, reaction_member, message, now_time)
 
-        was_saved, suggestion_item = await self.add_suggestion(suggestion_item, extra_data)
+        was_saved, suggestion_item = await self._add_suggestion(suggestion_item, extra_data)
         log.info("saved new suggestion, suggestion name: '%s', suggestion author: '%s', saved by: '%s', suggestion has extra data: '%s'",
                  name,
                  message_member.name,
@@ -469,7 +469,7 @@ class SaveSuggestion(commands.Cog, command_attrs={'hidden': True}):
     async def _change_category(self, channel, message, emoji_name):
         category = self.categories.get(emoji_name)
         if category:
-            success = await self.set_category(category, message.id)
+            success = await self._set_category(category, message.id)
             if success:
                 await channel.send(embed=await self.make_changed_category_embed(message, category))
                 log.info("updated category for suggestion (id: %s) to category '%s'", message.id, category)
@@ -512,4 +512,4 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(SaveSuggestion(bot))
+    bot.add_cog(SaveSuggestionCog(bot))

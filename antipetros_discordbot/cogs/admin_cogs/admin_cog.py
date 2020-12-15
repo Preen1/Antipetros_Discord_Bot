@@ -42,21 +42,6 @@ from fuzzywuzzy import process as fuzzprocess
 # from jinja2 import BaseLoader, Environment
 # from natsort import natsorted
 # from fuzzywuzzy import fuzz, process
-
-
-# * PyQt5 Imports -->
-
-# from PyQt5.QtGui import QFont, QIcon, QBrush, QColor, QCursor, QPixmap, QStandardItem, QRegExpValidator
-# from PyQt5.QtCore import (Qt, QRect, QSize, QObject, QRegExp, QThread, QMetaObject, QCoreApplication,
-#                           QFileSystemWatcher, QPropertyAnimation, QAbstractTableModel, pyqtSlot, pyqtSignal)
-# from PyQt5.QtWidgets import (QMenu, QFrame, QLabel, QDialog, QLayout, QWidget, QWizard, QMenuBar, QSpinBox, QCheckBox, QComboBox,
-#                              QGroupBox, QLineEdit, QListView, QCompleter, QStatusBar, QTableView, QTabWidget, QDockWidget, QFileDialog,
-#                              QFormLayout, QGridLayout, QHBoxLayout, QHeaderView, QListWidget, QMainWindow, QMessageBox, QPushButton,
-#                              QSizePolicy, QSpacerItem, QToolButton, QVBoxLayout, QWizardPage, QApplication, QButtonGroup, QRadioButton,
-#                              QFontComboBox, QStackedWidget, QListWidgetItem, QTreeWidgetItem, QDialogButtonBox, QAbstractItemView,
-#                              QCommandLinkButton, QAbstractScrollArea, QGraphicsOpacityEffect, QTreeWidgetItemIterator, QAction, QSystemTrayIcon)
-
-
 # * Gid Imports -->
 
 import gidlogger as glog
@@ -71,6 +56,10 @@ from antipetros_discordbot.utility.data_gathering import gather_data
 # endregion[Imports]
 
 # region [TODO]
+
+
+# TODO: get_logs command
+# TODO: get_appdata_location command
 
 
 # endregion [TODO]
@@ -97,7 +86,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class Administration(commands.Cog):
+class AdministrationCog(commands.Cog, command_attrs={'hidden': True}):
     # region [ClassAttributes]
 
     config_name = 'admin'
@@ -348,9 +337,21 @@ class Administration(commands.Cog):
         await gather_data(self.bot)
         await ctx.send(embed=await self.bot.make_basic_embed(title='Data Collected', text='Data was gathered and written to the assigned files', symbol='save', collected_data='This command only collected fixed data like role_ids, channel_ids,...\n', reason='Data is collected and saved to a json file so to not relying on getting it at runtime, as this kind of data is unchanging', if_it_changes='then this command can just be run again'))
 
+    @commands.command()
+    @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    async def show_command_names(self, ctx):
+        if ctx.channel.name not in self.allowed_channels:
+            return
+        _out = []
+
+        for cog_name, cog_object in self.bot.cogs.items():
+            for command in cog_object.get_commands():
+                _out.append('__**' + str(command.name) + '**__' + ': ```\n' + str(command.help).split('\n')[0] + '\n```')
+        await self.bot.split_to_messages(ctx, '\n---\n'.join(_out), split_on='\n---\n')
+
 
 def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(Administration(bot))
+    bot.add_cog(AdministrationCog(bot))

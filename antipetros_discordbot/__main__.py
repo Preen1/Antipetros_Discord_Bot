@@ -46,7 +46,7 @@ BASE_CONFIG = SupportKeeper.get_config('base_config')
 
 _log_file = glog.log_folderer(__name__, APPDATA)
 log_stdout = 'both' if BASE_CONFIG.getboolean('logging', 'log_also_to_stdout') is True else 'file'
-log = glog.main_logger(_log_file, BASE_CONFIG.get('logging', 'logging_level'), other_logger_names=['asyncio', 'gidsql', 'gidfiles'], log_to=log_stdout)
+log = glog.main_logger(_log_file, BASE_CONFIG.get('logging', 'logging_level'), other_logger_names=['asyncio', 'gidsql', 'gidfiles', "gidappdata"], log_to=log_stdout)
 log.info(glog.NEWRUN())
 if BASE_CONFIG.getboolean('logging', 'use_logging') is False:
     logging.disable(logging.CRITICAL)
@@ -117,17 +117,17 @@ def main():
     @ANTI_PETROS_BOT.event
     async def on_ready():
         log.info('%s has connected to Discord!', ANTI_PETROS_BOT.user.name)
-
         channel = ANTI_PETROS_BOT.get_channel(BASE_CONFIG.getint('startup_message', 'channel'))
         if ANTI_PETROS_BOT.startup_message is not None:
             delete_time = 15 if ANTI_PETROS_BOT.is_debug is True else 60
             await ANTI_PETROS_BOT.get_channel(ANTI_PETROS_BOT.startup_message[0]).send(ANTI_PETROS_BOT.startup_message[1], delete_after=delete_time)
-        await asyncio.sleep(5)
+        await asyncio.sleep(2)
         if ANTI_PETROS_BOT.is_debug:
             await debug_function(ANTI_PETROS_BOT)
 
     if len(sys.argv) == 1 or sys.argv[1] != 'get_info_run':
         log.info('trying to log on as %s!', str(ANTI_PETROS_BOT))
+
         ANTI_PETROS_BOT.run(get_token(), bot=True, reconnect=True)
 
 

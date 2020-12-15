@@ -89,7 +89,8 @@ MEMBERS_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'members_data.json')
 async def get_member_data(bot):
     member_data = {"by_roles": {}}
     for role in await bot.antistasi_guild.fetch_roles():
-        member_data['by_roles'][role.name] = {mem.name: mem.id for mem in role.members}
+        if '@everyone' not in role.name:
+            member_data['by_roles'][role.name] = {mem.name: mem.id for mem in role.members}
     writejson(member_data, MEMBERS_DATA_OUTPUT, sort_keys=False, indent=4)
 
 

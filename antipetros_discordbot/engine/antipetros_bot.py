@@ -59,7 +59,7 @@ class AntiPetrosBot(commands.Bot):
     def __init__(self, *args, ** kwargs):
         super().__init__(*args, **kwargs)
         self.start_time = datetime.utcnow()
-        self.max_message_length = 2000
+        self.max_message_length = 1900
         self.commands_executed = 0
         self.bot_member = None
         self.all_bot_roles = []
@@ -70,12 +70,15 @@ class AntiPetrosBot(commands.Bot):
         self._setup()
 
         glog.class_init_notification(log, self)
+        if self.is_debug:
+            log.critical('!!!!!!!!!!!!!!!!! DEBUG MODE !!!!!!!!!!!!!!!!!')
 
     def _setup(self):
         self._get_initial_cogs()
         self.get_bot_roles_loop.start()
 
     def _get_initial_cogs(self):
+        load_dev = BASE_CONFIG.getboolean('general_settings', 'load_dev_cogs')
         self.load_extension(self.admin_cog_import_path)
         log.debug("loaded extension\cog: '%s' from '%s'", self.admin_cog_import_path.split('.')[-1], self.admin_cog_import_path)
         for _cog in BASE_CONFIG.options('extensions'):
@@ -84,6 +87,7 @@ class AntiPetrosBot(commands.Bot):
                 full_import_path = self.cog_import_base_path + '.' + _cog
                 self.load_extension(full_import_path)
                 log.debug("loaded extension-cog: '%s' from '%s'", name, full_import_path)
+
         log.info("extensions-cogs loaded: %s", ', '.join(self.cogs))
 
     @staticmethod
@@ -182,7 +186,7 @@ class AntiPetrosBot(commands.Bot):
         _out = ''
         chunks = message.split(split_on)
         for chunk in chunks:
-            if sum(map(len, _out)) < self.max_message_length:
+            if sum(map(len, _out)) + len(chunk + split_on) < self.max_message_length:
                 _out += chunk + split_on
             else:
                 print(len(_out))

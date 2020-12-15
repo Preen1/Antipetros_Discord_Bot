@@ -6,7 +6,6 @@ Deleted links are kept in the bots database and can always be retrieved by fuzzy
 
 Checks against a blacklist of urls and a blacklist of words, to not store malicious links.
 
-cogs_config.ini section: self.config_name
 
 """
 
@@ -66,7 +65,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion [TODO]
 
 
-class SaveLink(commands.Cog, command_attrs={'hidden': True}):
+class SaveLinkCog(commands.Cog):
     """
     Cog Class for SaveLink features.
 
@@ -100,6 +99,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 # region [Setup]
 
     def save_commands(self):
+        # Todo: refractor to standard function
         command_json_file = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\docs\commands.json"
         command_json = loadjson(command_json_file)
         command_json[str(self)] = {'file_path': pathmaker(os.path.abspath(__file__)),
@@ -176,21 +176,46 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Properties]
 
-
     @property
     def forbidden_url_words(self):
+        """
+        Lazy loads the forbidden url word json when needed.
+
+        Returns:
+            set: forbidden url word list
+        """
         return set(map(lambda x: str(x).casefold(), loadjson(self.forbidden_url_words_file)))
 
     @property
     def link_channel(self):
+        """
+        lazy loads the channel to save the links in
+
+        Returns:
+            discord.channel: channel object
+        """
         return self.bot.get_channel(COGS_CONFIG.getint(self.config_name, 'link_channel'))
 
     @property
     def allowed_channels(self):
+        """
+        Lazy loads the list of channel names where the commands in this cog are allowed
+
+
+
+        Returns:
+            set: channel name list
+        """
         return set(COGS_CONFIG.getlist(self.config_name, 'allowed_channels'))
 
     @property
     def bad_link_image(self):
+        """
+        Lazy loads the image that should be posted when someone tries to save an fobidden link.
+
+        Returns:
+            tuple: name of the image, path to the image
+        """
         path = COGS_CONFIG.get(self.config_name, 'bad_link_image_path')
         name = COGS_CONFIG.get(self.config_name, 'bad_link_image_name')
         return name, path
@@ -205,9 +230,16 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Commands]
 
+
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_admin_roles'))
-    async def add_forbidden_word(self, ctx, word):
+    async def add_forbidden_word(self, ctx, word: str):
+        """
+        adds a word to the forbidden url word list, case is unimportant
+
+        Args:
+            word (str): the word to save
+        """
         if ctx.channel.name not in self.allowed_channels:
             return
         if word.casefold() in self.forbidden_url_words:
@@ -221,6 +253,12 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_admin_roles'))
     async def remove_forbidden_word(self, ctx, word):
+        """
+        removes a word from the forbidden url word list, caseinsensitive.
+
+        Args:
+            word (str): the word to remove
+        """
         if ctx.channel.name not in self.allowed_channels:
             return
         if word.casefold() not in self.forbidden_url_words:
@@ -238,11 +276,9 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
     async def clear_all_links(self, ctx, sure=False):
         """
         Clears the datastorage (currently database) and sets it up empty again.
-        Back up the database (keeps 3 newest backups)
 
         Args:
             sure (bool, optional): skip the confirmation dialog. Defaults to False.
-
         """
         if ctx.channel.name not in self.allowed_channels:
             return
@@ -452,8 +488,6 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
         """
         Deletes an link by name (name will be fuzzy matched).
 
-        [extended_summary]
-
         Args:
             name (str): name of the link to delete
             scope (str, optional): if 'channel' it will only delete the link in the channel but keeps it in the Database, if 'full' tries to delete both in channel and in database. Defaults to 'channel'.
@@ -516,7 +550,6 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 # endregion [DataStorage]
 
 # region [Embeds]
-
 
     async def _answer_embed(self, link_item):
         """
@@ -590,7 +623,6 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
 
 # region [HelperMethods]
-
 
     async def _get_bad_link_image(self):
         """
@@ -686,6 +718,9 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
         return list(set(_out))
 
     async def _clear_links(self, ctx, answer):
+        """
+        Helper to tell the datastorage to reset.
+        """
         if answer.casefold() == 'yes':
             for link_id in self.data_storage_handler.get_all_posted_links():
                 msg = await self.link_channel.fetch_message(link_id)
@@ -701,6 +736,7 @@ class SaveLink(commands.Cog, command_attrs={'hidden': True}):
 
 # region [SpecialMethods]
 
+
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"
 
@@ -714,4 +750,4 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(SaveLink(bot))
+    bot.add_cog(SaveLinkCog(bot))

@@ -52,7 +52,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion [TODO]
 
 
-class GeneralDebug(commands.Cog):
+class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True}):
 
     config_name = 'general_debug'
 
@@ -244,15 +244,9 @@ class GeneralDebug(commands.Cog):
     def __str__(self):
         return self.__class__.__name__
 
-    # @ commands.Cog.listener()
-    # async def on_message(self, msg):
-    #     if msg.author.id == 579155972115660803:
-    #         await msg.delete()
-    #         await msg.channel.send(embed=await self.bot.make_basic_embed(title='here lies the remnants of a lesser bot', text='He messed with the best and died like the rest', symbol='warning'), delete_after=60)
-
 
 def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(GeneralDebug(bot))
+    bot.add_cog(GeneralDebugCog(bot))

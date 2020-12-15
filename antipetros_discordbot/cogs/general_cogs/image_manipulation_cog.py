@@ -52,7 +52,7 @@ IMAGE_MANIPULATION_CONFIG_NAME = 'image_manipulation'
 # TODO: Document and Docstrings
 
 
-class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
+class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True}):
 
     # region [ClassAttributes]
 
@@ -90,6 +90,7 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
                                    'commands': {(com.name + ' ' + com.signature).replace('<ctx>', '').replace('  ', ' ').strip(): com.help for com in self.get_commands()}}
         writejson(command_json, command_json_file, indent=4)
         log.debug("commands for %s saved to %s", self, command_json_file)
+
 
 # endregion[Init]
 
@@ -129,7 +130,7 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
     def avatar_stamp(self):
         if self.bot.is_debug:
             COGS_CONFIG.read()
-        return self._get_stamp_image(COGS_CONFIG.get(IMAGE_MANIPULATION_CONFIG_NAME, 'avatar_stamp')).copy()
+        return self._get_stamp_image(COGS_CONFIG.get(IMAGE_MANIPULATION_CONFIG_NAME, 'avatar_stamp'))
 
 # endregion[Properties]
 
@@ -145,7 +146,7 @@ class ImageManipulator(commands.Cog, command_attrs={'hidden': True}):
         alpha = image.split()[3]
         alpha = ImageEnhance.Brightness(alpha).enhance(self.stamp_opacity)
         image.putalpha(alpha)
-        return image
+        return image.copy()
 
     @staticmethod
     def _stamp_resize(input_image, stamp_image, factor):
@@ -351,4 +352,4 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(ImageManipulator(bot))
+    bot.add_cog(ImageManipulatorCog(bot))
