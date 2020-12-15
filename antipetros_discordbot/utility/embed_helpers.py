@@ -68,7 +68,7 @@ glog.import_notification(log, __name__)
 
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-DEFAULT_FOOTER = ""
+DEFAULT_FOOTER = "For feature suggestions and feature request, contact @Giddi"
 
 EMBED_SYMBOLS = loadjson(APPDATA["embed_symbols.json"])
 

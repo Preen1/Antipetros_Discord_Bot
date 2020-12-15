@@ -64,6 +64,7 @@ from antipetros_discordbot.dev_tools.gui.converted.Ui_create_cog_main_window imp
 from antipetros_discordbot.dev_tools.gui.commands.commands_model import CommandsListModel
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writeit, readit, readbin, writebin, writejson, loadjson, pickleit, get_pickled, work_in
 import antipetros_discordbot
+from antipetros_discordbot.dev_tools.gui.listener.listener_model import ListenerListModel
 # endregion[Imports]
 
 # region [TODO]
@@ -98,11 +99,19 @@ class CreateNewCogMainWindow(Ui_CreateCogMainWindow, QMainWindow):
         self.actions()
 
     def setup(self):
+        self.hide_disable_setup()
         self.category_setup()
         self.view_setup()
 
+    def hide_disable_setup(self):
+        self.custom_config_name_groupBox.setChecked(False)
+        self.custom_config_name_lineEdit.setHidden(True)
+        self.create_new_cog_file_pushButton.setEnabled(False)
+        self.cog_exists_label.setHidden(True)
+
     def view_setup(self):
         self.commands_listView.setModel(CommandsListModel())
+        self.listener_listView.setModel(ListenerListModel())
 
     def category_setup(self):
         self.cog_category_combo.clear()
@@ -112,7 +121,28 @@ class CreateNewCogMainWindow(Ui_CreateCogMainWindow, QMainWindow):
 
     def actions(self):
         self.add_command_pushButton.pressed.connect(self.commands_listView.model().add_command)
+        self.add_listener_pushButton.pressed.connect(self.listener_listView.model().add_listener)
         self.cog_category_combo.currentTextChanged.connect(self.add_new_category)
+        self.custom_config_name_groupBox.toggled.connect(self.show_custom_config_name_line_edit)
+        self.cog_name_lineedit.textChanged.connect(self.check_existing_name)
+
+    def check_existing_name(self, text):
+        if any(text.casefold() == item.replace('_cog', '').casefold() for item in self.existing_cogs(typus='purename')):
+            self.create_new_cog_file_pushButton.setEnabled(False)
+            self.cog_exists_label.setHidden(False)
+        elif text != '':
+            self.create_new_cog_file_pushButton.setEnabled(True)
+            self.cog_exists_label.setHidden(True)
+        else:
+            self.create_new_cog_file_pushButton.setEnabled(False)
+
+    def show_custom_config_name_line_edit(self):
+        if self.custom_config_name_groupBox.isChecked() is True:
+            self.custom_config_name_lineEdit.setHidden(False)
+            self.custom_config_name_lineEdit.setEnabled(True)
+        else:
+            self.custom_config_name_lineEdit.setEnabled(False)
+            self.custom_config_name_lineEdit.setHidden(True)
 
     def add_new_category(self, text):
         if text != 'New Category...':

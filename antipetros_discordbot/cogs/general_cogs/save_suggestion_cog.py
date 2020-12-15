@@ -28,7 +28,7 @@ from antipetros_discordbot.utility.sqldata_storager import SuggestionDataStorage
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
-from antipetros_discordbot.utility.embed_helpers import make_basic_embed, EMBED_SYMBOLS
+from antipetros_discordbot.utility.embed_helpers import make_basic_embed, EMBED_SYMBOLS, DEFAULT_FOOTER
 from antipetros_discordbot.utility.misc import save_commands
 # endregion[Imports]
 
@@ -397,6 +397,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
 
         extra_data_value = ['No attachments detected'] if suggestion_item.extra_data is None else suggestion_item.extra_data[0]
         embed.add_field(name='Attachments', value=f"`{extra_data_value}`")
+        embed.set_footer(text=DEFAULT_FOOTER)
 
         return embed
 
@@ -405,11 +406,13 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
         embed.set_thumbnail(url=EMBED_SYMBOLS.get('update', None))
         embed.add_field(name="New Category:", value=category, inline=False)
         embed.add_field(name="Suggestion:", value=message.jump_url, inline=False)
+        embed.set_footer(text=DEFAULT_FOOTER)
         return embed
 
     async def make_already_saved_embed(self):
         embed = discord.Embed(title="**This Suggestion was already saved!**", description="I did not save the Suggestion as I have it already saved", color=0xe04d7e)
         embed.set_thumbnail(url=EMBED_SYMBOLS.get('not_possible', None))
+        embed.set_footer(text=DEFAULT_FOOTER)
         return embed
 
 
