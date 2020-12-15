@@ -28,7 +28,8 @@ from antipetros_discordbot.utility.sqldata_storager import SuggestionDataStorage
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
-from antipetros_discordbot.utility.embed_helpers import make_basic_embed
+from antipetros_discordbot.utility.embed_helpers import make_basic_embed, EMBED_SYMBOLS
+from antipetros_discordbot.utility.misc import save_commands
 # endregion[Imports]
 
 # region [Logging]
@@ -76,21 +77,14 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
         self.bot = bot
         self.data_storage_handler = SuggestionDataStorageSQLite()
         if self.bot.is_debug:
-            self._save_commands()
+            save_commands(self)
         glog.class_init_notification(log, self)
 
-    def _save_commands(self):
-        command_json_file = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\docs\commands.json"
-        command_json = loadjson(command_json_file)
-        command_json[str(self)] = {'file_path': pathmaker(os.path.abspath(__file__)),
-                                   'description': __doc__,
-                                   'commands': {(com.name + ' ' + com.signature).replace('<ctx>', '').replace('  ', ' ').strip(): com.help for com in self.get_commands()}}
-        writejson(command_json, command_json_file, indent=4)
-        log.debug("commands for %s saved to %s", self, command_json_file)
 
 # endregion [Init]
 
 # region [Properties]
+
 
     @property
     def command_emojis(self):
@@ -156,10 +150,10 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
             if str(message.author.id) not in self.auto_accept_user_dict:
                 await message.author.send(embed=await make_basic_embed(title='Your Suggestion was saved by the Devs!',
                                                                        text='The devs have saved your suggestion in their Database to locate it more easily',
+                                                                       footer='If you dont want to receive this message anymore íf your suggestion is saved, DM me: `@AntiPetros auto_accept_suggestions',
                                                                        if_you_do_not_want_this=f'DM me: `@Antipetros unsave_suggestion {message.id}`',
                                                                        if_you_want_to_see_all_data_saved_from_you='DM me: `@Antipetros request_my_data`',
-                                                                       if_you_want_to_have_all_data_saved_from_you_deleted='DM me: `@Antipetros remove_all_userdata`'),
-                                          footer='If you dont want to receive this message anymore íf your suggestion is saved, DM me: `@AntiPetros auto_accept_suggestions')
+                                                                       if_you_want_to_have_all_data_saved_from_you_deleted='DM me: `@Antipetros remove_all_userdata`'),)
 
         elif emoji_name in self.categories and message.id in self.saved_messages:
             await self._change_category(channel, message, emoji_name)
@@ -394,7 +388,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
         _filtered_content = f"```\n{_filtered_content.strip()}\n```"
 
         embed = discord.Embed(title="**Suggestion was Saved!**", description="Your suggestion was saved for the Dev Team.\n\n", color=0xf2ea48)
-        embed.set_thumbnail(url=self.bot.embed_symbols.get('save', None))
+        embed.set_thumbnail(url=EMBED_SYMBOLS.get('save', None))
         embed.add_field(name="Title:", value=f"__{suggestion_item.name}__", inline=False)
         if COGS_CONFIG.getboolean(self.config_name, 'add_success_embed_verbose') is True:
             embed.add_field(name="Author:", value=f"*{suggestion_item.message_author.name}*", inline=True)
@@ -408,14 +402,14 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
 
     async def make_changed_category_embed(self, message, category):
         embed = discord.Embed(title="**Updated Suggestion Category**", description="I updated the category an Suggestion\n\n", color=0xf2a44a)
-        embed.set_thumbnail(url=self.bot.embed_symbols.get('update', None))
+        embed.set_thumbnail(url=EMBED_SYMBOLS.get('update', None))
         embed.add_field(name="New Category:", value=category, inline=False)
         embed.add_field(name="Suggestion:", value=message.jump_url, inline=False)
         return embed
 
     async def make_already_saved_embed(self):
         embed = discord.Embed(title="**This Suggestion was already saved!**", description="I did not save the Suggestion as I have it already saved", color=0xe04d7e)
-        embed.set_thumbnail(url=self.bot.embed_symbols.get('not_possible', None))
+        embed.set_thumbnail(url=EMBED_SYMBOLS.get('not_possible', None))
         return embed
 
 

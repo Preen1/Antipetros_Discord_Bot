@@ -54,6 +54,7 @@ from antipetros_discordbot.utility.misc import seconds_to_pretty
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.utility.data_gathering import gather_data
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
+from antipetros_discordbot.utility.misc import save_commands
 # endregion[Imports]
 
 # region [TODO]
@@ -101,21 +102,14 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True}):
         self.all_configs = [BASE_CONFIG, COGS_CONFIG]
         self.config_dir = APPDATA['config']
         if self.bot.is_debug:
-            self.save_commands()
+            save_commands(self)
         glog.class_init_notification(log, self)
 
-    def save_commands(self):
-        command_json_file = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\docs\commands.json"
-        command_json = loadjson(command_json_file)
-        command_json[str(self)] = {'file_path': pathmaker(os.path.abspath(__file__)),
-                                   'description': __doc__,
-                                   'commands': {(com.name + ' ' + com.signature).replace('<ctx>', '').replace('  ', ' ').strip(): com.help for com in self.get_commands()}}
-        writejson(command_json, command_json_file, indent=4)
-        log.debug("commands for %s saved to %s", self, command_json_file)
 
 # endregion[Init]
 
 # region [Properties]
+
 
     @ property
     def allowed_dm_invoker_ids(self):

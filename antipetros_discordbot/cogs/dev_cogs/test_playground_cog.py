@@ -20,6 +20,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import Bold, Cursive, CodeBlock, LineCode, UnderScore, BlockQuote
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
+from antipetros_discordbot.utility.misc import save_commands
 
 # region [Logging]
 
@@ -67,8 +68,8 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
                               "https://pbs.twimg.com/media/DSrDQVFVAAAODM1.jpg",
                               "https://memegenerator.net/img/instances/58080047/carthago-delenda-est.jpg"]
         if self.bot.is_debug:
-            self.save_commands()
-            log.debug("commands for %s saved to commands.json")
+            save_commands(self)
+
     # @property
     # def last_map_msg(self):
     #     msg_id = COGS_CONFIG.get(self.config_name, 'last_map_image_msg_id')
@@ -80,15 +81,6 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
     #         COGS_CONFIG.set(self.config_name, 'last_map_image_msg_id')
     #         return None
     #     msg = self.bot.
-
-    def save_commands(self):
-        command_json_file = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\docs\commands.json"
-        command_json = loadjson(command_json_file)
-        command_json[str(self)] = {'file_path': pathmaker(os.path.abspath(__file__)),
-                                   'description': __doc__,
-                                   'commands': {(com.name + ' ' + com.signature).replace('<ctx>', '').replace('  ', ' ').strip(): com.help for com in self.get_commands()}}
-        writejson(command_json, command_json_file, indent=4)
-        log.debug("commands for %s saved to %s", self, command_json_file)
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))

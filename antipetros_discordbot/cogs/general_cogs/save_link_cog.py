@@ -33,7 +33,8 @@ from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
 from antipetros_discordbot.utility.sqldata_storager import LinkDataStorageSQLite
 from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
-from antipetros_discordbot.utility.embed_helpers import make_basic_embed
+from antipetros_discordbot.utility.embed_helpers import make_basic_embed, EMBED_SYMBOLS
+from antipetros_discordbot.utility.misc import save_commands
 # endregion [Imports]
 
 # region [Logging]
@@ -88,7 +89,7 @@ class SaveLinkCog(commands.Cog):
         self.forbidden_links = set(loadjson(APPDATA["forbidden_link_list.json"]))  # read previously saved blacklist, because extra_setup method does not run when the cog is only reloaded
         self.forbidden_url_words_file = APPDATA['forbidden_url_words.json']
         if self.bot.is_debug:
-            self.save_commands()
+            save_commands(self)
         self.fresh_blacklist_loop.start()
         self.check_link_best_by_loop.start()
 
@@ -97,16 +98,6 @@ class SaveLinkCog(commands.Cog):
 # endregion [Init]
 
 # region [Setup]
-
-    def save_commands(self):
-        # Todo: refractor to standard function
-        command_json_file = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\docs\commands.json"
-        command_json = loadjson(command_json_file)
-        command_json[str(self)] = {'file_path': pathmaker(os.path.abspath(__file__)),
-                                   'description': __doc__,
-                                   'commands': {(com.name + ' ' + com.signature).replace('<ctx>', '').replace('  ', ' ').strip(): com.help for com in self.get_commands()}}
-        writejson(command_json, command_json_file, indent=4)
-        log.debug("commands for %s saved to %s", self, command_json_file)
 
     async def _process_raw_blocklist_content(self, raw_content):
         """
@@ -563,7 +554,7 @@ class SaveLinkCog(commands.Cog):
 
         _rel_time = link_item.delete_date_time - link_item.date_time
         _embed = discord.Embed(title="Saved Link", description="Temporary Stored Link", color=0x4fe70e)
-        _embed.set_thumbnail(url=self.bot.embed_symbols.get('link', None))
+        _embed.set_thumbnail(url=EMBED_SYMBOLS.get('link', None))
         _embed.add_field(name="from:", value=link_item.author.name, inline=True)
         _embed.add_field(name=link_item.link_name + ':', value=link_item.link, inline=False)
         _embed.add_field(name="available until:", value=link_item.delete_date_time.strftime("%Y/%m/%d, %H:%M:%S") + f" ({str(_rel_time).split(',')[0].strip()})", inline=False)
@@ -583,7 +574,7 @@ class SaveLinkCog(commands.Cog):
         """
 
         embed = discord.Embed(title="FORBIDDEN LINK", description="You tried to save a link that is either in my forbidden_link-list or contains a forbidden word.", color=0x7c0303)
-        embed.set_thumbnail(url=self.bot.embed_symbols.get('forbidden', None))
+        embed.set_thumbnail(url=EMBED_SYMBOLS.get('forbidden', None))
         embed.add_field(name="🚫 The link has NOT been saved! 🚫", value="-", inline=False)
         embed.add_field(name="⚠️ DO NOT TRY THIS AGAIN ⚠️", value="-", inline=False)
         embed.set_footer(text="! This has been Logged !")
@@ -602,7 +593,7 @@ class SaveLinkCog(commands.Cog):
         _description = ('The message has been successfully deleted and warning was posted!' if was_deleted else "I was not able to delete the message, but posted the warning")
 
         embed = discord.Embed(title='ATTEMPT AT SAVING FORBIDDEN LINK', description=_description, color=0xdf0005)
-        embed.set_thumbnail(url=self.bot.embed_symbols.get('warning', None))
+        embed.set_thumbnail(url=EMBED_SYMBOLS.get('warning', None))
         embed.add_field(name="User", value=f"__**{author.name}**__", inline=False)
         embed.add_field(name="User Display Name", value=f"*{author.display_name}*", inline=False)
         embed.add_field(name="User ID", value=f"**{author.id}**", inline=False)

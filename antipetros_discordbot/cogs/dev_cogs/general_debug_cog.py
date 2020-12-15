@@ -24,6 +24,7 @@ from antipetros_discordbot.utility.sqldata_storager import LinkDataStorageSQLite
 from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
+from antipetros_discordbot.utility.misc import save_commands
 # endregion [Imports]
 
 # region [Logging]
@@ -59,17 +60,8 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True}):
     def __init__(self, bot):
         self.bot = bot
         if self.bot.is_debug:
-            self.save_commands()
+            save_commands(self)
         glog.class_init_notification(log, self)
-
-    def save_commands(self):
-        command_json_file = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\docs\commands.json"
-        command_json = loadjson(command_json_file)
-        command_json[str(self)] = {'file_path': pathmaker(os.path.abspath(__file__)),
-                                   'description': __doc__,
-                                   'commands': {(com.name + ' ' + com.signature).replace('<ctx>', '').replace('  ', ' ').strip(): com.help for com in self.get_commands()}}
-        writejson(command_json, command_json_file, indent=4)
-        log.debug("commands for %s saved to %s", self, command_json_file)
 
     @property
     def allowed_channels(self):
