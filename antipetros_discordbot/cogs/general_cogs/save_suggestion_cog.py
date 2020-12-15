@@ -28,6 +28,7 @@ from antipetros_discordbot.utility.sqldata_storager import SuggestionDataStorage
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
+from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 # endregion[Imports]
 
 # region [Logging]
@@ -153,11 +154,11 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
         if emoji_name == self.command_emojis['save']:
             await self._new_suggestion(channel, message, payload.guild_id, reaction_user)
             if str(message.author.id) not in self.auto_accept_user_dict:
-                await message.author.send(embed=await self.bot.make_basic_embed(title='Your Suggestion was saved by the Devs!',
-                                                                                text='The devs have saved your suggestion in their Database to locate it more easily',
-                                                                                if_you_do_not_want_this=f'DM me: `@Antipetros unsave_suggestion {message.id}`',
-                                                                                if_you_want_to_see_all_data_saved_from_you='DM me: `@Antipetros request_my_data`',
-                                                                                if_you_want_to_have_all_data_saved_from_you_deleted='DM me: `@Antipetros remove_all_userdata`'),
+                await message.author.send(embed=await make_basic_embed(title='Your Suggestion was saved by the Devs!',
+                                                                       text='The devs have saved your suggestion in their Database to locate it more easily',
+                                                                       if_you_do_not_want_this=f'DM me: `@Antipetros unsave_suggestion {message.id}`',
+                                                                       if_you_want_to_see_all_data_saved_from_you='DM me: `@Antipetros request_my_data`',
+                                                                       if_you_want_to_have_all_data_saved_from_you_deleted='DM me: `@Antipetros remove_all_userdata`'),
                                           footer='If you dont want to receive this message anymore íf your suggestion is saved, DM me: `@AntiPetros auto_accept_suggestions')
 
         elif emoji_name in self.categories and message.id in self.saved_messages:
@@ -171,7 +172,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Commands]
 
-
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_admin_roles'))
     async def mark_discussed(self, ctx, *suggestion_ids: int):
@@ -181,7 +181,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
         for suggestion_id in suggestion_ids:
             self.data_storage_handler.mark_discussed(suggestion_id)
             embed_dict['message_with_id_' + str(suggestion_id)] = 'was marked as discussed'
-        await ctx.send(embed=await self.bot.make_basic_embed(title='Marked Suggestions as discussed', text='The following items were marked as discussed: ', symbol='update', ** embed_dict))
+        await ctx.send(embed=await make_basic_embed(title='Marked Suggestions as discussed', text='The following items were marked as discussed: ', symbol='update', ** embed_dict))
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
@@ -199,7 +199,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
                 msg = await self.bot.wait_for('message', check=check, timeout=30.0)
                 await self._clear_suggestions(ctx, msg.content)
             except asyncio.TimeoutError:
-                await ctx.send(embed=await self.bot.make_basic_embed(title='No answer received', text='canceling request to delete Database, nothing was deleted', symbol='cancelled'))
+                await ctx.send(embed=await make_basic_embed(title='No answer received', text='canceling request to delete Database, nothing was deleted', symbol='cancelled'))
                 await question_msg.delete()
         else:
             await self._clear_suggestions(ctx, 'yes')
@@ -222,10 +222,10 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
     async def user_delete_suggestion(self, ctx, suggestion_id: int):
         if suggestion_id not in self.saved_messages:
 
-            await ctx.send(embed=await self.bot.make_basic_embed(title=f'ID {suggestion_id} not found',
-                                                                 text='We have no message saved with this ID',
-                                                                 symbol='not_possible',
-                                                                 if_you_feel_like_this_is_an_error_please_contact=self.notify_contact_member))
+            await ctx.send(embed=await make_basic_embed(title=f'ID {suggestion_id} not found',
+                                                        text='We have no message saved with this ID',
+                                                        symbol='not_possible',
+                                                        if_you_feel_like_this_is_an_error_please_contact=self.notify_contact_member))
             return
         suggestion = self.data_storage_handler.get_suggestion_by_id(suggestion_id)
         if ctx.author.name != suggestion['author_name']:
@@ -381,6 +381,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Embeds]
 
+
     async def make_add_success_embed(self, suggestion_item: SUGGESTION_DATA_ITEM):
         _filtered_content = []
         if suggestion_item.name is not None:
@@ -422,6 +423,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
 
 # region [HelperMethods]
 
+
     async def _collect_title(self, content):
         name_result = self.suggestion_name_regex.search(content)
         if name_result:
@@ -441,8 +443,8 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
             await channel.send(embed=await self.make_already_saved_embed())
             return
 
-        message_member = await self.bot.retrieve_member(guild_id, message.author.id)
-        reaction_member = await self.bot.retrieve_member(guild_id, reaction_user.id)
+        message_member = await self.bot.retrieve_antistasi_member(message.author.id)
+        reaction_member = await self.bot.retrieve_antistasi_member(reaction_user.id)
         now_time = datetime.utcnow()
         name = await self._collect_title(message.content)
         extra_data = (message.attachments[0].filename, await message.attachments[0].read()) if len(message.attachments) != 0 else None

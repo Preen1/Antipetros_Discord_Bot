@@ -31,15 +31,15 @@ from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.exceptions import TokenError
 from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
-from antipetros_discordbot.utility.gidtools_functions import writejson
-
+from antipetros_discordbot.utility.gidtools_functions import writejson, writeit
+from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 # endregion[Imports]
 
 # region [Constants]
 
 APPDATA = SupportKeeper.get_appdata()
 BASE_CONFIG = SupportKeeper.get_config('base_config')
-
+COGS_CONFIG = SupportKeeper.get_config('cogs_config')
 # endregion [Constants]
 
 # region [Logging]

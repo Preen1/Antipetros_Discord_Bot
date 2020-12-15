@@ -22,6 +22,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.utility.misc import sync_to_async
+from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 # endregion[Imports]
 
 
@@ -53,12 +54,13 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 class AntiPetrosBot(commands.Bot):
     executor = ThreadPoolExecutor(3, thread_name_prefix='Bot_Thread')
     admin_cog_import_path = "antipetros_discordbot.cogs.admin_cogs.admin_cog"
-    embed_symbols = loadjson(APPDATA["embed_symbols.json"])
+
     cog_import_base_path = BASE_CONFIG.get('general_settings', 'cogs_location')
 
     def __init__(self, *args, ** kwargs):
         super().__init__(*args, **kwargs)
         self.start_time = datetime.utcnow()
+        self.general_data = loadjson(APPDATA['general_data.json'])
         self.max_message_length = 1900
         self.commands_executed = 0
         self.bot_member = None
@@ -136,10 +138,6 @@ class AntiPetrosBot(commands.Bot):
         await self.wait_until_ready()
 
     @property
-    def general_data(self):
-        return loadjson(APPDATA['general_data.json'])
-
-    @property
     def antistasi_guild(self):
         return self.get_guild(self.antistasi_guild_id)
 
@@ -162,11 +160,6 @@ class AntiPetrosBot(commands.Bot):
     @property
     def notify_contact_member(self):
         return BASE_CONFIG.get('blacklist', 'notify_contact_member')
-
-    @property
-    def standard_embed_color(self):
-        color_string = BASE_CONFIG.get('embeds', 'standard_embed_color')
-        return int(color_string, base=16)
 
     @property
     def std_date_time_format(self):
@@ -208,30 +201,6 @@ class AntiPetrosBot(commands.Bot):
 
     async def execute_in_thread(self, func, *args, **kwargs):
         return await self.loop.run_in_executor(self.executor, func, *args, **kwargs)
-
-    async def make_basic_embed(self, title, text=None, footer=None, symbol=None, **kwargs):
-        embed_title = str(title).title()
-        embed_text = '' if text is None else str(text)
-
-        basic_embed = Embed(title=embed_title, description=embed_text, color=self.standard_embed_color)
-        if symbol is not None:
-            basic_embed.set_thumbnail(url=self.embed_symbols.get(symbol.casefold(), None))
-        for key, value in kwargs.items():
-            field_name = key.replace('_', ' ').title()
-            if isinstance(value, tuple):
-                field_value = str(value[0])
-                field_in_line = value[1]
-            else:
-                field_value = str(value)
-                field_in_line = False
-            basic_embed.add_field(name=field_name, value=field_value, inline=field_in_line)
-        if footer is not None:
-            if isinstance(footer, tuple):
-                footer_icon_url = self.embed_symbols.get(footer[1].casefold(), None)
-                basic_embed.set_footer(text=str(footer[0]), icon_url=footer_icon_url)
-            else:
-                basic_embed.set_footer(text=str(footer))
-        return basic_embed
 
     def __repr__(self):
         return f"{self.__class__.__name__}()"

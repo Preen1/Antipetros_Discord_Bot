@@ -16,5 +16,3 @@ watchgod
 weasyprint
 pdfkit
 gidlogger
-gidconfig
-gidappdata

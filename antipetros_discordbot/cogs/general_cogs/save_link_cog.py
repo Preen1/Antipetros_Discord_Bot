@@ -33,7 +33,7 @@ from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
 from antipetros_discordbot.utility.sqldata_storager import LinkDataStorageSQLite
 from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
-
+from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 # endregion [Imports]
 
 # region [Logging]
@@ -243,12 +243,12 @@ class SaveLinkCog(commands.Cog):
         if ctx.channel.name not in self.allowed_channels:
             return
         if word.casefold() in self.forbidden_url_words:
-            await ctx.send(embed=await self.bot.make_basic_embed(title='Word already in list', text=f'The word "{word}" is allready in the forbidden url words list', symbol='not_possible'))
+            await ctx.send(embed=await make_basic_embed(title='Word already in list', text=f'The word "{word}" is allready in the forbidden url words list', symbol='not_possible'))
             return
         _forbidden_list = loadjson(self.forbidden_url_words_file)
         _forbidden_list.append(word)
         writejson(_forbidden_list, self.forbidden_url_words_file)
-        await ctx.send(embed=await self.bot.make_basic_embed(title='Added Word', text=f'The Word "{word}" was added to the forbidden url word list', symbol='update'))
+        await ctx.send(embed=await make_basic_embed(title='Added Word', text=f'The Word "{word}" was added to the forbidden url word list', symbol='update'))
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_admin_roles'))
@@ -262,13 +262,13 @@ class SaveLinkCog(commands.Cog):
         if ctx.channel.name not in self.allowed_channels:
             return
         if word.casefold() not in self.forbidden_url_words:
-            await ctx.send(embed=await self.bot.make_basic_embed(title='Word not in list', text=f'The word "{word}" is not found in the forbidden url words list', symbol='not_possible'))
+            await ctx.send(embed=await make_basic_embed(title='Word not in list', text=f'The word "{word}" is not found in the forbidden url words list', symbol='not_possible'))
             return
         _forbidden_list = loadjson(self.forbidden_url_words_file)
         _new_list = [url_words for url_words in _forbidden_list if url_words.casefold() != word.casefold()]
 
         writejson(_new_list, self.forbidden_url_words_file)
-        await ctx.send(embed=await self.bot.make_basic_embed(title='Removed Word', text=f'The Word "{word}" was removed from the forbidden url word list', symbol='update'))
+        await ctx.send(embed=await make_basic_embed(title='Removed Word', text=f'The Word "{word}" was removed from the forbidden url word list', symbol='update'))
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'delete_all_allowed_roles'))
@@ -317,10 +317,10 @@ class SaveLinkCog(commands.Cog):
         log.info("Link with Link name '%s' was requested", name)
         _name, _link = self.data_storage_handler.get_link(name)
         if _name is None:
-            await ctx.send(embed=await self.bot.make_basic_embed(title="Not Found!", text=f"I could not find a Link with the Name of '{name}', or any similar Name!", symbol='not_possible'), delete_after=60)
+            await ctx.send(embed=await make_basic_embed(title="Not Found!", text=f"I could not find a Link with the Name of '{name}', or any similar Name!", symbol='not_possible'), delete_after=60)
             log.warning("not able to find link with name '%s'", name)
             return
-        await ctx.send(embed=await self.bot.make_basic_embed(title='Retrieved link!', text='Link was successfully retrieved from storage', symbol='link', **{'available for the next': '1 Hour', _name: _link}), delete_after=60 * 60)
+        await ctx.send(embed=await make_basic_embed(title='Retrieved link!', text='Link was successfully retrieved from storage', symbol='link', **{'available for the next': '1 Hour', _name: _link}), delete_after=60 * 60)
         log.info("retrieve link '%s'", _link)
         await self.bot.did_command()
 
@@ -359,7 +359,7 @@ class SaveLinkCog(commands.Cog):
                     return
                 writeit(_path, '\n'.join(_link_list))
             else:
-                await ctx.send(embed=await self.bot.make_basic_embed(title='Unknown Format requested', text=f'unable to provide link list in format "{in_format}"'), symbol='not_possible')
+                await ctx.send(embed=await make_basic_embed(title='Unknown Format requested', text=f'unable to provide link list in format "{in_format}"'), symbol='not_possible')
                 return
             _file = discord.File(_path, _name)
             await ctx.send(file=_file)
@@ -499,11 +499,11 @@ class SaveLinkCog(commands.Cog):
         log.info("Link with Link name '%s' was requested to be deleted by '%s'", name, ctx.author.name)
         link_name, link_message_id, link_status = self.data_storage_handler.get_link_for_delete(name)
         if link_message_id is None:
-            await ctx.send(embed=await self.bot.make_basic_embed(title="Link not found", text="I cannot find a link with that name", symbol="cancelled", link_name=name))
+            await ctx.send(embed=await make_basic_embed(title="Link not found", text="I cannot find a link with that name", symbol="cancelled", link_name=name))
             log.warning("No saved link found with name: '%s'", name)
             return
         if scope == 'channel' and link_status in [1, True]:
-            await ctx.send(embed=await self.bot.make_basic_embed(title='Link was already deleted!', text='The link was already deleted from the channel some time ago', symbol="not_possible"))
+            await ctx.send(embed=await make_basic_embed(title='Link was already deleted!', text='The link was already deleted from the channel some time ago', symbol="not_possible"))
             return
         answer = {}
         if scope == 'full':
@@ -515,7 +515,7 @@ class SaveLinkCog(commands.Cog):
                 self.data_storage_handler.update_removed_status(link_message_id)
                 await message.delete()
                 answer["deleted_from_channel"] = "✅"
-        await ctx.send(embed=await self.bot.make_basic_embed(title="Deleted Link", text='Link was deleted from: ', symbol='trash', **answer))
+        await ctx.send(embed=await make_basic_embed(title="Deleted Link", text='Link was deleted from: ', symbol='trash', **answer))
         await self.bot.did_command()
 
 # endregion [Commands]
@@ -726,10 +726,10 @@ class SaveLinkCog(commands.Cog):
                 msg = await self.link_channel.fetch_message(link_id)
                 await msg.delete()
             self.data_storage_handler.clear()
-            await ctx.send(embed=await self.bot.make_basic_embed(title="Link data deleted", text="The link data storage was deleted an initialized again, it is ready for new input", symbol='trash'))
+            await ctx.send(embed=await make_basic_embed(title="Link data deleted", text="The link data storage was deleted an initialized again, it is ready for new input", symbol='trash'))
 
         elif answer.casefold() == 'no':
-            await ctx.send(embed=await self.bot.make_basic_embed(title="Aborting deletion process", text='aborting deletion process, nothing was deleted', symbol='cancelled'))
+            await ctx.send(embed=await make_basic_embed(title="Aborting deletion process", text='aborting deletion process, nothing was deleted', symbol='cancelled'))
 
 
 # endregion [HelperMethods]

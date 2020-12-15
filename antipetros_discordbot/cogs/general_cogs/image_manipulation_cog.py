@@ -23,7 +23,7 @@ from antipetros_discordbot.utility.enums import WATERMARK_COMBINATIONS, Watermar
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
-
+from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 # endregion[Imports]
 
 # region [TODO]
@@ -291,7 +291,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True}):
         if ctx.channel.name not in self.allowed_channels:
             return
 
-        await ctx.send(embed=await self.bot.make_basic_embed(title="__**Currently available Stamps are:**__", footer="These messages will be deleted in 120 seconds", symbol='photo'), delete_after=120)
+        await ctx.send(embed=await make_basic_embed(title="__**Currently available Stamps are:**__", footer="These messages will be deleted in 120 seconds", symbol='photo'), delete_after=120)
         for name, image in self.stamps.items():
             thumb_image = image.copy()
             thumb_image.thumbnail((128, 128))

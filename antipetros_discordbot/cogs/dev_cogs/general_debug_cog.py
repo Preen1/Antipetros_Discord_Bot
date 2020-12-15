@@ -23,7 +23,7 @@ from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
 from antipetros_discordbot.utility.sqldata_storager import LinkDataStorageSQLite
 from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
-
+from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 # endregion [Imports]
 
 # region [Logging]
@@ -233,10 +233,10 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True}):
         if ctx.channel.name not in self.allowed_channels:
             return
         if role is None:
-            await ctx.send(embed=await self.bot.make_basic_embed(title='Amount of Members', text='This is the amount of discord Members which is an attribute of discord', symbol="update", amount_of_members=len(self.bot.antistasi_guild.members)))
+            await ctx.send(embed=await make_basic_embed(title='Amount of Members', text='This is the amount of discord Members which is an attribute of discord', symbol="update", amount_of_members=len(self.bot.antistasi_guild.members)))
         else:
             _role = discord.utils.get(self.bot.antistasi_guild.roles, name=role)
-            await ctx.send(embed=await self.bot.make_basic_embed(title=f'Amount of Members with role {role}', text=f'This is the amount of discord Members with the role "{role}"', symbol="update", amount_of_members=len(_role.members)))
+            await ctx.send(embed=await make_basic_embed(title=f'Amount of Members with role {role}', text=f'This is the amount of discord Members with the role "{role}"', symbol="update", amount_of_members=len(_role.members)))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

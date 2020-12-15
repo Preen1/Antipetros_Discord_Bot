@@ -53,6 +53,7 @@ from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
 from antipetros_discordbot.utility.misc import seconds_to_pretty
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.utility.data_gathering import gather_data
+from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 # endregion[Imports]
 
 # region [TODO]
@@ -182,7 +183,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True}):
             return
         log.debug('shutdown command received from "%s"', ctx.author.name)
         started_at = self.bot.start_time.strftime(self.bot.std_date_time_format)
-        embed = await self.bot.make_basic_embed(title='cya!', text='AntiPetros is shutting down.', symbol='shutdown', was_online_since=started_at, commands_executed=str(self.bot.commands_executed))
+        embed = await make_basic_embed(title='cya!', text='AntiPetros is shutting down.', symbol='shutdown', was_online_since=started_at, commands_executed=str(self.bot.commands_executed))
         embed.set_image(url='https://media.discordapp.net/attachments/449481990513754114/785601325329023006/2d1ca5fea58e65277ac5c18788b21d03.gif')
         await ctx.send(embed=embed)
         await self.bot.logout()
@@ -335,7 +336,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True}):
     @commands.is_owner()
     async def write_data(self, ctx):
         await gather_data(self.bot)
-        await ctx.send(embed=await self.bot.make_basic_embed(title='Data Collected', text='Data was gathered and written to the assigned files', symbol='save', collected_data='This command only collected fixed data like role_ids, channel_ids,...\n', reason='Data is collected and saved to a json file so to not relying on getting it at runtime, as this kind of data is unchanging', if_it_changes='then this command can just be run again'))
+        await ctx.send(embed=await make_basic_embed(title='Data Collected', text='Data was gathered and written to the assigned files', symbol='save', collected_data='This command only collected fixed data like role_ids, channel_ids,...\n', reason='Data is collected and saved to a json file so to not relying on getting it at runtime, as this kind of data is unchanging', if_it_changes='then this command can just be run again'))
 
     @commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))

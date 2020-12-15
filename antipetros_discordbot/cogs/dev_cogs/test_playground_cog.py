@@ -19,6 +19,7 @@ import gidlogger as glog
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import Bold, Cursive, CodeBlock, LineCode, UnderScore, BlockQuote
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
+from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 
 # region [Logging]
 
@@ -354,7 +355,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
 
         _out = await self.highlight_member(_out)
         file = discord.File(APPDATA['comboavatar.jpg'], 'comboavatar.jpg')
-        await ctx.send(embed=await self.bot.make_basic_embed(title="ComboTombos School of Quotes", text='The Holy Book of Quotes', symbol='combo', **{'QUOTE #' + str(number): _out}), file=file)
+        await ctx.send(embed=await make_basic_embed(title="ComboTombos School of Quotes", text='The Holy Book of Quotes', symbol='combo', **{'QUOTE #' + str(number): _out}), file=file)
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
