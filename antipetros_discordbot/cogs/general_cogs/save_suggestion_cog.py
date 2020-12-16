@@ -30,6 +30,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed, EMBED_SYMBOLS, DEFAULT_FOOTER
 from antipetros_discordbot.utility.misc import save_commands
+from antipetros_discordbot.utility.checks import in_allowed_channels
 # endregion[Imports]
 
 # region [Logging]
@@ -135,6 +136,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
 
     @ commands.Cog.listener()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels')))
     async def on_raw_reaction_add(self, payload):
         channel = self.bot.get_channel(payload.channel_id)
         if channel.name not in self.allowed_channels:
@@ -168,9 +170,8 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_admin_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels')))
     async def mark_discussed(self, ctx, *suggestion_ids: int):
-        if ctx.channel.name not in self.allowed_channels:
-            return
         embed_dict = {}
         for suggestion_id in suggestion_ids:
             self.data_storage_handler.mark_discussed(suggestion_id)
@@ -179,9 +180,8 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels')))
     async def clear_all_suggestions(self, ctx, sure=False):
-        if ctx.channel.name not in self.allowed_channels:
-            return
         if sure is False:
             question_msg = await ctx.send("Do you really want to delete all saved suggestions?\n\nANSWER **YES** in the next __30 SECONDS__")
             user = ctx.author
@@ -254,10 +254,9 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels')))
     async def get_all_suggestions(self, ctx, report_template: str = "basic_report.html.jinja"):
         log.debug('command was triggered')
-        if ctx.channel.name not in self.allowed_channels:
-            return
         log.debug('correct channel')
         log.debug('querying data')
         query = self.data_storage_handler.get_all_suggestion_not_discussed()

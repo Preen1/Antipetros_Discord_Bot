@@ -25,6 +25,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.misc import save_commands
+from antipetros_discordbot.utility.checks import in_allowed_channels
 # endregion[Imports]
 
 # region [TODO]
@@ -236,6 +237,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True}):
 
     @commands.command(name='antistasify')
     @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels')))
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def stamp_image(self, ctx, stamp='ASLOGO1', first_pos='bottom', second_pos='right', factor: float = None):
         async with ctx.channel.typing():
@@ -278,6 +280,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True}):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels')))
     @commands.cooldown(1, 120, commands.BucketType.channel)
     async def available_stamps(self, ctx):
         # TODO: FIX COMMAND!
@@ -300,6 +303,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True}):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_avatar_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels')))
     @commands.cooldown(1, 60 * 5, commands.BucketType.member)
     async def member_avatar(self, ctx, target_id: int = None):
         # TODO: FIX COMMAND!

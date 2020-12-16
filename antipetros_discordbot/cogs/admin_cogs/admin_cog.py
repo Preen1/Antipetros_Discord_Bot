@@ -55,6 +55,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.utility.data_gathering import gather_data
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.misc import save_commands
+from antipetros_discordbot.utility.checks import in_allowed_channels
 # endregion[Imports]
 
 # region [TODO]
@@ -146,9 +147,9 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True}):
 
     @ commands.command(name="reload_all")
     @ commands.has_any_role(*COGS_CONFIG.getlist('admin', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
     async def reload_all_ext(self, ctx):
-        if ctx.channel.name not in self.allowed_channels:
-            return
+
         _extensions_list = []
         BASE_CONFIG.read()
         COGS_CONFIG.read()
@@ -172,9 +173,9 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True}):
 
     @ commands.command(name='die', aliases=['go_away', 'turn_of', 'shutdown', 'exit', 'close'])
     @ commands.has_any_role(*COGS_CONFIG.getlist('admin', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
     async def shutdown(self, ctx):
-        if ctx.channel.name not in self.allowed_channels:
-            return
+
         log.debug('shutdown command received from "%s"', ctx.author.name)
         started_at = self.bot.start_time.strftime(self.bot.std_date_time_format)
         embed = await make_basic_embed(title='cya!', text='AntiPetros is shutting down.', symbol='shutdown', was_online_since=started_at, commands_executed=str(self.bot.commands_executed))
@@ -221,8 +222,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True}):
     @ commands.command(name='overwrite_config')
     @ commands.dm_only()
     async def overwrite_config_from_file(self, ctx, config_name):
-        if ctx.author.id not in self.allowed_dm_invoker_ids:
-            return
+
         if len(ctx.message.attachments) > 1:
             # TODO: make as embed
             await ctx.send('please only send a single file with the command')
@@ -241,9 +241,9 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True}):
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
     async def add_to_blacklist(self, ctx, user_id: int):
-        if ctx.channel.name not in self.allowed_channels:
-            return
+
         user = await self.bot.fetch_user(user_id)
         if user is None:
             # TODO: make as embed
@@ -268,9 +268,9 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True}):
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
     async def remove_from_blacklist(self, ctx, user_id: int):
-        if ctx.channel.name not in self.allowed_channels:
-            return
+
         user = await self.bot.fetch_user(user_id)
         if user is None:
             # TODO: make as embed
@@ -300,9 +300,9 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True}):
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
     async def tell_uptime(self, ctx):
-        if ctx.channel.name not in self.allowed_channels:
-            return
+
         now_time = datetime.utcnow()
         delta_time = now_time - self.bot.start_time
         seconds = round(delta_time.total_seconds())
@@ -312,9 +312,9 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True}):
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
     async def delete_msg(self, ctx, msg_id: int):
-        if ctx.channel.name not in self.allowed_channels:
-            return
+
         channel = ctx.channel
         message = await channel.fetch_message(msg_id)
         await message.delete()
@@ -328,15 +328,16 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True}):
 
     @commands.command()
     @commands.is_owner()
+    @in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
     async def write_data(self, ctx):
         await gather_data(self.bot)
         await ctx.send(embed=await make_basic_embed(title='Data Collected', text='Data was gathered and written to the assigned files', symbol='save', collected_data='This command only collected fixed data like role_ids, channel_ids,...\n', reason='Data is collected and saved to a json file so to not relying on getting it at runtime, as this kind of data is unchanging', if_it_changes='then this command can just be run again'))
 
     @commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
     async def show_command_names(self, ctx):
-        if ctx.channel.name not in self.allowed_channels:
-            return
+
         _out = []
 
         for cog_name, cog_object in self.bot.cogs.items():

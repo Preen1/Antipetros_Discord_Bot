@@ -35,6 +35,7 @@ from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, 
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed, EMBED_SYMBOLS
 from antipetros_discordbot.utility.misc import save_commands
+from antipetros_discordbot.utility.checks import in_allowed_channels
 # endregion [Imports]
 
 # region [Logging]
@@ -224,6 +225,7 @@ class SaveLinkCog(commands.Cog):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_admin_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
     async def add_forbidden_word(self, ctx, word: str):
         """
         adds a word to the forbidden url word list, case is unimportant
@@ -231,8 +233,6 @@ class SaveLinkCog(commands.Cog):
         Args:
             word (str): the word to save
         """
-        if ctx.channel.name not in self.allowed_channels:
-            return
         if word.casefold() in self.forbidden_url_words:
             await ctx.send(embed=await make_basic_embed(title='Word already in list', text=f'The word "{word}" is allready in the forbidden url words list', symbol='not_possible'))
             return
@@ -243,6 +243,7 @@ class SaveLinkCog(commands.Cog):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_admin_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
     async def remove_forbidden_word(self, ctx, word):
         """
         removes a word from the forbidden url word list, caseinsensitive.
@@ -250,8 +251,6 @@ class SaveLinkCog(commands.Cog):
         Args:
             word (str): the word to remove
         """
-        if ctx.channel.name not in self.allowed_channels:
-            return
         if word.casefold() not in self.forbidden_url_words:
             await ctx.send(embed=await make_basic_embed(title='Word not in list', text=f'The word "{word}" is not found in the forbidden url words list', symbol='not_possible'))
             return
@@ -263,6 +262,7 @@ class SaveLinkCog(commands.Cog):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'delete_all_allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def clear_all_links(self, ctx, sure=False):
         """
@@ -271,8 +271,6 @@ class SaveLinkCog(commands.Cog):
         Args:
             sure (bool, optional): skip the confirmation dialog. Defaults to False.
         """
-        if ctx.channel.name not in self.allowed_channels:
-            return
         if sure is False:
             # TODO: make as embed
             await ctx.send("Do you really want to delete all saved links?\n\nANSWER **YES** in the next __30 SECONDS__")
@@ -293,6 +291,7 @@ class SaveLinkCog(commands.Cog):
 
     @commands.command(hidden=False)
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def get_link(self, ctx, name):
         """
@@ -302,9 +301,6 @@ class SaveLinkCog(commands.Cog):
             name (str): link name
         """
         log.debug("command was triggered in '%s', by '%s'", ctx.channel.name, ctx.author.name)
-        if ctx.channel.name not in self.allowed_channels:
-            log.debug("channel not is 'allowed channel'")
-            return
         log.info("Link with Link name '%s' was requested", name)
         _name, _link = self.data_storage_handler.get_link(name)
         if _name is None:
@@ -317,6 +313,7 @@ class SaveLinkCog(commands.Cog):
 
     @ commands.command(hidden=False)
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def get_all_links(self, ctx, in_format='txt'):
         """
@@ -326,9 +323,6 @@ class SaveLinkCog(commands.Cog):
             in_format (str, optional): output format, currently possible: 'json', 'txt'. Defaults to 'txt'.
         """
         log.debug("command was triggered in %s", ctx.channel.name)
-        if ctx.channel.name not in self.allowed_channels:
-            log.debug("channel not is 'allowed channel'")
-            return
         with TemporaryDirectory() as tempdir:
             if in_format == 'json':
                 _link_dict = self.data_storage_handler.get_all_links('json')
@@ -358,6 +352,7 @@ class SaveLinkCog(commands.Cog):
 
     @ commands.command(hidden=False)
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def save_link(self, ctx, link: str, link_name: str = None, days_to_hold: int = None):
         """
@@ -370,9 +365,6 @@ class SaveLinkCog(commands.Cog):
         """
         # TODO: refractor that monster of an function
         log.debug("command was triggered in %s", ctx.channel.name)
-        if ctx.channel.name not in self.allowed_channels:
-            log.debug("channel not is 'allowed channel'")
-            return
 
         # check if it is a forbidden link, before computing all that expansive shit
         to_check_link = await self._make_check_link(link)
@@ -450,6 +442,7 @@ class SaveLinkCog(commands.Cog):
 
     @ commands.command(hidden=False)
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def get_forbidden_list(self, ctx, file_format='json'):
         """
@@ -459,9 +452,6 @@ class SaveLinkCog(commands.Cog):
             file_format (str, optional): format the list file should have(currently possible: 'json'). Defaults to 'json'.
         """
         log.debug("command was triggered in %s", ctx.channel.name)
-        if ctx.channel.name not in self.allowed_channels:
-            log.debug("command called from outside 'allowed channels', channel: '%s'", ctx.channel.name)
-            return
         if file_format == 'json':
             with TemporaryDirectory() as tempdir:
                 _name = 'forbidden_links.json'
@@ -474,6 +464,7 @@ class SaveLinkCog(commands.Cog):
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def delete_link(self, ctx, name, scope='channel'):
         """
@@ -484,9 +475,6 @@ class SaveLinkCog(commands.Cog):
             scope (str, optional): if 'channel' it will only delete the link in the channel but keeps it in the Database, if 'full' tries to delete both in channel and in database. Defaults to 'channel'.
         """
         log.debug("command was triggered in %s", ctx.channel.name)
-        if ctx.channel.name not in self.allowed_channels:
-            log.debug("command called from outside 'allowed channels', channel: '%s'", ctx.channel.name)
-            return
         log.info("Link with Link name '%s' was requested to be deleted by '%s'", name, ctx.author.name)
         link_name, link_message_id, link_status = self.data_storage_handler.get_link_for_delete(name)
         if link_message_id is None:

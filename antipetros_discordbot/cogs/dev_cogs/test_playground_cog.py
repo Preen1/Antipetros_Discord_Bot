@@ -21,6 +21,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_help
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.misc import save_commands
+from antipetros_discordbot.utility.checks import in_allowed_channels
 
 # region [Logging]
 
@@ -84,35 +85,37 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     async def embed_experiment(self, ctx):
-        if ctx.channel.name in self.allowed_channels:
-            embed = discord.Embed(title='this is a test embed'.title(), description=f'it is posted in {ctx.channel.name}')
-            embed.add_field(name='From', value=ctx.author.name)
-            embed.set_footer(text='destroy all humans'.upper())
-            await ctx.send(embed=embed)
+
+        embed = discord.Embed(title='this is a test embed'.title(), description=f'it is posted in {ctx.channel.name}')
+        embed.add_field(name='From', value=ctx.author.name)
+        embed.set_footer(text='destroy all humans'.upper())
+        await ctx.send(embed=embed)
 
     @commands.command(name='changesettings')
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     async def change_setting_to(self, ctx, config, section, option, value):
 
-        if ctx.channel.name in self.allowed_channels:
-            if config.casefold() in ['base_config', 'cogs_config']:
-                if config.casefold() == 'base_config':
-                    _config = BASE_CONFIG
-                elif config.casefold() == 'cogs_config':
-                    _config = COGS_CONFIG
+        if config.casefold() in ['base_config', 'cogs_config']:
+            if config.casefold() == 'base_config':
+                _config = BASE_CONFIG
+            elif config.casefold() == 'cogs_config':
+                _config = COGS_CONFIG
 
-                if section in _config.sections():
-                    _config.set(section, option, value)
-                    _config.save()
-                    await ctx.send(f"change the setting '{option}' in section '{section}' to '{value}'")
-                else:
-                    await ctx.send('no such section in the specified config')
+            if section in _config.sections():
+                _config.set(section, option, value)
+                _config.save()
+                await ctx.send(f"change the setting '{option}' in section '{section}' to '{value}'")
             else:
-                await ctx.send('config you specified does not exist!')
+                await ctx.send('no such section in the specified config')
+        else:
+            await ctx.send('config you specified does not exist!')
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist('test_playground', 'allowed_channels')))
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def roll(self, ctx, sides: int = 6, amount: int = 1):
         log.info(ctx.message.raw_role_mentions)
@@ -153,20 +156,20 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def map_changed(self, ctx, marker, color):
-        if ctx.channel.name in self.allowed_channels:
 
-            with BytesIO() as image_binary:
+        with BytesIO() as image_binary:
 
-                self.base_map_image, image_binary = await self.bot.execute_in_thread(self.map_image_handling, self.base_map_image, marker, color, image_binary)
+            self.base_map_image, image_binary = await self.bot.execute_in_thread(self.map_image_handling, self.base_map_image, marker, color, image_binary)
 
-                if self.old_map_message is not None:
-                    await self.old_map_message.delete()
-                delete_time = 30 if self.bot.is_debug is True else None
-                self.old_map_message = await ctx.send(file=discord.File(fp=image_binary, filename="map.png"), delete_after=delete_time)
-            self.bot.commands_executed += 1
-            log.debug("finished 'map_changed' command")
+            if self.old_map_message is not None:
+                await self.old_map_message.delete()
+            delete_time = 30 if self.bot.is_debug is True else None
+            self.old_map_message = await ctx.send(file=discord.File(fp=image_binary, filename="map.png"), delete_after=delete_time)
+        self.bot.commands_executed += 1
+        log.debug("finished 'map_changed' command")
 
     # @commands.command(name='FAQ_you')
     # async def get_faq_by_number(self, ctx, faq_number: int):
@@ -198,9 +201,8 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     async def check_md_helper(self, ctx, *, text):
-        if ctx.channel.name not in self.allowed_channels:
-            return
 
         _out = []
         _out.append(f'bold: {Bold(text)}')
@@ -218,9 +220,9 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     async def check_md_helper_specific(self, ctx, typus, *, text):
-        if ctx.channel.name not in self.allowed_channels:
-            return
+
         typus = typus.casefold()
         if typus == 'bold':
             await ctx.send(f'bold: {Bold(text)}')
@@ -252,18 +254,18 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def furthermore_do_you_want_to_say_something(self, ctx):
-        if ctx.channel.name not in self.allowed_channels:
-            return
+
         await ctx.send(random.choice(self.carthage_list))
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def big_message(self, ctx, amount: int):
-        if ctx.channel.name not in self.allowed_channels:
-            return
+
         content = []
         for _ in range(amount // 2):
             content.append(random.randint(0, 9))
@@ -274,10 +276,10 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def request_server_restart(self, ctx):
-        if ctx.channel.name not in self.allowed_channels:
-            return
+
         if ctx.prefix != "<@&752957930902651062> ":
             return
         roles = await self.bot.antistasi_guild.fetch_roles()
@@ -333,9 +335,9 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
         return text
 
     @commands.command(aliases=["tombquote", "Tombquote", "Combquote"])
+    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     async def combquote(self, ctx, number: int = None):
-        if ctx.channel.name not in self.allowed_channels:
-            return
+
         if ctx.author.id not in [699922947086745601, 576522029470056450]:
             return
 
@@ -351,9 +353,9 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     async def add_special_name(self, ctx, name):
-        if ctx.channel.name not in self.allowed_channels:
-            return
+
         spec_names = loadjson(APPDATA['special_names.json'])
         if name not in spec_names:
             spec_names.append(name)
