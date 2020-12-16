@@ -612,3 +612,4 @@ antipetros_discordbot/data/data_storage/sqlite_data/save_db.db
 quick_test.txt
 **/data_storage/images/
 oauth2_google_credentials.json
+/antipetros_discordbot/init_userdata/data_pack/misc/token.pickle
