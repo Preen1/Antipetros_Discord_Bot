@@ -92,39 +92,30 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True}):
 
     @property
     def allowed_channels(self):
-        if self.bot.is_debug:
-            COGS_CONFIG.read()
+
         return set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels'))
 
     @property
     def target_stamp_fraction(self):
-        if self.bot.is_debug:
-            COGS_CONFIG.read()
+
         return COGS_CONFIG.getfloat(IMAGE_MANIPULATION_CONFIG_NAME, 'stamp_fraction')
 
     @property
     def stamp_margin(self):
-        if self.bot.is_debug:
-            COGS_CONFIG.read()
+
         return COGS_CONFIG.getint(IMAGE_MANIPULATION_CONFIG_NAME, 'stamps_margin')
 
     @property
     def stamp_opacity(self):
-        if self.bot.is_debug:
-            COGS_CONFIG.read()
         return COGS_CONFIG.getfloat(IMAGE_MANIPULATION_CONFIG_NAME, 'stamp_opacity')
 
     @property
     def avatar_stamp_fraction(self):
-        if self.bot.is_debug:
-            COGS_CONFIG.read()
         return COGS_CONFIG.getfloat(IMAGE_MANIPULATION_CONFIG_NAME, 'avatar_stamp_fraction')
 
     @property
     def avatar_stamp(self):
-        if self.bot.is_debug:
-            COGS_CONFIG.read()
-        return self._get_stamp_image(COGS_CONFIG.get(IMAGE_MANIPULATION_CONFIG_NAME, 'avatar_stamp'))
+        return self._get_stamp_image(COGS_CONFIG.get(IMAGE_MANIPULATION_CONFIG_NAME, 'avatar_stamp').upper())
 
 # endregion[Properties]
 
@@ -283,13 +274,10 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True}):
     @in_allowed_channels(set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels')))
     @commands.cooldown(1, 120, commands.BucketType.channel)
     async def available_stamps(self, ctx):
-        # TODO: FIX COMMAND!
-        if ctx.channel.name not in self.allowed_channels:
-            return
-
         await ctx.send(embed=await make_basic_embed(title="__**Currently available Stamps are:**__", footer="These messages will be deleted in 120 seconds", symbol='photo'), delete_after=120)
-        for name, image in self.stamps.items():
-            thumb_image = image.copy()
+        for name, image_path in self.stamps.items():
+
+            thumb_image = Image.open(image_path)
             thumb_image.thumbnail((128, 128))
             with BytesIO() as image_binary:
                 thumb_image.save(image_binary, 'PNG', optimize=True)
@@ -306,9 +294,6 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True}):
     @in_allowed_channels(set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels')))
     @commands.cooldown(1, 60 * 5, commands.BucketType.member)
     async def member_avatar(self, ctx, target_id: int = None):
-        # TODO: FIX COMMAND!
-        if ctx.channel.name not in self.allowed_channels:
-            return
         if target_id is None:
             avatar_image = await self.get_avatar_from_user(ctx.author)
         else:

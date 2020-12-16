@@ -106,17 +106,17 @@ class AntiPetrosBot(commands.Bot):
 
         return discord.Activity(name=text, type=activity_type)
 
-    async def on_command_error(self, ctx, error):
-        if isinstance(error, commands.MaxConcurrencyReached):
-            await ctx.channel.send(f'{ctx.author.mention} your mother was a hamster and your father smelt of elderberries, STOP SPAMMING!', delete_after=30)
-            await ctx.message.delete()
-            return
-        elif isinstance(error, commands.CommandOnCooldown):
-            await ctx.channel.send(f'{ctx.author.mention} your mother was a hamster and your father smelt of elderberries, STOP SPAMMING!', delete_after=30)
-            await ctx.message.delete()
-        else:
-            log.error('Ignoring exception in command {}:'.format(ctx.command))
-            log.error(str(error), exc_info=True)
+    # async def on_command_error(self, ctx, error):
+    #     if isinstance(error, commands.MaxConcurrencyReached):
+    #         await ctx.channel.send(f'{ctx.author.mention} your mother was a hamster and your father smelt of elderberries, STOP SPAMMING!', delete_after=30)
+    #         await ctx.message.delete()
+    #         return
+    #     elif isinstance(error, commands.CommandOnCooldown):
+    #         await ctx.channel.send(f'{ctx.author.mention} your mother was a hamster and your father smelt of elderberries, STOP SPAMMING!', delete_after=30)
+    #         await ctx.message.delete()
+    #     else:
+    #         log.error('Ignoring exception in command {}:'.format(ctx.command))
+    #         log.error(str(error), exc_info=True)
 
     @tasks.loop(minutes=30, reconnect=True)
     async def get_bot_roles_loop(self):
