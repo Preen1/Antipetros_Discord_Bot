@@ -83,6 +83,7 @@ ROLE_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'role_data.json')
 CHANNEL_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'channel_data.json')
 GENERAL_DATA_OUTPUT = APPDATA['general_data.json']
 MEMBERS_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'members_data.json')
+ROLE_CHANNEL_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'role_channel_data.json')
 # endregion[Constants]
 
 
@@ -133,8 +134,23 @@ async def get_channel_data(bot):
     writejson(channel_dict, CHANNEL_DATA_OUTPUT, indent=4)
 
 
+async def get_channel_role_data(bot):
+    role_dict = {}
+    for role in await bot.antistasi_guild.fetch_roles():
+        if '@everyone' not in role.name:
+            if role.name not in role_dict:
+                role_dict[role.name] = {}
+            for channel in bot.antistasi_guild.channels:
+                try:
+                    role_dict[role.name][channel.name] = {perm[0]: perm[1] for perm in channel.permissions_for(role.members[0])}
+                except IndexError:
+                    log.error(str([member.name for member in role.members]))
+    writejson(role_dict, ROLE_CHANNEL_DATA_OUTPUT, sort_keys=False, indent=4)
+
+
 async def gather_data(bot):
     await get_general_data(bot)
     await get_channel_data(bot)
     await get_role_data(bot)
     await get_member_data(bot)
+    await get_channel_role_data(bot)
