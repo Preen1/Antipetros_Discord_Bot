@@ -67,7 +67,8 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
     config_name = 'save_suggestions'
     jinja_env = Environment(loader=FileSystemLoader(APPDATA["reports"]))
     css_files = {"basic_report_style": (APPDATA["basic_report_style.css"], "basic_report_style.css"),
-                 'exp_report_stylesheet': (APPDATA["style.css"], "style.css")}
+                 'exp_report_stylesheet': (APPDATA["style.css"], "style.css"),
+                 'exp_report_stylesheet_2': (APPDATA['experiment_css_1.css'], 'experiment_css_1.css')}
     auto_accept_user_file = APPDATA["auto_accept_suggestion_users.json"]
 
 # endregion [ClassAttributes]
@@ -271,7 +272,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
             writeit(html_path, await self.bot.execute_in_thread(template.render, var_dict))
 
             log.debug('copying stylesheet')
-            shutil.copyfile(self.css_files.get('exp_report_stylesheet')[0], pathmaker(tempfold, self.css_files.get('exp_report_stylesheet')[1]))
+            shutil.copyfile(self.css_files.get('exp_report_stylesheet_2')[0], pathmaker(tempfold, self.css_files.get('exp_report_stylesheet_2')[1]))
             log.debug('transforming html to pdf')
 
             weasy_html = HTML(filename=html_path)

@@ -65,6 +65,10 @@ from antipetros_discordbot.dev_tools.gui.commands.commands_model import Commands
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writeit, readit, readbin, writebin, writejson, loadjson, pickleit, get_pickled, work_in
 import antipetros_discordbot
 from antipetros_discordbot.dev_tools.gui.listener.listener_model import ListenerListModel
+from antipetros_discordbot.dev_tools.gui.loops.new_loop_dialog import AddLoopDialog
+from antipetros_discordbot.dev_tools.gui.loops.loops_model import LoopsListModel
+from antipetros_discordbot.utility.named_tuples import NEW_COG_ITEM
+from antipetros_discordbot.dev_tools.render_new_cog_file import create_cog_file
 # endregion[Imports]
 
 # region [TODO]
@@ -86,13 +90,16 @@ log.info(glog.imported(__name__))
 
 # region [Constants]
 
+COGS_FOLDER = pathmaker(os.getenv('BASE_FOLDER'), 'cogs')
 
 # endregion[Constants]
 
+
 class CreateNewCogMainWindow(Ui_CreateCogMainWindow, QMainWindow):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, app, *args, **kwargs):
         super().__init__(*args, **kwargs)
         super().setupUi(self)
+        self.app = app
         self.package_basefolder = pathmaker(os.path.dirname(antipetros_discordbot.__file__))
         self.cogs_folder = self._find_cogs_folder()
         self.setup()
@@ -112,6 +119,7 @@ class CreateNewCogMainWindow(Ui_CreateCogMainWindow, QMainWindow):
     def view_setup(self):
         self.commands_listView.setModel(CommandsListModel())
         self.listener_listView.setModel(ListenerListModel())
+        self.loops_listView.setModel(LoopsListModel())
 
     def category_setup(self):
         self.cog_category_combo.clear()
@@ -122,9 +130,11 @@ class CreateNewCogMainWindow(Ui_CreateCogMainWindow, QMainWindow):
     def actions(self):
         self.add_command_pushButton.pressed.connect(self.commands_listView.model().add_command)
         self.add_listener_pushButton.pressed.connect(self.listener_listView.model().add_listener)
+        self.add_loop_pushButton.pressed.connect(self.open_add_loop_dialog)
         self.cog_category_combo.currentTextChanged.connect(self.add_new_category)
         self.custom_config_name_groupBox.toggled.connect(self.show_custom_config_name_line_edit)
         self.cog_name_lineedit.textChanged.connect(self.check_existing_name)
+        self.create_new_cog_file_pushButton.pressed.connect(self.create_cog)
 
     def check_existing_name(self, text):
         if any(text.casefold() == item.replace('_cog', '').casefold() for item in self.existing_cogs(typus='purename')):
@@ -143,6 +153,11 @@ class CreateNewCogMainWindow(Ui_CreateCogMainWindow, QMainWindow):
         else:
             self.custom_config_name_lineEdit.setEnabled(False)
             self.custom_config_name_lineEdit.setHidden(True)
+
+    def open_add_loop_dialog(self):
+        dialog = AddLoopDialog(self.loops_listView.model().items)
+        dialog.dialog_accepted.connect(self.loops_listView.model().add_loop)
+        dialog.exec()
 
     def add_new_category(self, text):
         if text != 'New Category...':
@@ -194,11 +209,34 @@ class CreateNewCogMainWindow(Ui_CreateCogMainWindow, QMainWindow):
         print('##################')
         pprint(self.existing_cogs('classname'))
 
+    def get_all_com_attr(self):
+        _out = {}
+        if self.comattr_hidden_checkBox.isChecked():
+            _out = [('hidden', True)]
+        return _out
+
+    def create_cog(self):
+        name = self.cog_name_lineedit.text().title().replace('_', '')
+        absoute_path = pathmaker(COGS_FOLDER, self.cog_category_combo.currentText().lower() + '_cogs', self.cog_name_lineedit.text() + '_cog.py')
+        import_location = self.cog_category_combo.currentText().lower() + '_cogs.' + self.cog_name_lineedit.text() + '_cog'
+        config_name = self.cog_name_lineedit.text() if self.custom_config_name_groupBox.isChecked() is False else self.custom_config_name_lineEdit.text()
+        if config_name == '':
+            config_name = self.cog_name_lineedit.text()
+        all_com_attr = self.get_all_com_attr()
+        all_loops = self.loops_listView.model().items
+        all_listeners = self.listener_listView.model().items
+        all_commands = self.commands_listView.model().items
+        extra_imports = []
+        code = ''
+        cog_item = NEW_COG_ITEM(name, absoute_path, import_location, config_name, all_com_attr, all_loops, all_listeners, all_commands, extra_imports, code)
+        create_cog_file(cog_item)
+        self.app.quit()
+
 
 def new_cog_ui():
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(True)
-    main_window = CreateNewCogMainWindow()
+    main_window = CreateNewCogMainWindow(app)
     main_window.show()
 
     sys.exit(app.exec_())

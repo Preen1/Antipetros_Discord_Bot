@@ -8,6 +8,8 @@ import gidlogger as glog
 log = glog.aux_logger(__name__)
 glog.import_notification(log, __name__)
 
+STANDARD_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+
 SECOND_FACTOR = 1
 MINUTE_FACTOR = SECOND_FACTOR * 60
 HOUR_FACTOR = MINUTE_FACTOR * 60

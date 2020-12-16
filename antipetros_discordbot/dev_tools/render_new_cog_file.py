@@ -33,6 +33,7 @@ from jinja2 import BaseLoader, Environment, FileSystemLoader, ModuleLoader
 
 # * Gid Imports -->
 import gidlogger as glog
+import antipetros_discordbot
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writeit, readit, readbin, writebin, appendwriteit, linereadit, writejson, loadjson, pickleit, get_pickled
 
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
@@ -124,7 +125,7 @@ def create_cog_file(cog_item: namedtuple, overwrite=False):
 
     _make_folder(folder)
     if os.path.isfile(file) is False or overwrite is True:
-        writeit(file, cog_item.code)
+        writeit(file, cog_item.code.replace('$$config_name$$', cog_item.config_name))
     _edit_configs(cog_item)
 
 # region[Main_Exec]

@@ -16,3 +16,4 @@ watchgod
 weasyprint
 pdfkit
 gidlogger
+pytz

@@ -7,11 +7,15 @@ __version__ = "0.1"
 from dotenv import load_dotenv
 import os
 from importlib.metadata import metadata
-load_dotenv('../tools/_project_devmeta.env')
-THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
+THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
+old_cd = os.getcwd()
+os.chdir(THIS_FILE_DIR)
+
+load_dotenv(r'D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\tools\_project_devmeta.env')
 os.environ['APP_NAME'] = metadata(__name__).get('name')
 os.environ['AUTHOR_NAME'] = metadata(__name__).get('author')
-
-
+os.environ['BASE_FOLDER'] = os.getenv('TOPLEVELMODULE')
+os.environ['LOG_FOLDER'] = os.path.join(os.getenv('TOPLEVELMODULE'), 'logs')
 load_dotenv()
+os.chdir(old_cd)

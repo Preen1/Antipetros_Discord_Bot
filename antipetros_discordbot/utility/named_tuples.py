@@ -18,3 +18,8 @@ NEW_COG_ITEM = namedtuple('NewCogItem', ['name', 'absolute_location', 'import_lo
 NEW_COMMAND_ITEM = namedtuple('NewCommandItem', ['name', 'code'])
 NEW_LISTENER_ITEM = namedtuple('NewListenerItem', ['name', 'event_name', 'code'])
 NEW_LOOP_ITEM = namedtuple('NewLoopItem', ['name', 'all_attributes', 'code'])
+
+
+# for timezones
+COUNTRY_ITEM = namedtuple('CountryItem', ['id', 'name', 'code', 'timezone'])
+CITY_ITEM = namedtuple('TimeZoneItem', ['id', 'continent', 'name', 'timezone'])

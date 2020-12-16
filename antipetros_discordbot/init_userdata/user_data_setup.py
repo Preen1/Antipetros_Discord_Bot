@@ -15,7 +15,7 @@ if os.path.isfile(CONSTRUCTION_INFO_FILE):
     dotenv.load_dotenv(CONSTRUCTION_INFO_FILE)
 
 if os.path.isfile(DEV_TRIGGER_FILE) is True:
-    SupportKeeper.set_dev(True, DATA_DIR, os.getenv('TOPLEVELMODULE'))
+    SupportKeeper.set_dev(True, DATA_DIR, os.getenv('LOG_FOLDER'))
 SupportKeeper.set_archive_data(bin_archive_data)
 SupportKeeper.app_info['app_name'] = os.getenv('APP_NAME').title()
 SupportKeeper.app_info['author_name'] = os.getenv('AUTHOR_NAME').title()
