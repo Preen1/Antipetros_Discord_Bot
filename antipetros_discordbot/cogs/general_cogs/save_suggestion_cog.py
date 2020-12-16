@@ -66,9 +66,10 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
     suggestion_name_regex = re.compile(r"(?P<name>(?<=#).*)")
     config_name = 'save_suggestions'
     jinja_env = Environment(loader=FileSystemLoader(APPDATA["reports"]))
-    css_files = {"basic_report_style": (APPDATA["basic_report_style.css"], "basic_report_style.css"),
-                 'exp_report_stylesheet': (APPDATA["style.css"], "style.css"),
-                 'exp_report_stylesheet_2': (APPDATA['experiment_css_1.css'], 'experiment_css_1.css')}
+    css_files = {"basic_report_style.css": (APPDATA["basic_report_style.css"], "basic_report_style.css"),
+                 'style.css': (APPDATA["style.css"], "style.css"),
+                 'experiment_css_1.css': (APPDATA['experiment_css_1.css'], 'experiment_css_1.css'),
+                 'experiment_3.css': (APPDATA['experiment_3.css'], 'experiment_3.css')}
     auto_accept_user_file = APPDATA["auto_accept_suggestion_users.json"]
 
 # endregion [ClassAttributes]
@@ -261,7 +262,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
         log.debug('correct channel')
         log.debug('querying data')
         query = self.data_storage_handler.get_all_suggestion_not_discussed()
-        var_dict = {'all_suggestions': query}
+        var_dict = {'all_suggestions': query, 'style_sheet': "basic_report_style.css"}
         log.debug('getting template')
         template = self.jinja_env.get_template(report_template)
         log.debug('creating Tempdir')
@@ -270,9 +271,9 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
             pdf_path = pathmaker(tempfold, 'suggestion_report.pdf')
             log.debug('rendering template and writing to file')
             writeit(html_path, await self.bot.execute_in_thread(template.render, var_dict))
-
+            writeit('test.html', await self.bot.execute_in_thread(template.render, var_dict))
             log.debug('copying stylesheet')
-            shutil.copyfile(self.css_files.get('exp_report_stylesheet_2')[0], pathmaker(tempfold, self.css_files.get('exp_report_stylesheet_2')[1]))
+            shutil.copyfile(self.css_files.get('basic_report_style.css')[0], pathmaker(tempfold, self.css_files.get('basic_report_style.css')[1]))
             log.debug('transforming html to pdf')
 
             weasy_html = HTML(filename=html_path)

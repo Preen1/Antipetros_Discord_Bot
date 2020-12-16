@@ -2,11 +2,14 @@ from functools import wraps, partial
 from asyncio import get_event_loop
 from concurrent.futures import ThreadPoolExecutor
 import os
+from textwrap import dedent
+import inspect
 from pprint import pprint, pformat
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, loadjson, writejson, readit, readbin, writeit, work_in, writebin
 import gidlogger as glog
 log = glog.aux_logger(__name__)
 glog.import_notification(log, __name__)
+
 
 STANDARD_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -98,10 +101,10 @@ def sync_to_async(_func):
 
 
 def save_commands(cog):
-    command_json_file = pathmaker('../docs/commands.json')
+    command_json_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/commands.json')
     command_json = loadjson(command_json_file)
-    command_json[str(cog)] = {'file_path': pathmaker(os.path.abspath(__file__)),
-                              'description': __doc__,
+    command_json[str(cog)] = {'file_path': pathmaker(os.path.abspath(inspect.getfile(cog.__class__))),
+                              'description': dedent(str(inspect.getdoc(inspect.getmodule(cog.__class__)))),
                               'commands': {(com.name + ' ' + com.signature).replace('<ctx>', '').replace('  ', ' ').strip(): com.help for com in cog.get_commands()}}
     writejson(command_json, command_json_file, indent=4)
     log.debug("commands for %s saved to %s", cog, command_json_file)

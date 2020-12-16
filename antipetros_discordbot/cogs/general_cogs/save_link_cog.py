@@ -6,7 +6,6 @@ Deleted links are kept in the bots database and can always be retrieved by fuzzy
 
 Checks against a blacklist of urls and a blacklist of words, to not store malicious links.
 
-
 """
 
 

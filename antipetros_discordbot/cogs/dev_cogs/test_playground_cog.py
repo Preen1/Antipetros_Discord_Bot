@@ -4,8 +4,8 @@ import random
 import statistics
 from io import BytesIO
 from time import time
-
-from datetime import datetime
+import pickle
+from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 import random
 import asyncio
@@ -14,6 +14,10 @@ import discord
 from PIL import Image
 from discord.ext import commands
 import gidlogger as glog
+from googleapiclient.discovery import build
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+
 # * Local Imports -->
 
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
@@ -22,6 +26,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.misc import save_commands
 from antipetros_discordbot.utility.checks import in_allowed_channels
+from antipetros_discordbot.utility.regexes import DATE_REGEX, TIME_REGEX
 
 # region [Logging]
 
@@ -68,8 +73,34 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
                               "https://i.redd.it/h3bi3p5jurwz.jpg",
                               "https://pbs.twimg.com/media/DSrDQVFVAAAODM1.jpg",
                               "https://memegenerator.net/img/instances/58080047/carthago-delenda-est.jpg"]
+        self.google_scopes = ['https://www.googleapis.com/auth/calendar']
+        self.google_credentials_file = APPDATA['oauth2_google_credentials.json']
+        self.google_token_pickle = pathmaker(APPDATA['misc'], 'token.pickle')
         if self.bot.is_debug:
             save_commands(self)
+
+    async def get_calendar_service(self):
+        creds = None
+        # The file token.pickle stores the user's access and refresh tokens, and is
+        # created automatically when the authorization flow completes for the first
+        # time.
+        if os.path.exists(self.google_token_pickle):
+            with open(self.google_token_pickle, 'rb') as token:
+                creds = pickle.load(token)
+        # If there are no (valid) credentials available, let the user log in.
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    self.google_credentials_file, self.google_scopes)
+                creds = flow.run_console()
+            # Save the credentials for the next run
+            with open(self.google_token_pickle, 'wb') as token:
+                pickle.dump(creds, token)
+
+        service = build('calendar', 'v3', credentials=creds)
+        return service
 
     # @property
     # def last_map_msg(self):
@@ -82,6 +113,54 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
     #         COGS_CONFIG.set(self.config_name, 'last_map_image_msg_id')
     #         return None
     #     msg = self.bot.
+
+    async def time_parse(self, in_time):
+        _result = TIME_REGEX.search(in_time)
+        if _result:
+            _result_dict = _result.groupdict()
+            return int(_result_dict.get('hour')), int(_result_dict.get('minute')), int(_result_dict.get('second'))
+
+    async def date_parse(self, in_date):
+        _result = DATE_REGEX.search(in_date)
+        if _result:
+            _result_dict = _result.groupdict()
+            return int(_result_dict.get('year')), int(_result_dict.get('month')), int(_result_dict.get('day'))
+
+    async def date_and_time_to_datetime(self, in_time, in_date):
+        hour, minute, second = await self.time_parse(in_time)
+
+        year, month, day = await self.date_parse(in_date)
+        return datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)
+
+    async def handle_duration(self, in_duration):
+        if 'd' in in_duration:
+            return 'days', int(in_duration.replace('d', ''))
+        elif 'h' in in_duration:
+            return 'hours', int(in_duration.replace('h', ''))
+        elif 'm' in in_duration:
+            return 'minutes', int(in_duration.replace('m', ''))
+
+    @commands.command()
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
+    async def new_google_calender_event(self, ctx, event_time, event_date, duration, summary, description):
+        service = await self.get_calendar_service()
+        event_datetime = await self.date_and_time_to_datetime(event_time, event_date)
+        duration_unit, duration_amount = await self.handle_duration(duration)
+        event_datetime_end = event_datetime + timedelta(**{duration_unit: duration_amount})
+        start = event_datetime.isoformat()
+        log.debug("event start is '%s'", start)
+        end = event_datetime_end.isoformat()
+        log.debug("event end is '%s'", end)
+        event_result = service.events().insert(calendarId='primary',
+                                               body={
+                                                   "summary": summary,
+                                                   "description": description,
+                                                   "start": {"dateTime": start, "timeZone": 'Europe/Berlin'},
+                                                   "end": {"dateTime": end, "timeZone": 'Europe/Berlin'},
+                                               }
+                                               ).execute()
+        await ctx.send(f"created event with id: {event_result['id']}")
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
