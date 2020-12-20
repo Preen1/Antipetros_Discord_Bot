@@ -164,7 +164,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
 
         elif emoji_name in [self.command_emojis['upvote'], self.command_emojis['downvote']] and message.id in self.saved_messages:
             await self._change_votes(message, emoji_name)
-
+        await self.bot.did_command()
 
 # endregion [Listener]
 
@@ -179,6 +179,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
             self.data_storage_handler.mark_discussed(suggestion_id)
             embed_dict['message_with_id_' + str(suggestion_id)] = 'was marked as discussed'
         await ctx.send(embed=await make_basic_embed(title='Marked Suggestions as discussed', text='The following items were marked as discussed: ', symbol='update', ** embed_dict))
+        await self.bot.did_command()
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
@@ -199,6 +200,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
                 await question_msg.delete()
         else:
             await self._clear_suggestions(ctx, 'yes')
+        await self.bot.did_command()
 
     @ commands.command()
     @commands.dm_only()
@@ -212,6 +214,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
         writejson(auto_accept_dict, self.auto_accept_user_file)
         # Todo: make as embed
         await ctx.send("I added you to the auto accept suggestion list")
+        await self.bot.did_command()
 
     @commands.command(name='unsave_suggestion')
     @commands.dm_only()
@@ -253,14 +256,14 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
             # TODO: make as embed
             await ctx.send('No answer received, aborting request, you can always try again')
             return
+        await self.bot.did_command()
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels')))
     async def get_all_suggestions(self, ctx, report_template: str = "basic_report.html.jinja"):
-        log.debug('command was triggered')
-        log.debug('correct channel')
-        log.debug('querying data')
+
+        log.info("command was initiated by '%s'", ctx.author.name)
         query = self.data_storage_handler.get_all_suggestion_not_discussed()
         var_dict = {'all_suggestions': query, 'style_sheet': "basic_report_style.css"}
         log.debug('getting template')
@@ -282,6 +285,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
             file = discord.File(pdf_path, filename='suggestion_report.pdf')
             log.debug('sending file')
             await ctx.send(file=file)
+        await self.bot.did_command()
 
     @ commands.command(name="remove_all_my_data")
     @commands.dm_only()
@@ -319,6 +323,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
             # TODO: make as embed
             await ctx.send('No answer received, aborting request, you can always try again')
             return
+        await self.bot.did_command()
 
     @ commands.command()
     @commands.dm_only()
@@ -333,7 +338,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
             writejson(await self._row_to_json_user_data(all_user_data), pathmaker(tmpdir, 'output.json'))
             file = discord.File(pathmaker(tmpdir, 'output.json'), filename=ctx.author.name + '_data.txt')
             await ctx.send(file=file)
-
+        await self.bot.did_command()
 # endregion [Commands]
 
 # region [DataStorage]

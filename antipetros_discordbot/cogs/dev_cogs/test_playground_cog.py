@@ -17,6 +17,9 @@ import gidlogger as glog
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+from googletrans import Translator, LANGUAGES
+from fuzzywuzzy import process as fuzzprocess
+from fuzzywuzzy import fuzz
 
 # * Local Imports -->
 
@@ -24,9 +27,10 @@ from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import Bold, Cursive, CodeBlock, LineCode, UnderScore, BlockQuote
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
-from antipetros_discordbot.utility.misc import save_commands
+from antipetros_discordbot.utility.misc import save_commands, async_load_json, image_to_url
 from antipetros_discordbot.utility.checks import in_allowed_channels
 from antipetros_discordbot.utility.regexes import DATE_REGEX, TIME_REGEX
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 
 # region [Logging]
 
@@ -57,6 +61,7 @@ Your contribution and participation to this community will determine how long th
 
 class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
     config_name = "test_playground"
+    language_dict = {value: key for key, value in LANGUAGES.items()}
 
     def __init__(self, bot):
         self.bot = bot
@@ -144,6 +149,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     async def new_google_calender_event(self, ctx, event_time, event_date, duration, summary, description):
+        log.info("command was initiated by '%s'", ctx.author.name)
         service = await self.get_calendar_service()
         event_datetime = await self.date_and_time_to_datetime(event_time, event_date)
         duration_unit, duration_amount = await self.handle_duration(duration)
@@ -161,6 +167,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
                                                }
                                                ).execute()
         await ctx.send(f"created event with id: {event_result['id']}")
+        await self.bot.did_command()
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
@@ -197,7 +204,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
     @in_allowed_channels(set(COGS_CONFIG.getlist('test_playground', 'allowed_channels')))
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def roll(self, ctx, sides: int = 6, amount: int = 1):
-        log.info(ctx.message.raw_role_mentions)
+        log.info("command was initiated by '%s'", ctx.author.name)
         _result = 0
         _dice = []
         time_start = time()
@@ -238,7 +245,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
     @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def map_changed(self, ctx, marker, color):
-
+        log.info("command was initiated by '%s'", ctx.author.name)
         with BytesIO() as image_binary:
 
             self.base_map_image, image_binary = await self.bot.execute_in_thread(self.map_image_handling, self.base_map_image, marker, color, image_binary)
@@ -247,7 +254,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
                 await self.old_map_message.delete()
             delete_time = 30 if self.bot.is_debug is True else None
             self.old_map_message = await ctx.send(file=discord.File(fp=image_binary, filename="map.png"), delete_after=delete_time)
-        self.bot.commands_executed += 1
+        await self.bot.did_command()
         log.debug("finished 'map_changed' command")
 
     # @commands.command(name='FAQ_you')
@@ -336,7 +343,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
     @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def furthermore_do_you_want_to_say_something(self, ctx):
-
+        log.info("command was initiated by '%s'", ctx.author.name)
         await ctx.send(random.choice(self.carthage_list))
 
     @commands.command()
@@ -358,7 +365,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
     @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def request_server_restart(self, ctx):
-
+        log.info("command was initiated by '%s'", ctx.author.name)
         if ctx.prefix != "<@&752957930902651062> ":
             return
         roles = await self.bot.antistasi_guild.fetch_roles()
@@ -419,7 +426,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
 
         if ctx.author.id not in [699922947086745601, 576522029470056450]:
             return
-
+        log.info("command was initiated by '%s'", ctx.author.name)
         _quotes_dict = loadjson(APPDATA["combo_quotes.json"])
         number = random.randint(1, len(_quotes_dict) + 1) if number is None else number
         _out = _quotes_dict.get(str(number), None)
@@ -429,18 +436,79 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
         _out = await self.highlight_member(_out)
         file = discord.File(APPDATA['comboavatar.jpg'], 'comboavatar.jpg')
         await ctx.send(embed=await make_basic_embed(title="ComboTombos School of Quotes", text='The Holy Book of Quotes', symbol='combo', **{'QUOTE #' + str(number): _out}), file=file)
+        await self.bot.did_command()
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     async def add_special_name(self, ctx, name):
-
+        log.info("command was initiated by '%s'", ctx.author.name)
         spec_names = loadjson(APPDATA['special_names.json'])
         if name not in spec_names:
             spec_names.append(name)
         writejson(spec_names, APPDATA['special_names.json'])
         await ctx.send(f'added "{name}" to special names')
+        await self.bot.did_command()
 
+    async def _translate(self, text, out_language, in_language=None):
+        in_lang_code = self.language_dict.get(in_language.casefold()) if in_language is not None else 'auto'
+        out_lang_code = self.language_dict.get(out_language.casefold())
+        translator = Translator()
+        x = translator.translate(text=text, dest=out_lang_code, src=in_lang_code)
+        return x.text
+
+    @commands.command(hidden=False)
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
+    async def translate(self, ctx, out_lang, *, text):
+        log.info("command was initiated by '%s'", ctx.author.name)
+        if out_lang.casefold() not in self.language_dict:
+            await ctx.send('unknown language')
+            return
+        result = await self._translate(text, out_lang)
+        await self.bot.split_to_messages(ctx, result)
+        await self.bot.did_command()
+
+    def _helper_cfg_processor(self, item):
+        if isinstance(item, str):
+            return item.casefold()
+        elif item[2] is not None:
+            return item[2].casefold()
+        else:
+            return None
+
+    def _helper_cfg_processor_classname(self, item):
+        if isinstance(item, str):
+            return item.casefold()
+        elif item[0] is not None:
+            return item[0].casefold()
+        else:
+            return None
+
+    @commands.command(hidden=False)
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
+    async def get_cfg_name(self, ctx, cfg_category, display_name, result_amount: int = 1, search_by='display'):
+        log.info("command was initiated by '%s'", ctx.author.name)
+        _cfg_categories = {'cfgweapons': APPDATA['cfgweapons_items.json'],
+                           'cfgvehicles': APPDATA['cfgvehicles_items.json'],
+                           'cfgmagazines': APPDATA['cfgmagazines_items.json']}
+        if all(cfg_category.casefold() != existing_category.casefold() for existing_category in _cfg_categories):
+            await ctx.send('unknown cfg category')
+            return
+        _data = await async_load_json(_cfg_categories.get(cfg_category.casefold()))
+        _data = [item for item in _data if 'ace_dogtag' not in item[0].casefold()]
+        _processor = self._helper_cfg_processor if search_by == 'display' else self._helper_cfg_processor_classname
+        _result = fuzzprocess.extract(display_name.casefold(), _data, limit=result_amount, processor=_processor)
+        _out = {}
+        _index = 1
+        for item, score in _result:
+
+            _out[str(_index) + '.'] = f"{ZERO_WIDTH}\n***__{item[2]}:__***\n```python\n'{item[0]}'\n```\n{ZERO_WIDTH}"
+            _index += 1
+        _url, _file = await image_to_url(APPDATA['cog_icon.png'])
+        await ctx.send(embed=await make_basic_embed(title='Search Result', text=f"__**config category:**__ {cfg_category}", symbol=_url, **_out), file=_file)
+        await self.bot.did_command()
 # region [SpecialMethods]
 
     def __repr__(self):

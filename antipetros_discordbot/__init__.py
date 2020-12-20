@@ -16,6 +16,6 @@ load_dotenv(r'D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Disco
 os.environ['APP_NAME'] = metadata(__name__).get('name')
 os.environ['AUTHOR_NAME'] = metadata(__name__).get('author')
 os.environ['BASE_FOLDER'] = os.getenv('TOPLEVELMODULE')
-os.environ['LOG_FOLDER'] = os.path.join(os.getenv('TOPLEVELMODULE'), 'logs')
+os.environ['LOG_FOLDER'] = os.path.join(os.getenv('TOPLEVELMODULE'))
 load_dotenv()
 os.chdir(old_cd)

@@ -6,6 +6,7 @@ from datetime import datetime
 from collections import namedtuple
 import traceback
 import asyncio
+
 # * Third Party Imports -->
 from discord.ext import commands, tasks
 import discord
@@ -14,6 +15,7 @@ from async_property import async_property
 from discord import Embed, File
 from watchgod import awatch
 from concurrent.futures import ThreadPoolExecutor
+
 
 # * Gid Imports -->
 import gidlogger as glog
@@ -164,7 +166,7 @@ class AntiPetrosBot(commands.Bot):
 
     @property
     def std_date_time_format(self):
-        return BASE_CONFIG.get('datetime', 'std_format')
+        return "%Y-%m-%d %H:%M:%S UTC"
 
     async def did_command(self):
         self.commands_executed += 1

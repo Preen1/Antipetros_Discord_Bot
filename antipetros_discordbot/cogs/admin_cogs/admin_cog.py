@@ -33,15 +33,7 @@ from discord.ext import commands, tasks
 from discord import DiscordException
 import discord
 from fuzzywuzzy import process as fuzzprocess
-# import requests
-# import pyperclip
-# import matplotlib.pyplot as plt
-# from bs4 import BeautifulSoup
-# from dotenv import load_dotenv
-# from github import Github, GithubException
-# from jinja2 import BaseLoader, Environment
-# from natsort import natsorted
-# from fuzzywuzzy import fuzz, process
+
 # * Gid Imports -->
 
 import gidlogger as glog
@@ -56,6 +48,7 @@ from antipetros_discordbot.utility.data_gathering import gather_data
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.misc import save_commands
 from antipetros_discordbot.utility.checks import in_allowed_channels
+
 # endregion[Imports]
 
 # region [TODO]
@@ -111,7 +104,6 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True}):
 
 # region [Properties]
 
-
     @ property
     def allowed_dm_invoker_ids(self):
         return set(map(int, COGS_CONFIG.getlist(self.config_name, 'allowed_dm_ids')))
@@ -122,23 +114,19 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True}):
 
 # endregion[Properties]
 
-    @ commands.Cog.listener(name='on_ready')
-    async def extra_cog_setup(self):
-        log.info(f"{self} Cog ----> nothing to set up")
-
-    async def get_available_configs(self):  # sourcery skip: dict-comprehension
+    async def _get_available_configs(self):  # sourcery skip: dict-comprehension
         found_configs = {}
         for _file in os.scandir(self.config_dir):
             if 'config' in _file.name and os.path.splitext(_file.name)[1] in ['.ini', '.json', '.yaml', '.toml']:
                 found_configs[os.path.splitext(_file.name)[0]] = _file.name
         return found_configs
 
-    async def config_file_to_discord_file(self, config_name):
+    async def _config_file_to_discord_file(self, config_name):
         config_path = pathmaker(self.config_dir, config_name) if '/' not in config_name else config_name
         return discord.File(config_path, config_name)
 
-    async def match_config_name(self, config_name_input):
-        available_configs = await self.get_available_configs()
+    async def _match_config_name(self, config_name_input):
+        available_configs = await self._get_available_configs()
         _result = fuzzprocess.extractOne(config_name_input, choices=available_configs.keys(), score_cutoff=80)
         if _result is None:
             return None
@@ -149,11 +137,10 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True}):
     @ commands.has_any_role(*COGS_CONFIG.getlist('admin', 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
     async def reload_all_ext(self, ctx):
-
-        _extensions_list = []
+        standard_space_amount = 30
         BASE_CONFIG.read()
         COGS_CONFIG.read()
-        reloaded_extensions = ''
+        reloaded_extensions = {}
         _base_location = BASE_CONFIG.get('general_settings', 'cogs_location')
         for _extension in BASE_CONFIG.options('extensions'):
             if BASE_CONFIG.getboolean('extensions', _extension) is True:
@@ -162,14 +149,19 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True}):
                     self.bot.unload_extension(_location)
                     self.bot.load_extension(_location)
                     log.debug('Extension Cog "%s" was successfully reloaded from "%s"', _extension.split('.')[-1], _location)
-                    reloaded_extensions += f"> __'{_extension}'__ was **SUCCESSFULLY** reloaded!\n\n"
+                    _category, _extension = _extension.split('.')
+
+                    if _category not in reloaded_extensions:
+                        reloaded_extensions[_category] = ""
+                    spaces = ' ' * (standard_space_amount - len(_extension))
+                    reloaded_extensions[_category] += f"*{_extension}:*\n:white_check_mark:\n\n"
                 except DiscordException as error:
                     log.error(error)
 
-        _delete_time = 5 if self.bot.is_debug is True else 30
-        # TODO: make as embed
-        await ctx.send(f"**successfully reloaded the following extensions:**\n{reloaded_extensions}", delete_after=_delete_time)
-        await ctx.message.delete(delay=float(_delete_time - (_delete_time // 2)))
+        _delete_time = 15 if self.bot.is_debug is True else 60
+        await ctx.send(embed=await make_basic_embed(title="**successfully reloaded the following extensions**", symbol="update", **reloaded_extensions), delete_after=_delete_time)
+        await ctx.message.delete(delay=float(_delete_time))
+        await self.bot.did_command()
 
     @ commands.command(name='die', aliases=['go_away', 'turn_of', 'shutdown', 'exit', 'close'])
     @ commands.has_any_role(*COGS_CONFIG.getlist('admin', 'allowed_roles'))
@@ -181,6 +173,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True}):
         embed = await make_basic_embed(title='cya!', text='AntiPetros is shutting down.', symbol='shutdown', was_online_since=started_at, commands_executed=str(self.bot.commands_executed))
         embed.set_image(url='https://media.discordapp.net/attachments/449481990513754114/785601325329023006/2d1ca5fea58e65277ac5c18788b21d03.gif')
         await ctx.send(embed=embed)
+        await self.bot.did_command()
         await self.bot.logout()
 
     @ commands.command(name='list_configs')
@@ -205,7 +198,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True}):
                 requested_configs = [conf_file_name for key, conf_file_name in available_configs.items()]
 
             else:
-                _req_config_path = await self.match_config_name(config_name)
+                _req_config_path = await self._match_config_name(config_name)
                 requested_configs.append(os.path.basename(_req_config_path))
 
             if requested_configs == []:
@@ -214,7 +207,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True}):
             else:
                 for req_config in requested_configs:
                     _msg = f"Here is the file for the requested config `{req_config}`"
-                    _file = await self.config_file_to_discord_file(req_config)
+                    _file = await self._config_file_to_discord_file(req_config)
                     # TODO: make as embed
                     await ctx.send(_msg, file=_file)
                 log.info("requested configs (%s) send to %s", ", ".join(requested_configs), ctx.author.name)
@@ -228,7 +221,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True}):
             await ctx.send('please only send a single file with the command')
             return
         _file = ctx.message.attachments[0]
-        _config_path = await self.match_config_name(config_name)
+        _config_path = await self._match_config_name(config_name)
         if _config_path is None:
             # TODO: make as embed
             await ctx.send(f'could not find a config that fuzzy matches `{config_name}`')

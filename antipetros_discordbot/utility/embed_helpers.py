@@ -86,7 +86,7 @@ async def make_basic_embed(title, text=None, footer=None, symbol=None, **kwargs)
 
     basic_embed = discord.Embed(title=embed_title, description=embed_text, color=standard_embed_color())
     if symbol is not None:
-        basic_embed.set_thumbnail(url=EMBED_SYMBOLS.get(symbol.casefold(), None))
+        basic_embed.set_thumbnail(url=EMBED_SYMBOLS.get(symbol.casefold(), symbol))
     for key, value in kwargs.items():
         field_name = key.replace('_', ' ').title()
         if isinstance(value, tuple):

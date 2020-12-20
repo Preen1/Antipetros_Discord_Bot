@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 import os
 from textwrap import dedent
 import inspect
+import discord
 from pprint import pprint, pformat
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, loadjson, writejson, readit, readbin, writeit, work_in, writebin
 import gidlogger as glog
@@ -104,7 +105,18 @@ def save_commands(cog):
     command_json_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/commands.json')
     command_json = loadjson(command_json_file)
     command_json[str(cog)] = {'file_path': pathmaker(os.path.abspath(inspect.getfile(cog.__class__))),
-                              'description': dedent(str(inspect.getdoc(inspect.getmodule(cog.__class__)))),
+                              'description': dedent(str(inspect.getdoc(cog.__class__))),
                               'commands': {(com.name + ' ' + com.signature).replace('<ctx>', '').replace('  ', ' ').strip(): com.help for com in cog.get_commands()}}
     writejson(command_json, command_json_file, indent=4)
     log.debug("commands for %s saved to %s", cog, command_json_file)
+
+
+async def async_load_json(json_file):
+    return loadjson(json_file)
+
+
+async def image_to_url(image_path):
+    _name = os.path.basename(image_path).replace('_', '').replace(' ', '')
+    _file = discord.File(image_path, _name)
+    _url = f"attachment://{_name}"
+    return _url, _file

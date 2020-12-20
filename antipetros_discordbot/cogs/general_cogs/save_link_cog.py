@@ -1,12 +1,3 @@
-"""
-An extension Cog to let users temporary save links.
-
-Saved links get posted to a certain channel and deleted after the specified time period from that channel (default in config).
-Deleted links are kept in the bots database and can always be retrieved by fuzzy matched name.
-
-Checks against a blacklist of urls and a blacklist of words, to not store malicious links.
-
-"""
 
 
 # region [Imports]
@@ -61,14 +52,19 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # TODO: need help figuring out how to best check bad link or how to format/normalize it
 
-# TODO: check if everything is documented
 
 # endregion [TODO]
 
 
 class SaveLinkCog(commands.Cog):
+
     """
-    Cog Class for SaveLink features.
+    An extension Cog to let users temporary save links.
+
+    Saved links get posted to a certain channel and deleted after the specified time period from that channel (default in config).
+    Deleted links are kept in the bots database and can always be retrieved by fuzzy matched name.
+
+    Checks against a blacklist of urls and a blacklist of words, to not store malicious links.
 
     """
 # region [ClassAttributes]
@@ -83,10 +79,7 @@ class SaveLinkCog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-
         self.data_storage_handler = LinkDataStorageSQLite()  # composition to make data storage modular, currently set up for an sqlite Database
-
-        self.forbidden_links = set(loadjson(APPDATA["forbidden_link_list.json"]))  # read previously saved blacklist, because extra_setup method does not run when the cog is only reloaded
         self.forbidden_url_words_file = APPDATA['forbidden_url_words.json']
         if self.bot.is_debug:
             save_commands(self)
@@ -127,10 +120,10 @@ class SaveLinkCog(commands.Cog):
                 if RequestStatus(_response.status) is RequestStatus.Ok:
                     _content = await _response.read()
                     _content = _content.decode('utf-8', errors='ignore')
-                    self.forbidden_links = await self._process_raw_blocklist_content(_content)
-                    self.forbidden_links = set(map(lambda x: urlparse('https://' + x).netloc.replace('www.', ''), self.forbidden_links))
+                    forbidden_links = await self._process_raw_blocklist_content(_content)
+
                     _path = APPDATA["forbidden_link_list.json"]
-                    writejson(list(map(lambda x: urlparse('https://' + x).netloc.replace('www.', ''), self.forbidden_links)), _path)  # converting to list as set is not json serializable
+                    writejson(list(map(lambda x: urlparse('https://' + x).netloc.replace('www.', ''), forbidden_links)), _path)  # converting to list as set is not json serializable
 
     def cog_unload(self):
         self.fresh_blacklist_loop.stop()
@@ -167,6 +160,7 @@ class SaveLinkCog(commands.Cog):
 
 # region [Properties]
 
+
     @property
     def forbidden_url_words(self):
         """
@@ -192,8 +186,6 @@ class SaveLinkCog(commands.Cog):
         """
         Lazy loads the list of channel names where the commands in this cog are allowed
 
-
-
         Returns:
             set: channel name list
         """
@@ -211,6 +203,16 @@ class SaveLinkCog(commands.Cog):
         name = COGS_CONFIG.get(self.config_name, 'bad_link_image_name')
         return name, path
 
+    @property
+    def forbidden_links(self):
+        """
+        Lazy loads the forbidden links json when needed.
+
+        Returns:
+            set: forbidden link list
+
+        """
+        return set(loadjson(APPDATA["forbidden_link_list.json"]))
 
 # endregion [Properties]
 
@@ -220,7 +222,6 @@ class SaveLinkCog(commands.Cog):
 # endregion [Listener]
 
 # region [Commands]
-
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_admin_roles'))
@@ -265,14 +266,13 @@ class SaveLinkCog(commands.Cog):
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def clear_all_links(self, ctx, sure=False):
         """
-        Clears the datastorage (currently database) and sets it up empty again.
+        Clears the datastorage (database) and sets it up empty again.
 
         Args:
             sure (bool, optional): skip the confirmation dialog. Defaults to False.
         """
         if sure is False:
-            # TODO: make as embed
-            await ctx.send("Do you really want to delete all saved links?\n\nANSWER **YES** in the next __30 SECONDS__")
+            await ctx.send(embed=await make_basic_embed(title="Are you sure?", text="Do you really want to delete all saved links?", symbol='warning', **{"ANSWER **YES** to delete all saved links": "You have __30 SECONDS__ to answer"}))
             user = ctx.author
             channel = ctx.channel
 
@@ -282,8 +282,7 @@ class SaveLinkCog(commands.Cog):
                 msg = await self.bot.wait_for('message', check=check, timeout=30.0)
                 await self._clear_links(ctx, msg.content)
             except asyncio.TimeoutError:
-                # TODO: make as embed
-                await ctx.send('No answer received, canceling request to delete Database, nothing was deleted')
+                await ctx.send(embed=await make_basic_embed(title='No answer received', text='canceling request to delete all links, nothing was deleted', symbol='cancelled'))
         else:
             await self._clear_links(ctx, 'yes')
         await self.bot.did_command()
@@ -294,10 +293,10 @@ class SaveLinkCog(commands.Cog):
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def get_link(self, ctx, name):
         """
-        Get a previously saved link by name. Name will be fuzzymatched to saved links names.
+        Get a previously saved link by link_name.
 
         Args:
-            name (str): link name
+            name (str): link name, will be fuzzy matched.
         """
         log.debug("command was triggered in '%s', by '%s'", ctx.channel.name, ctx.author.name)
         log.info("Link with Link name '%s' was requested", name)
@@ -328,9 +327,9 @@ class SaveLinkCog(commands.Cog):
                 _name = 'all_links.json'
                 _path = pathmaker(tempdir, _name)
                 if len(_link_dict) == 0:
-                    # TODO: make as embed
-                    await ctx.send('no saved links')
+                    await ctx.send(embed=await make_basic_embed(title='No saved links', text='I have no links saved in my datastorage', symbol='not_possible'))
                     return
+
                 writejson(_link_dict, _path)
 
             elif in_format == 'txt':
@@ -338,9 +337,9 @@ class SaveLinkCog(commands.Cog):
                 _name = 'all_links.txt'
                 _path = pathmaker(tempdir, _name)
                 if len(_link_list) == 0:
-                    # TODO: make as embed
-                    await ctx.send('no saved links')
+                    await ctx.send(embed=await make_basic_embed(title='No saved links', text='I have no links saved in my datastorage', symbol='not_possible'))
                     return
+
                 writeit(_path, '\n'.join(_link_list))
             else:
                 await ctx.send(embed=await make_basic_embed(title='Unknown Format requested', text=f'unable to provide link list in format "{in_format}"'), symbol='not_possible')
@@ -364,7 +363,7 @@ class SaveLinkCog(commands.Cog):
         """
         # TODO: refractor that monster of an function
         log.debug("command was triggered in %s", ctx.channel.name)
-
+        log.info("command was initiated by '%s'", ctx.author.name)
         # check if it is a forbidden link, before computing all that expansive shit
         to_check_link = await self._make_check_link(link)
         log.debug("link transformed to  check link: '%s'", to_check_link)
@@ -381,8 +380,7 @@ class SaveLinkCog(commands.Cog):
             # check if link name is already occupied
             if await self._check_link_name_existing(link_name) is True:
                 log.error("link name '%s' already in DataStorage", link_name)
-                # TODO: make as embed
-                await ctx.send(f"The link_name '{link_name}', is already taken, please choose a different Name.")
+                await ctx.send(embed=await make_basic_embed(title='Link name already in use', text=f"The link_name '{link_name}', is already taken, please choose a different Name.", symbol='not_possible'))
                 return None
 
             # calculate or retrieve all other needed values
@@ -406,8 +404,7 @@ class SaveLinkCog(commands.Cog):
             await self.save(link_item, link_store_message.id)
 
             # post an success message to the channel from where the command was invoked. Delete after 60 seconds.
-            # TODO: make as embed
-            await ctx.send('✅ Link was successfully saved')
+            await ctx.send(embed=await make_basic_embed(title='success', text='✅ Link was successfully saved', symbol='save'))
 
         else:
             log.warning("link '%s' matched against a forbidden link or contained a forbidden word", parsed_link)
@@ -441,7 +438,7 @@ class SaveLinkCog(commands.Cog):
 
     @ commands.command(hidden=False)
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
+    @ in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def get_forbidden_list(self, ctx, file_format='json'):
         """
@@ -463,7 +460,7 @@ class SaveLinkCog(commands.Cog):
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
+    @ in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def delete_link(self, ctx, name, scope='channel'):
         """
@@ -529,6 +526,7 @@ class SaveLinkCog(commands.Cog):
 
 # region [Embeds]
 
+
     async def _answer_embed(self, link_item):
         """
         creates the stored link embed for an saved link.
@@ -576,7 +574,7 @@ class SaveLinkCog(commands.Cog):
         Returns:
             discord.Embed: notify dm embed
         """
-        # TODO: Add logging
+
         _description = ('The message has been successfully deleted and warning was posted!' if was_deleted else "I was not able to delete the message, but posted the warning")
 
         embed = discord.Embed(title='ATTEMPT AT SAVING FORBIDDEN LINK', description=_description, color=0xdf0005)
@@ -601,6 +599,7 @@ class SaveLinkCog(commands.Cog):
 
 
 # region [HelperMethods]
+
 
     async def _get_bad_link_image(self):
         """
@@ -713,7 +712,6 @@ class SaveLinkCog(commands.Cog):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

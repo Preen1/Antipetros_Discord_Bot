@@ -8,10 +8,11 @@ Main module, starts the Antistasi Discord Bot.
 
 
 # region [Imports]
-
+UV_LOOP_IMPORTED = False
 # * Standard Library Imports -->
 import os
 import sys
+import platform
 import logging
 import configparser
 import shutil
@@ -23,6 +24,14 @@ import discord
 from dotenv import load_dotenv
 from discord.ext import commands
 from watchgod import awatch
+if platform.system() == 'Linux':
+    try:
+        import uvloop
+        UV_LOOP_IMPORTED = True
+    except ImportError as error:
+        print(error)
+
+
 # * Gid Imports -->
 import gidlogger as glog
 
@@ -119,7 +128,7 @@ def main():
         log.info('%s has connected to Discord!', ANTI_PETROS_BOT.user.name)
         channel = ANTI_PETROS_BOT.get_channel(BASE_CONFIG.getint('startup_message', 'channel'))
         if ANTI_PETROS_BOT.startup_message is not None:
-            delete_time = 15 if ANTI_PETROS_BOT.is_debug is True else 60
+            delete_time = 240 if ANTI_PETROS_BOT.is_debug is True else 600
             await ANTI_PETROS_BOT.get_channel(ANTI_PETROS_BOT.startup_message[0]).send(ANTI_PETROS_BOT.startup_message[1], delete_after=delete_time)
         await asyncio.sleep(2)
         if ANTI_PETROS_BOT.is_debug:
@@ -127,7 +136,8 @@ def main():
 
     if len(sys.argv) == 1 or sys.argv[1] != 'get_info_run':
         log.info('trying to log on as %s!', str(ANTI_PETROS_BOT))
-
+        if UV_LOOP_IMPORTED is True:
+            uvloop.install()
         ANTI_PETROS_BOT.run(get_token(), bot=True, reconnect=True)
 
 

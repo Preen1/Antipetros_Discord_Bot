@@ -233,6 +233,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True}):
         async with ctx.channel.typing():
             if ctx.channel.name not in self.allowed_channels:
                 return
+            log.info("command was initiated by '%s'", ctx.author.name)
             if len(ctx.message.attachments) == 0:
                 # TODO: make as embed
                 await ctx.send('! **there is NO image to antistasify** !')
@@ -273,6 +274,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True}):
     @in_allowed_channels(set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels')))
     @commands.cooldown(1, 120, commands.BucketType.channel)
     async def available_stamps(self, ctx):
+        log.info("command was initiated by '%s'", ctx.author.name)
         await ctx.send(embed=await make_basic_embed(title="__**Currently available Stamps are:**__", footer="These messages will be deleted in 120 seconds", symbol='photo'), delete_after=120)
         for name, image_path in self.stamps.items():
 
@@ -293,6 +295,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True}):
     @in_allowed_channels(set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels')))
     @commands.cooldown(1, 30, commands.BucketType.member)
     async def member_avatar(self, ctx, target_id: int = None):
+        log.info("command was initiated by '%s'", ctx.author.name)
         if target_id is None:
             avatar_image = await self.get_avatar_from_user(ctx.author)
         else:
