@@ -281,17 +281,17 @@ are equally valid here.</blockquote>
 
 **Developed with Python Version `3.8.6`**
 
-- google_auth_oauthlib<=`0.4.2`
-- aiohttp<=`3.6.3`
-- watchgod<=`0.6`
-- fuzzywuzzy<=`0.18.0`
-- async_property<=`0.2.1`
-- pdfkit<=`0.6.1`
-- pytz<=`2020.4`
-- Jinja2<=`2.11.2`
-- dpytest<=`0.0.22`
 - WeasyPrint<=`52.2`
+- pdfkit<=`0.6.1`
 - googletrans<=`4.0.0rc1`
+- pytz<=`2020.4`
+- watchgod<=`0.6`
+- aiohttp<=`3.6.3`
+- google_auth_oauthlib<=`0.4.2`
+- async_property<=`0.2.1`
+- fuzzywuzzy<=`0.18.0`
+- dpytest<=`0.0.22`
+- Jinja2<=`2.11.2`
 - discord<=`1.0.1`
 - gidappdata<=`0.1.1`
 - gidlogger<=`0.1.3`
@@ -300,7 +300,6 @@ are equally valid here.</blockquote>
 - protobuf<=`3.14.0`
 - PyQt5<=`5.15.2`
 - python-dotenv<=`0.15.0`
-- uvloop<=`0.14.0`
 
 
 
