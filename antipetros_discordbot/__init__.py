@@ -7,6 +7,26 @@ __version__ = "0.1"
 from dotenv import load_dotenv
 import os
 from importlib.metadata import metadata
+import platform
+
+
+def install_uvloop_if_needed():
+    try:
+        import uvloop
+    except ImportError:
+        print("uvloop package not installed, installing now.\nYou may need to restart the application afterwards")
+        import sys
+        import subprocess
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "package"])
+
+
+if platform.system() == 'Linux':
+    print('Platform detected as "Linux"')
+    print('checking conditional dependencies')
+    install_uvloop_if_needed()
+elif platform.system() == "Windows":
+    print('Platform detected as "Windows"')
+    print('there are no conditional dependencies for "Windows"')
 
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 old_cd = os.getcwd()
