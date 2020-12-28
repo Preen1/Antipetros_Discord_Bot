@@ -8,6 +8,7 @@ author = "antistasi_tools"
 home-page = "https://github.com/Giddius/Antipetros_Discord_Bot"
 classifiers = ["License :: OSI Approved :: MIT License"]
 description-file = "README.md"
+license = "MIT"
 requires = [
     "WeasyPrint>=52.2",
     "pdfkit>=0.6.1",
