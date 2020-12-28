@@ -1,11 +1,12 @@
-graft antipetros_discordbot
-prune antipetros_discordbot/logs
 include LICENSE
+graft antipetros_discordbot/init_userdata/data_pack
+prune antipetros_discordbot/logs
+prune antipetros_discordbot/temp
 prune data_pack/json_data
 prune data_pack/archive
 global-exclude *.db
 global-exclude *.env
-global-exclude dev.trigger
-global-exclude token.pickle
-global-exclude oauth2_google_credentials.json
-prune temp
+exclude dev.trigger
+exclude token.pickle
+exclude oauth2_google_credentials.json
+
