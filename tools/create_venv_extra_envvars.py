@@ -53,5 +53,5 @@ def modify_activate_bat():
 
 if __name__ == '__main__':
     create_project_devmeta_env_file()
-    create_project_meta_env_file()
+    # create_project_meta_env_file()
     modify_activate_bat()
