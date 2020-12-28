@@ -25,6 +25,7 @@ from fuzzywuzzy import fuzz
 
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import Bold, Cursive, CodeBlock, LineCode, UnderScore, BlockQuote
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.misc import save_commands, async_load_json, image_to_url
@@ -106,6 +107,10 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
 
         service = build('calendar', 'v3', credentials=creds)
         return service
+
+    @property
+    def faq_by_numbers(self):
+        return loadjson(APPDATA["converted_faq_list.json"])
 
     # @property
     # def last_map_msg(self):
@@ -257,18 +262,20 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
         await self.bot.did_command()
         log.debug("finished 'map_changed' command")
 
-    # @commands.command(name='FAQ_you')
-    # async def get_faq_by_number(self, ctx, faq_number: int):
+    @commands.command(name='FAQ_you')
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
+    async def get_faq_by_number(self, ctx, faq_number: int):
 
-    #     if ctx.channel.name in self.allowed_channels:
-    #         _faq_dict = FAQ_BY_NUMBERS
-    #         _msg = _faq_dict.get(faq_number, None)
+        if ctx.channel.name in self.allowed_channels:
+            _faq_dict = self.faq_by_numbers
+            _msg = _faq_dict.get(faq_number, None)
 
-    #         if _msg is None:
-    #             _msg = "Canot find the requested FAQ"
-    #         else:
-    #             _msg = "**FAQ you too**\n\n" + _msg
-    #         await ctx.send(_msg)
+            if _msg is None:
+                embed = await make_basic_embed(title='F.A.Q. Number not found', text='I was not able to find the specified F.A.Q. Number', symbol='not_possible', **{'Existing F.A.Q. Numbers': f"{ZERO_WIDTH}\n1 - {str(len(_faq_dict)+1)}\n{ZERO_WIDTH}"})
+            else:
+                _msg = "**FAQ you too**\n\n" + _msg
+            await ctx.send(embed=embed)
 
     # @commands.Cog.listener()
     # async def on_message(self, message):

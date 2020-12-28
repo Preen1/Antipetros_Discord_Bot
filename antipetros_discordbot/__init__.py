@@ -32,10 +32,12 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 old_cd = os.getcwd()
 os.chdir(THIS_FILE_DIR)
 
-load_dotenv(r'D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\tools\_project_devmeta.env')
+if os.path.isfile(r'D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\tools\_project_devmeta.env'):
+    load_dotenv(r'D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\tools\_project_devmeta.env')
+    os.environ['IS_DEV'] = 'true'
 os.environ['APP_NAME'] = metadata(__name__).get('name')
 os.environ['AUTHOR_NAME'] = metadata(__name__).get('author')
 os.environ['BASE_FOLDER'] = os.getenv('TOPLEVELMODULE')
 os.environ['LOG_FOLDER'] = os.path.join(os.getenv('TOPLEVELMODULE'))
-load_dotenv()
+
 os.chdir(old_cd)

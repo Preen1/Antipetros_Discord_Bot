@@ -40,7 +40,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.exceptions import TokenError
 from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
-from antipetros_discordbot.utility.gidtools_functions import writejson, writeit
+from antipetros_discordbot.utility.gidtools_functions import writejson, writeit, pathmaker, loadjson, readit
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 # endregion[Imports]
 
@@ -59,11 +59,31 @@ log = glog.main_logger(_log_file, BASE_CONFIG.get('logging', 'logging_level'), o
 log.info(glog.NEWRUN())
 if BASE_CONFIG.getboolean('logging', 'use_logging') is False:
     logging.disable(logging.CRITICAL)
-
+if os.getenv('IS_DEV') == 'yes':
+    log.warning('!!!!!!!!!!!!!!!!!IS DEV!!!!!!!!!!!!!!!!!')
 # endregion[Logging]
 
 
 # region [Helper_Functions]
+
+def find_env_files():
+    env_files = {}
+    if os.getenv('IS_DEV').casefold() in ['yes', 'true', 1, 'y']:
+        env_files['.env'] = pathmaker(os.path.abspath('.env'))
+    else:
+        for env_folder in [APPDATA['env_files'], APPDATA['user_env_files']]:
+            for env_file in os.scandir(env_folder):
+                if os.path.isfile(env_file.path) is True:
+                    env_files[env_file.name] = pathmaker(env_file.path)
+    return env_files
+
+
+def load_env_files():
+    env_files = find_env_files()
+    excludes = BASE_CONFIG.getlist('env_files', 'auto_load_excluded')
+    for key, value in env_files.items():
+        if all(key.casefold() != excl_filename.casefold() for excl_filename in excludes):
+            load_dotenv(value)
 
 
 def get_intents():
@@ -92,11 +112,8 @@ def get_token():
     Returns:
         str: Token
     """
-    target = APPDATA['.env']
-    if os.getenv('IS_DEV') == 'yes':
-        log.warning('!!!!!!!!!!!!!!!!!IS DEV!!!!!!!!!!!!!!!!!')
-        target = '.env'
-    load_dotenv(target)
+    if BASE_CONFIG.getboolean('env_files', 'auto_load') is True:
+        load_env_files()
     _temp_token = os.getenv('DISCORD_TOKEN')
     if _temp_token not in [None, '', 'xxxx']:
         return _temp_token

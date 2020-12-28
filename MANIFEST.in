@@ -1,8 +1,11 @@
 graft antipetros_discordbot
 prune antipetros_discordbot/logs
-prune json_data
-prune pickle_data
-prune sqlite_data
+include LICENSE
+prune data_pack/json_data
+prune data_pack/archive
+global-exclude *.db
+global-exclude *.env
+global-exclude dev.trigger
+global-exclude token.pickle
+global-exclude oauth2_google_credentials.json
 prune temp
-prune antipetros_discordbot/reports
-exclude .env
