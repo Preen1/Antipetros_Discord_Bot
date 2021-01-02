@@ -23,3 +23,19 @@ NEW_LOOP_ITEM = namedtuple('NewLoopItem', ['name', 'all_attributes', 'code'])
 # for timezones
 COUNTRY_ITEM = namedtuple('CountryItem', ['id', 'name', 'code', 'timezone'])
 CITY_ITEM = namedtuple('TimeZoneItem', ['id', 'continent', 'name', 'timezone'])
+
+# for feature suggestion
+FeatureSuggestionItem = namedtuple("FeatureSuggestionItem", ['author_name', 'author_nick', 'author_id', 'author_roles', 'author_top_role', 'author_joined_at', 'send_at', 'message', 'extra_data_path'], defaults=(None,))
+
+# Me
+CreatorMember = namedtuple("CreatorMember", ['name', 'id', 'member_object', 'user_object'], defaults=(None, None))
+
+
+# for performance
+
+LatencyMeasurement = namedtuple("LatencyMeasurement", ['date_time', 'latency'])
+
+MemoryUsageMeasurement = namedtuple("MemoryUsageMeasurement", ["date_time", "total", "absolute", "as_percent", 'is_warning', 'is_critical'], defaults=(False, False))
+
+
+InvokedCommandsDataItem=namedtuple("InvokedCommandsDataItem",['name', 'date', 'data'])

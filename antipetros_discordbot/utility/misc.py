@@ -12,6 +12,14 @@ log = glog.aux_logger(__name__)
 glog.import_notification(log, __name__)
 
 
+SGF = 1024  # SIZE_GENERAL_FACTOR
+SIZE_CONV = {'byte': {'factor': SGF**0, 'short_name': 'b'},
+             'kilobyte': {'factor': SGF**1, 'short_name': 'kb'},
+             'megabyte': {'factor': SGF**2, 'short_name': 'mb'},
+             'gigabyte': {'factor': SGF**3, 'short_name': 'gb'},
+             'terrabyte': {'factor': SGF**4, 'short_name': 'tb'}}
+
+
 STANDARD_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 SECOND_FACTOR = 1
@@ -92,6 +100,16 @@ def seconds_to_pretty(seconds: int):
     return out_string
 
 
+async def async_seconds_to_pretty_normal(seconds: int):
+    out_string = ''
+    rest = seconds
+    for name, factor in FACTORS.items():
+        sub_result, rest = divmod(rest, factor)
+        if sub_result != 0:
+            out_string += f"{str(sub_result)} {name.lower()} "
+    return out_string.strip()
+
+
 def sync_to_async(_func):
     @wraps(_func)
     def wrapped(*args, **kwargs):
@@ -120,3 +138,7 @@ async def image_to_url(image_path):
     _file = discord.File(image_path, _name)
     _url = f"attachment://{_name}"
     return _url, _file
+
+
+def color_hex_embed(color_string):
+    return int(color_string, base=16)

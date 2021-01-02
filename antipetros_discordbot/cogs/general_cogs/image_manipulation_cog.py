@@ -54,7 +54,7 @@ IMAGE_MANIPULATION_CONFIG_NAME = 'image_manipulation'
 # TODO: Document and Docstrings
 
 
-class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True}):
+class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "ImageManipulationCog"}):
 
     # region [ClassAttributes]
 
@@ -88,6 +88,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True}):
 # endregion[Init]
 
 # region [Properties]
+
 
     @property
     def allowed_channels(self):
@@ -252,8 +253,8 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True}):
             for _file in ctx.message.attachments:
                 # TODO: maybe make extra attribute for input format, check what is possible and working. else make a generic format list
                 if any(_file.filename.endswith(allowed_ext) for allowed_ext in self.allowed_stamp_formats):
-                    _stamp = self.bot.execute_in_thread(self._get_stamp_image, stamp)
-                    _stamp = self.bot.execute_in_thread(_stamp.copy)
+                    _stamp = self._get_stamp_image(stamp)
+                    _stamp = _stamp.copy()
                     with TemporaryDirectory(prefix='temp') as temp_dir:
                         temp_file = Path(pathmaker(temp_dir, 'temp_file.png'))
                         log.debug("Tempfile '%s' created", temp_file)
@@ -267,7 +268,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True}):
                     name = 'antistasified_' + os.path.splitext(_file.filename)[0]
                     # TODO: make as embed
                     await self._send_image(ctx, in_image, name, f"__**{name}**__")
-            await self.bot.did_command()
+            ()
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_roles'))
@@ -288,7 +289,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True}):
                 embed.add_field(name='Stamp Name:', value=name)
                 embed.set_image(url=f"attachment://{name}.png")
                 await ctx.send(embed=embed, file=_file, delete_after=120)
-        await self.bot.did_command()
+        ()
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_avatar_roles'))
@@ -310,7 +311,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True}):
             await self._send_image(ctx, modified_avatar, name, f"**Your New Avatar {ctx.author.name}**")
         else:
             await self._send_image(ctx, modified_avatar, name, f"**Your New Avatar {user.name}**", delete_after=90)
-        await self.bot.did_command()
+        ()
 
     async def get_avatar_from_user(self, user):
         avatar = user.avatar_url
@@ -326,6 +327,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True}):
 
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

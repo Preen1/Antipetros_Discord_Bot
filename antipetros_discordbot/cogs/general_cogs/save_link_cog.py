@@ -56,7 +56,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion [TODO]
 
 
-class SaveLinkCog(commands.Cog):
+class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
 
     """
     An extension Cog to let users temporary save links.
@@ -114,8 +114,9 @@ class SaveLinkCog(commands.Cog):
         """
         Downloads Blacklist and saves it to json, after processing (-->_process_raw_blocklist_content)
         """
-
-        async with aiohttp.ClientSession() as session:
+        if self.bot.aio_request_session is None:
+            await asyncio.sleep(5)
+        async with self.bot.aio_request_session as session:
             async with session.get(self.blocklist_hostfile_url) as _response:
                 if RequestStatus(_response.status) is RequestStatus.Ok:
                     _content = await _response.read()
@@ -199,9 +200,9 @@ class SaveLinkCog(commands.Cog):
         Returns:
             tuple: name of the image, path to the image
         """
-        path = COGS_CONFIG.get(self.config_name, 'bad_link_image_path')
+
         name = COGS_CONFIG.get(self.config_name, 'bad_link_image_name')
-        return name, path
+        return name, APPDATA[name]
 
     @property
     def forbidden_links(self):
@@ -285,7 +286,7 @@ class SaveLinkCog(commands.Cog):
                 await ctx.send(embed=await make_basic_embed(title='No answer received', text='canceling request to delete all links, nothing was deleted', symbol='cancelled'))
         else:
             await self._clear_links(ctx, 'yes')
-        await self.bot.did_command()
+        ()
 
     @commands.command(hidden=False)
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
@@ -307,7 +308,7 @@ class SaveLinkCog(commands.Cog):
             return
         await ctx.send(embed=await make_basic_embed(title='Retrieved link!', text='Link was successfully retrieved from storage', symbol='link', **{'available for the next': '1 Hour', _name: _link}), delete_after=60 * 60)
         log.info("retrieve link '%s'", _link)
-        await self.bot.did_command()
+        ()
 
     @ commands.command(hidden=False)
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
@@ -346,7 +347,7 @@ class SaveLinkCog(commands.Cog):
                 return
             _file = discord.File(_path, _name)
             await ctx.send(file=_file)
-        await self.bot.did_command()
+        ()
 
     @ commands.command(hidden=False)
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
@@ -434,7 +435,7 @@ class SaveLinkCog(commands.Cog):
                 user = self.bot.get_user(int(user_id))
                 await user.send(embed=notify_embed, delete_after=delete_answer)
                 log.debug("notified '%s' about the offending link", user.name)
-        await self.bot.did_command()
+        ()
 
     @ commands.command(hidden=False)
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
@@ -456,7 +457,7 @@ class SaveLinkCog(commands.Cog):
                 _file = discord.File(_path, filename=_name)
                 await ctx.send(file=_file, delete_after=60)
                 log.info("send forbidden link list to '%s'", ctx.author.name)
-        await self.bot.did_command()
+        ()
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
@@ -491,7 +492,7 @@ class SaveLinkCog(commands.Cog):
                 await message.delete()
                 answer["deleted_from_channel"] = "✅"
         await ctx.send(embed=await make_basic_embed(title="Deleted Link", text='Link was deleted from: ', symbol='trash', **answer))
-        await self.bot.did_command()
+        ()
 
 # endregion [Commands]
 

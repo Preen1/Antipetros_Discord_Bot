@@ -59,7 +59,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[TODO]
 
-class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
+class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "SaveSuggestionCog"}):
 
     # region [ClassAttributes]
 
@@ -144,7 +144,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
         if channel.name not in self.allowed_channels:
             return
         reaction_user = await self.bot.fetch_user(payload.user_id)
-        if reaction_user.bot is True or reaction_user.id in self.bot.blacklist_user:
+        if reaction_user.bot is True or reaction_user.id in self.bot.blacklisted_user_ids():
             return
         message = await channel.fetch_message(payload.message_id)
         emoji_name = unicodedata.name(payload.emoji.name)
@@ -164,7 +164,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
 
         elif emoji_name in [self.command_emojis['upvote'], self.command_emojis['downvote']] and message.id in self.saved_messages:
             await self._change_votes(message, emoji_name)
-        await self.bot.did_command()
+        ()
 
 # endregion [Listener]
 
@@ -179,7 +179,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
             self.data_storage_handler.mark_discussed(suggestion_id)
             embed_dict['message_with_id_' + str(suggestion_id)] = 'was marked as discussed'
         await ctx.send(embed=await make_basic_embed(title='Marked Suggestions as discussed', text='The following items were marked as discussed: ', symbol='update', ** embed_dict))
-        await self.bot.did_command()
+        ()
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
@@ -200,7 +200,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
                 await question_msg.delete()
         else:
             await self._clear_suggestions(ctx, 'yes')
-        await self.bot.did_command()
+        ()
 
     @ commands.command()
     @commands.dm_only()
@@ -214,7 +214,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
         writejson(auto_accept_dict, self.auto_accept_user_file)
         # Todo: make as embed
         await ctx.send("I added you to the auto accept suggestion list")
-        await self.bot.did_command()
+        ()
 
     @commands.command(name='unsave_suggestion')
     @commands.dm_only()
@@ -256,7 +256,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
             # TODO: make as embed
             await ctx.send('No answer received, aborting request, you can always try again')
             return
-        await self.bot.did_command()
+        ()
 
     @ commands.command()
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
@@ -285,7 +285,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
             file = discord.File(pdf_path, filename='suggestion_report.pdf')
             log.debug('sending file')
             await ctx.send(file=file)
-        await self.bot.did_command()
+        ()
 
     @ commands.command(name="remove_all_my_data")
     @commands.dm_only()
@@ -323,7 +323,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
             # TODO: make as embed
             await ctx.send('No answer received, aborting request, you can always try again')
             return
-        await self.bot.did_command()
+        ()
 
     @ commands.command()
     @commands.dm_only()
@@ -338,7 +338,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True}):
             writejson(await self._row_to_json_user_data(all_user_data), pathmaker(tmpdir, 'output.json'))
             file = discord.File(pathmaker(tmpdir, 'output.json'), filename=ctx.author.name + '_data.txt')
             await ctx.send(file=file)
-        await self.bot.did_command()
+        ()
 # endregion [Commands]
 
 # region [DataStorage]

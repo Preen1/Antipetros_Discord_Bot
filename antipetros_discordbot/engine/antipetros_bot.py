@@ -6,7 +6,10 @@ from datetime import datetime
 from collections import namedtuple
 import traceback
 import asyncio
-
+from asyncio import Future
+from contextlib import suppress
+import sys
+from inspect import iscoroutinefunction, iscoroutine
 # * Third Party Imports -->
 from discord.ext import commands, tasks
 import discord
@@ -15,17 +18,22 @@ from async_property import async_property
 from discord import Embed, File
 from watchgod import awatch
 from concurrent.futures import ThreadPoolExecutor
-
-
+import aiohttp
+from udpy import AsyncUrbanClient
 # * Gid Imports -->
 import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, readit
 from antipetros_discordbot.utility.misc import sync_to_async
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
+from antipetros_discordbot.utility.named_tuples import CreatorMember
+from antipetros_discordbot.engine.staff_invoke_statistician import InvokeStatistician
+from antipetros_discordbot.engine.staff_error_handler import ErrorHandler
+from antipetros_discordbot.engine.global_checks import user_not_blacklisted
+from antipetros_discordbot.engine.command_staff import CommandStaffRoster
 # endregion[Imports]
 
 
@@ -55,19 +63,29 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class AntiPetrosBot(commands.Bot):
-    executor = ThreadPoolExecutor(3, thread_name_prefix='Bot_Thread')
+    creator = CreatorMember('Giddi', 576522029470056450, None, None)
+    executor = ThreadPoolExecutor(6, thread_name_prefix='Bot_Thread')
     admin_cog_import_path = "antipetros_discordbot.cogs.admin_cogs.admin_cog"
-
+    bot_feature_suggestion_folder = APPDATA["bot_feature_suggestion_data"]
+    bot_feature_suggestion_json_file = APPDATA['bot_feature_suggestions.json']
     cog_import_base_path = BASE_CONFIG.get('general_settings', 'cogs_location')
+    available_staff = (InvokeStatistician,ErrorHandler)
 
     def __init__(self, *args, ** kwargs):
-        super().__init__(*args, **kwargs)
-        self.start_time = datetime.utcnow()
+        super().__init__(*args, owner_id=self.creator.id, **kwargs)
+        self.case_insensitive = BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive')
+        self.description = readit(APPDATA['bot_description.md'])
+        self.command_staff = CommandStaffRoster(self, self.available_staff)
         self.general_data = loadjson(APPDATA['general_data.json'])
         self.max_message_length = 1900
         self.commands_executed = 0
         self.bot_member = None
+        self.aio_request_session = None
+        self.urban_client = None
         self.all_bot_roles = []
+        self.current_day = datetime.utcnow().day
+        user_not_blacklisted(self, log)
+
         if BASE_CONFIG.getboolean('startup_message', 'use_startup_message') is True:
             self.startup_message = (BASE_CONFIG.getint('startup_message', 'channel'), BASE_CONFIG.get('startup_message', 'message'))
         else:
@@ -76,11 +94,23 @@ class AntiPetrosBot(commands.Bot):
 
         glog.class_init_notification(log, self)
         if self.is_debug:
-            log.critical('!!!!!!!!!!!!!!!!! DEBUG MODE !!!!!!!!!!!!!!!!!')
+            log.warning('!!!!!!!!!!!!!!!!! DEBUG MODE !!!!!!!!!!!!!!!!!')
 
     def _setup(self):
         self._get_initial_cogs()
         self.get_bot_roles_loop.start()
+
+
+    async def on_ready(self):
+        log.info('%s has connected to Discord!', self.user.name)
+        channel = self.get_channel(BASE_CONFIG.getint('startup_message', 'channel'))
+        if self.startup_message is not None:
+            delete_time = 240 if self.is_debug is True else 600
+            await self.get_channel(self.startup_message[0]).send(self.startup_message[1], delete_after=delete_time)
+        await asyncio.sleep(2)
+        self.command_staff.staff_memo(attribute_name='on_ready')
+        if self.is_debug:
+            await self.debug_function()
 
     def _get_initial_cogs(self):
         load_dev = BASE_CONFIG.getboolean('general_settings', 'load_dev_cogs')
@@ -94,6 +124,20 @@ class AntiPetrosBot(commands.Bot):
                 log.debug("loaded extension-cog: '%s' from '%s'", name, full_import_path)
 
         log.info("extensions-cogs loaded: %s", ', '.join(self.cogs))
+
+    async def close(self):
+        # TODO: check the needs for everything here, currently copied from official Python Discord Bot
+        self.command_staff.staff_memo('retire')
+        for ext in list(self.extensions):
+            with suppress(Exception):
+                self.unload_extension(ext)
+
+        if self.aio_request_session:
+            await self.aio_request_session.close()
+            log.debug('aiosession closed: %s', str(self.aio_request_session.closed))
+        await super().close()
+        if self.loop.is_closed():
+            sys.exit()
 
     @staticmethod
     def activity_from_config(option='standard_activity'):
@@ -109,11 +153,13 @@ class AntiPetrosBot(commands.Bot):
 
         return discord.Activity(name=text, type=activity_type)
 
-    # async def on_command_error(self, ctx, error):
-    #     if isinstance(error, commands.MaxConcurrencyReached):
-    #         await ctx.channel.send(f'{ctx.author.mention} your mother was a hamster and your father smelt of elderberries, STOP SPAMMING!', delete_after=30)
-    #         await ctx.message.delete()
-    #         return
+    async def on_command_error(self, ctx, error):
+        _call_item = self.command_staff.handle_errors
+        if iscoroutinefunction(_call_item):
+            await _call_item(ctx,error)
+        else:
+            _call_item(ctx,error)
+
     #     elif isinstance(error, commands.CommandOnCooldown):
     #         await ctx.channel.send(f'{ctx.author.mention} your mother was a hamster and your father smelt of elderberries, STOP SPAMMING!', delete_after=30)
     #         await ctx.message.delete()
@@ -121,9 +167,20 @@ class AntiPetrosBot(commands.Bot):
     #         log.error('Ignoring exception in command {}:'.format(ctx.command))
     #         log.error(str(error), exc_info=True)
 
+    @tasks.loop(minutes=10, reconnect=True)
+    async def update_check_loop(self):
+        if self.current_day != datetime.utcnow().day:
+            self.current_day = datetime.utcnow().day
+            self.command_staff.staff_memo('update')
+
+
     @tasks.loop(minutes=30, reconnect=True)
     async def get_bot_roles_loop(self):
         log.info('Starting Refreshing Bot Roles')
+        if self.aio_request_session is None:
+            self.aio_request_session = aiohttp.ClientSession(loop=self.loop)
+        if self.urban_client is None:
+            self.urban_client = AsyncUrbanClient()
         self.all_bot_roles = []
         self.bot_member = await self.retrieve_member(self.antistasi_guild.id, self.id)
         for index, role in enumerate(self.bot_member.roles):
@@ -134,6 +191,7 @@ class AntiPetrosBot(commands.Bot):
         else:
             self.command_prefix = BASE_CONFIG.get('prefix', 'command_prefix')
 
+        AntiPetrosBot.creator = self.creator._replace(**{'member_object': await self.retrieve_antistasi_member(self.creator.id), 'user_object': await self.fetch_user(self.creator.id)})
         log.info('Finished Refreshing Bot Roles')
 
     @get_bot_roles_loop.before_loop
@@ -142,7 +200,7 @@ class AntiPetrosBot(commands.Bot):
 
     @property
     def antistasi_guild(self):
-        return self.get_guild(self.antistasi_guild_id)
+        return self.get_guild(self.general_data.get('antistasi_guild_id'))
 
     @property
     def id(self):
@@ -157,8 +215,8 @@ class AntiPetrosBot(commands.Bot):
         return BASE_CONFIG.getboolean('general_settings', 'is_debug')
 
     @property
-    def blacklist_user(self):
-        return list(map(int, BASE_CONFIG.getlist('blacklist', 'user')))
+    def blacklisted_users(self):
+        return loadjson(APPDATA['blacklist.json'])
 
     @property
     def notify_contact_member(self):
@@ -166,10 +224,16 @@ class AntiPetrosBot(commands.Bot):
 
     @property
     def std_date_time_format(self):
-        return "%Y-%m-%d %H:%M:%S UTC"
+        return "%Y-%m-%d %H:%M:%S"
 
-    async def did_command(self):
-        self.commands_executed += 1
+    def blacklisted_user_ids(self):
+        for user_item in self.blacklisted_users:
+            yield user_item.get('id')
+
+    async def message_creator(self, message=None, embed=None, file=None):
+        if message is None and embed is None:
+            message = 'message has no content'
+        await self.creator.member_object.send(content=message, embed=embed, file=file)
 
     async def retrieve_antistasi_member(self, user_id):
         return await self.antistasi_guild.fetch_member(user_id)
@@ -185,8 +249,8 @@ class AntiPetrosBot(commands.Bot):
             if sum(map(len, _out)) + len(chunk + split_on) < self.max_message_length:
                 _out += chunk + split_on
             else:
-                print(len(_out))
                 await ctx.send(_out)
+                await asyncio.sleep(0.25)
                 _out = ''
         await ctx.send(_out)
 
@@ -198,21 +262,37 @@ class AntiPetrosBot(commands.Bot):
     def member_by_name(self, member_name):
         member_name = member_name.casefold()
         for member in self.antistasi_guild.members:
-            print(member.name)
+
             if member.name.casefold() == member_name:
                 return member
 
     async def execute_in_thread(self, func, *args, **kwargs):
         return await self.loop.run_in_executor(self.executor, func, *args, **kwargs)
 
+    def save_bin_file(self, path, data):
+        with open(path, 'wb') as f:
+            f.write(data)
+
+    async def save_feature_suggestion_extra_data(self, data_name, data_content):
+        path = pathmaker(self.bot_feature_suggestion_folder, data_name)
+        await self.execute_in_thread(self.save_bin_file, path, data_content)
+        return path
+
+    async def add_to_feature_suggestions(self, item):
+        feat_suggest_json = loadjson(self.bot_feature_suggestion_json_file)
+        feat_suggest_json.append(item._asdict())
+        writejson(feat_suggest_json, self.bot_feature_suggestion_json_file)
+
+
+    async def debug_function(self):
+        log.debug("debug function triggered")
+        log.warning('nothing set in debug function for "%s"', self.user.name)
+
+
+
+
     def __repr__(self):
         return f"{self.__class__.__name__}()"
 
     def __str__(self):
         return self.__class__.__name__
-
-    def __getattr__(self, name):
-        _out = self.general_data.get(name, None)
-        if _out is None:
-            raise AttributeError
-        return _out

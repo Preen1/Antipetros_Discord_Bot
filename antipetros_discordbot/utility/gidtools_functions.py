@@ -38,7 +38,7 @@ def loadjson(in_file):
     return _out
 
 
-def writejson(in_object, in_file, sort_keys=True, indent=0):
+def writejson(in_object, in_file, sort_keys=True, indent=4):
     with open(in_file, 'w') as jsonoutfile:
         json.dump(in_object, jsonoutfile, sort_keys=sort_keys, indent=indent)
 
@@ -661,6 +661,26 @@ def create_folder(in_path):
         log.info("Created Folder '{in_path}'")
     else:
         log.info(f"Folder '{in_path}' does exist!")
+
+
+def bytes2human(n, annotate=False):
+    # http://code.activestate.com/recipes/578019
+    # >>> bytes2human(10000)
+    # '9.8K'
+    # >>> bytes2human(100001221)
+    # '95.4M'
+    symbols = ('Kb', 'Mb', 'Gb', 'Tb', 'Pb', 'Eb', 'Zb', 'Yb')
+    prefix = {s: 1 << (i + 1) * 10 for i, s in enumerate(symbols)}
+    for s in reversed(symbols):
+        if n >= prefix[s]:
+            _out = float(n) / prefix[s]
+            if annotate is True:
+                _out = '%.1f%s' % (_out, s)
+            return _out
+    _out = n
+    if annotate is True:
+        _out = "%sb" % _out
+    return _out
 
 
 # region [Main_Exec]

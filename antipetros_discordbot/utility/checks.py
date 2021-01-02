@@ -76,7 +76,18 @@ def in_allowed_channels(allowed_channels: Iterable):
     return commands.check(predicate)
 
 
+def log_invoker(logger):
+    def predicate(ctx):
+        if BASE_CONFIG.getboolean('general_settings', 'is_debug'):
+            logger.info("command '%s' as '%s' -- invoked by: name: '%s', id: %s -- in channel: '%s' -- raw invoking message: '%s'",
+                        ctx.command.name, ctx.invoked_with, ctx.author.name, ctx.author.id, ctx.channel.name, ctx.message.content)
+        else:
+            logger.info("command '%s' as '%s' -- invoked by: name: '%s' -- in channel: '%s' -- args used: %s",
+                        ctx.command.name, ctx.invoked_with, ctx.author.name, ctx.channel.name, ctx.args)
+        return True
+    return commands.check(predicate)
 # region[Main_Exec]
+
 
 if __name__ == '__main__':
     pass

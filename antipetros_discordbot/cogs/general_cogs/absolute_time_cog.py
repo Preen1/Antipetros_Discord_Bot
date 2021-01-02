@@ -83,7 +83,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class AbsoluteTime(commands.Cog, command_attrs={'hidden': True}):
+class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "AbsoluteTimeCog"}):
 
     # region [ClassAttributes]
     config_name = "absolute_time"
@@ -260,4 +260,4 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(AbsoluteTime(bot))
+    bot.add_cog(AbsoluteTimeCog(bot))

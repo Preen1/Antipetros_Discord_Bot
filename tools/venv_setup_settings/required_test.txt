@@ -1,5 +1,5 @@
-pytest==6.2.1
-pytest-qt==3.3.0
-pytest-cov==2.10.1
-dpytest==0.0.22
+pytest
+pytest-qt
+pytest-cov
+dpytest
 pytest-venv

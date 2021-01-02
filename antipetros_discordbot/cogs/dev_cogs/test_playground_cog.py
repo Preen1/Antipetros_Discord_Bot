@@ -60,7 +60,7 @@ Your contribution and participation to this community will determine how long th
 ```"""
 
 
-class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
+class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "TestPlayground"}):
     config_name = "test_playground"
     language_dict = {value: key for key, value in LANGUAGES.items()}
 
@@ -82,6 +82,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
         self.google_scopes = ['https://www.googleapis.com/auth/calendar']
         self.google_credentials_file = APPDATA['oauth2_google_credentials.json']
         self.google_token_pickle = pathmaker(APPDATA['misc'], 'token.pickle')
+        self.translator = Translator()
         if self.bot.is_debug:
             save_commands(self)
 
@@ -172,7 +173,6 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
                                                }
                                                ).execute()
         await ctx.send(f"created event with id: {event_result['id']}")
-        await self.bot.did_command()
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
@@ -207,32 +207,51 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist('test_playground', 'allowed_channels')))
-    @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def roll(self, ctx, sides: int = 6, amount: int = 1):
-        log.info("command was initiated by '%s'", ctx.author.name)
-        _result = 0
-        _dice = []
+        """
+        roll a dice
+
+        Args:
+            sides (int, optional): number of sides the dice should have. Defaults to 6.
+            amount (int, optional): number of dice to roll and add together. Defaults to 1.
+        """
+
         time_start = time()
-        for i in range(amount):
-            _rolled = random.randint(1, sides)
-            _result += _rolled
-            _dice.append(_rolled)
-            if i + 1 % 1000000 == 0:
-                await ctx.send(f'reached {str("1.000.000")} dice again', delete_after=120)
+        log.debug('sleeping 1')
+        await asyncio.sleep(1)
+
+        _dice, _result = await self.bot.execute_in_thread(self.roll_dice, sides, amount)
 
         if amount > 1:
-            _stdev = statistics.stdev(_dice)
-            _mean = statistics.mean(_dice)
-            _median = statistics.median(_dice)
-            x = statistics.mode(_dice)
-            y = statistics.variance(_dice)
+            log.debug('sleeping 1')
+            await asyncio.sleep(1)
+            _stdev, _mean, _median, x, y = await self.bot.execute_in_thread(self.calc_stats, _dice)
+            log.debug('sleeping 1')
+            await asyncio.sleep(1)
             out_message = f"{ctx.author.mention} **you have rolled a total of:** {str(_result)}\n**dice result:** {', '.join(map(str,_dice))}\n\n**standard deviantion:** {str(_stdev)}\n**mean:** {str(_mean)}\n**median:** {str(_median)}\n**mode:** {str(x)}\n**variance:** {str(y)}"
             if len(out_message) >= 1900:
                 out_message = f"{ctx.author.mention} **you have rolled a total of:** {str(_result)}\n\n**standard deviantion:** {str(_stdev)}\n**mean:** {str(_mean)}\n**median:** {str(_median)}\n**mode:** {str(x)}\n**variance:** {str(y)}"
             await ctx.send(out_message + f'\n\n**THIS TOOK** {str(round(time()-time_start,3))} SECONDS')
         else:
             await ctx.send(f"{ctx.author.mention} you have rolled {_result}")
-        await self.bot.did_command()
+
+    def roll_dice(self, sides, amount):
+        _result = 0
+        _dice = []
+        for i in range(amount):
+            _rolled = random.randint(1, sides)
+            _result += _rolled
+            _dice.append(_rolled)
+
+        return _dice, _result
+
+    def calc_stats(self, dice):
+        _stdev = statistics.stdev(dice)
+        _mean = statistics.mean(dice)
+        _median = statistics.median(dice)
+        x = statistics.mode(dice)
+        y = statistics.variance(dice)
+        return _stdev, _mean, _median, x, y
 
     def map_image_handling(self, base_image, marker_name, color, bytes_out):
         log.debug("creating changed map, changed_location: '%s', changed_color: '%s'", marker_name, color)
@@ -257,9 +276,9 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
 
             if self.old_map_message is not None:
                 await self.old_map_message.delete()
-            delete_time = 30 if self.bot.is_debug is True else None
+            delete_time = None
             self.old_map_message = await ctx.send(file=discord.File(fp=image_binary, filename="map.png"), delete_after=delete_time)
-        await self.bot.did_command()
+
         log.debug("finished 'map_changed' command")
 
     @commands.command(name='FAQ_you')
@@ -379,7 +398,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
         for role in roles:
             if role.name.casefold() == 'Dev Helper'.casefold():
                 for _member in role.members:
-                    print(_member.name)
+                    pass
         servers = ["COMMUNITY_SERVER_1", "TEST_SERVER_1", "TEST_SERVER_2"]
         await ctx.send(f"please specify the server name in the next 20 seconds | OPTIONS: {', '.join(servers)}")
         user = ctx.author
@@ -443,7 +462,6 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
         _out = await self.highlight_member(_out)
         file = discord.File(APPDATA['comboavatar.jpg'], 'comboavatar.jpg')
         await ctx.send(embed=await make_basic_embed(title="ComboTombos School of Quotes", text='The Holy Book of Quotes', symbol='combo', **{'QUOTE #' + str(number): _out}), file=file)
-        await self.bot.did_command()
 
     @commands.command()
     @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
@@ -455,13 +473,12 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
             spec_names.append(name)
         writejson(spec_names, APPDATA['special_names.json'])
         await ctx.send(f'added "{name}" to special names')
-        await self.bot.did_command()
 
     async def _translate(self, text, out_language, in_language=None):
         in_lang_code = self.language_dict.get(in_language.casefold()) if in_language is not None else 'auto'
         out_lang_code = self.language_dict.get(out_language.casefold())
-        translator = Translator()
-        x = translator.translate(text=text, dest=out_lang_code, src=in_lang_code)
+
+        x = self.translator.translate(text=text, dest=out_lang_code, src=in_lang_code)
         return x.text
 
     @commands.command(hidden=False)
@@ -474,7 +491,6 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
             return
         result = await self._translate(text, out_lang)
         await self.bot.split_to_messages(ctx, result)
-        await self.bot.did_command()
 
     def _helper_cfg_processor(self, item):
         if isinstance(item, str):
@@ -515,7 +531,28 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True}):
             _index += 1
         _url, _file = await image_to_url(APPDATA['cog_icon.png'])
         await ctx.send(embed=await make_basic_embed(title='Search Result', text=f"__**config category:**__ {cfg_category}", symbol=_url, **_out), file=_file)
-        await self.bot.did_command()
+
+    @commands.command(hidden=False)
+    @ commands.dm_only()
+    async def speak_to_user(self, ctx, user_id: int, message: str):
+        user = await self.bot.fetch_user(user_id)
+        await user.send(message)
+
+    @commands.command(hidden=False)
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
+    async def urban(self, ctx, term: str):
+        _out = {}
+        x = await self.bot.urban_client.get_definition(term)
+        for index, y in enumerate(x):
+            if index < 15:
+                definition = x[0].definition
+                cleaned_definition = definition.replace('[', '**').replace(']', '**')
+                if cleaned_definition not in _out.values():
+                    _out[str(index)] = cleaned_definition
+        await ctx.send(embed=await make_basic_embed('urban dictionary definition', text='', symbol='link', **_out))
+
+
 # region [SpecialMethods]
 
     def __repr__(self):

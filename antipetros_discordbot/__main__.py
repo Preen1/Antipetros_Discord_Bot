@@ -19,6 +19,7 @@ import shutil
 from pprint import pprint, pformat
 import inspect
 import asyncio
+from contextlib import contextmanager
 # * Third Party Imports -->
 import discord
 from dotenv import load_dotenv
@@ -30,7 +31,7 @@ if platform.system() == 'Linux':
         UV_LOOP_IMPORTED = True
     except ImportError as error:
         print(error)
-
+import click
 
 # * Gid Imports -->
 import gidlogger as glog
@@ -78,12 +79,15 @@ def find_env_files():
     return env_files
 
 
+@contextmanager
 def load_env_files():
     env_files = find_env_files()
     excludes = BASE_CONFIG.getlist('env_files', 'auto_load_excluded')
     for key, value in env_files.items():
         if all(key.casefold() != excl_filename.casefold() for excl_filename in excludes):
             load_dotenv(value)
+    yield
+    os.environ['DISCORD_TOKEN'] = 'xxxxxxxxxxxxx'
 
 
 def get_intents():
@@ -112,23 +116,42 @@ def get_token():
     Returns:
         str: Token
     """
-    if BASE_CONFIG.getboolean('env_files', 'auto_load') is True:
-        load_env_files()
-    _temp_token = os.getenv('DISCORD_TOKEN')
-    if _temp_token not in [None, '', 'xxxx']:
-        return _temp_token
-    else:
-        raise TokenError('token loaded from enviroment is empty or not set')
+    # if BASE_CONFIG.getboolean('env_files', 'auto_load') is True:
+    #     load_env_files()
+    with load_env_files():
+        _temp_token = os.getenv('DISCORD_TOKEN')
+        if _temp_token not in [None, '', 'xxxx']:
+            return _temp_token
+        else:
+            raise TokenError('token loaded from enviroment is empty or not set')
 
 
 # endregion [Helper_Functions]
 
 # region [Main_function]
+@click.command()
+def command_info_run():
+    ANTI_PETROS_BOT = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
+    _commands = {}
+    for cog in ANTI_PETROS_BOT.cogs.items():
+        for command in cog.get_commands():
+            _commands[command.name] = {'cog_name': command.cog_name,
+                                       'aliases': command.aliases,
+                                       'brief': command.brief,
+                                       'clean_params': command.clean_params,
+                                       'description': command.description,
+                                       'enabled': command.enabled,
+                                       'help': command.help,
+                                       'hidden': command.hidden,
+                                       'short_doc': command.short_doc,
+                                       'signature': command.signature,
+                                       'usage': command.usage}
+    writejson(_commands, pathmaker(APPDATA['docs'], 'command_data.json'))
 
 
-async def debug_function(bot):
-    log.debug("debug function triggered")
-    log.warning('nothing set in debug function for "%s"', bot.user.name)
+@click.command()
+def info_run():
+    ANTI_PETROS_BOT = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
 
 
 def main():
@@ -140,17 +163,6 @@ def main():
 
     ANTI_PETROS_BOT = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
 
-    @ANTI_PETROS_BOT.event
-    async def on_ready():
-        log.info('%s has connected to Discord!', ANTI_PETROS_BOT.user.name)
-        channel = ANTI_PETROS_BOT.get_channel(BASE_CONFIG.getint('startup_message', 'channel'))
-        if ANTI_PETROS_BOT.startup_message is not None:
-            delete_time = 240 if ANTI_PETROS_BOT.is_debug is True else 600
-            await ANTI_PETROS_BOT.get_channel(ANTI_PETROS_BOT.startup_message[0]).send(ANTI_PETROS_BOT.startup_message[1], delete_after=delete_time)
-        await asyncio.sleep(2)
-        if ANTI_PETROS_BOT.is_debug:
-            await debug_function(ANTI_PETROS_BOT)
-
     if len(sys.argv) == 1 or sys.argv[1] != 'get_info_run':
         log.info('trying to log on as %s!', str(ANTI_PETROS_BOT))
         if UV_LOOP_IMPORTED is True:
@@ -159,6 +171,14 @@ def main():
 
 
 # endregion [Main_function]
-if __name__ == '__main__':
 
-    main()
+# region [Main_Exec]
+
+if __name__ == '__main__':
+    try:
+        main()
+    except:
+        log.exception(sys.exc_info()[0])
+        raise
+
+# endregion[Main_Exec]

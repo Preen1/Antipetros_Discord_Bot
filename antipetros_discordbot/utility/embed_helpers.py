@@ -107,6 +107,30 @@ async def make_basic_embed(title, text=None, footer=None, symbol=None, **kwargs)
     return basic_embed
 
 
+async def make_basic_embed_inline(title, text=None, footer=None, symbol=None, **kwargs):
+    embed_title = str(title).title()
+    embed_text = '' if text is None else str(text)
+
+    basic_embed = discord.Embed(title=embed_title, description=embed_text, color=standard_embed_color())
+    if symbol is not None:
+        basic_embed.set_thumbnail(url=EMBED_SYMBOLS.get(symbol.casefold(), symbol))
+    for key, value in kwargs.items():
+        field_name = key.replace('_', ' ').title()
+
+        field_value = str(value)
+        field_in_line = True
+        basic_embed.add_field(name=field_name, value=field_value, inline=field_in_line)
+    if footer is not None:
+        if isinstance(footer, tuple):
+            footer_icon_url = EMBED_SYMBOLS.get(footer[1].casefold(), None)
+            basic_embed.set_footer(text=str(footer[0]), icon_url=footer_icon_url)
+        else:
+            basic_embed.set_footer(text=str(footer))
+    else:
+        basic_embed.set_footer(text=DEFAULT_FOOTER)
+    return basic_embed
+
+
 # region[Main_Exec]
 
 if __name__ == '__main__':

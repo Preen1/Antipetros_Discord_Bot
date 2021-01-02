@@ -613,3 +613,8 @@ quick_test.txt
 **/data_storage/images/
 oauth2_google_credentials.json
 /antipetros_discordbot/init_userdata/data_pack/misc/token.pickle
+pyproject.toml
+.gitignore
+*_latency_graph.png
+*_memory_graph.png
+antipetros_discordbot/reports

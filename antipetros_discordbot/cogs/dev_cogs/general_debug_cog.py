@@ -53,7 +53,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion [TODO]
 
 
-class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True}):
+class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": "GeneralDebugCog"}):
 
     config_name = 'general_debug'
 

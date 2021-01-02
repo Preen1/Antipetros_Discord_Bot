@@ -10,25 +10,10 @@ classifiers = ["License :: OSI Approved :: MIT License"]
 description-file = "README.md"
 license = "MIT"
 requires = [
-    "Jinja2==2.11.2",
-    "watchgod==0.6",
-    "fuzzywuzzy==0.18.0",
-    "pdfkit==0.6.1",
-    "pytz==2020.4",
-    "WeasyPrint==52.2",
-    "async_property==0.2.1",
-    "aiohttp==3.7.3",
-    "discord==1.0.1",
-    "gidappdata==0.1.1",
-    "gidlogger==0.1.3",
-    "google_api_python_client==1.12.8",
-    "google_auth_oauthlib==0.4.2",
-    "googletrans==3.0.0",
-    "Pillow==8.0.1",
-    "protobuf==3.14.0",
-    "PyQt5==5.15.2",
-    "python-dotenv==0.15.0",
-    "uvloop==0.14.0;sys.platform == 'linux'",
+
+
 ]
 
 [tool.flit.scripts]
+info_run = "antipetros_discordbot.__main__:info_run"
+command_info_run="antipetros_discordbot.__main__:command_info_run"
