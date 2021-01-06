@@ -38,6 +38,7 @@ from antipetros_discordbot.utility.gidtools_functions import pathmaker, writeit,
 
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.named_tuples import NEW_COG_ITEM, NEW_COMMAND_ITEM, NEW_LISTENER_ITEM, NEW_LOOP_ITEM
+from antipetros_discordbot.dev_tools.templates import TEMPLATES_DIR
 # endregion[Imports]
 
 
@@ -57,10 +58,9 @@ APPDATA = SupportKeeper.get_appdata()
 BASE_CONFIG = SupportKeeper.get_config('base_config')
 COGS_CONFIG = SupportKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-TEMPLATE_PATH = pathmaker(THIS_FILE_DIR, 'templates')
 
 
-ENV = Environment(loader=FileSystemLoader(TEMPLATE_PATH, encoding='utf-8'))
+ENV = Environment(loader=FileSystemLoader(TEMPLATES_DIR, encoding='utf-8'))
 
 # endregion[Constants]
 

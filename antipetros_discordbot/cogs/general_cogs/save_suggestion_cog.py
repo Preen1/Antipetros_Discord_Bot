@@ -31,6 +31,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_help
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed, EMBED_SYMBOLS, DEFAULT_FOOTER
 from antipetros_discordbot.utility.misc import save_commands
 from antipetros_discordbot.utility.checks import in_allowed_channels
+from antipetros_discordbot.cogs import get_aliases
 # endregion[Imports]
 
 # region [Logging]
@@ -87,7 +88,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
 # endregion [Init]
 
 # region [Properties]
-
 
     @property
     def command_emojis(self):
@@ -170,7 +170,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
 
 # region [Commands]
 
-    @ commands.command()
+    @ commands.command(aliases=get_aliases("mark_discussed"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_admin_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels')))
     async def mark_discussed(self, ctx, *suggestion_ids: int):
@@ -181,10 +181,10 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
         await ctx.send(embed=await make_basic_embed(title='Marked Suggestions as discussed', text='The following items were marked as discussed: ', symbol='update', ** embed_dict))
         ()
 
-    @ commands.command()
+    @ commands.command(aliases=get_aliases("clear_all_suggestions"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels')))
-    async def clear_all_suggestions(self, ctx, sure=False):
+    async def clear_all_suggestions(self, ctx, sure: bool = False):
         if sure is False:
             question_msg = await ctx.send("Do you really want to delete all saved suggestions?\n\nANSWER **YES** in the next __30 SECONDS__")
             user = ctx.author
@@ -202,7 +202,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
             await self._clear_suggestions(ctx, 'yes')
         ()
 
-    @ commands.command()
+    @ commands.command(aliases=get_aliases("auto_accept_suggestions"))
     @commands.dm_only()
     async def auto_accept_suggestions(self, ctx):
         if str(ctx.author.id) in self.auto_accept_user_dict:
@@ -216,7 +216,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
         await ctx.send("I added you to the auto accept suggestion list")
         ()
 
-    @commands.command(name='unsave_suggestion')
+    @commands.command(aliases=get_aliases("user_delete_suggestion"))
     @commands.dm_only()
     async def user_delete_suggestion(self, ctx, suggestion_id: int):
         if suggestion_id not in self.saved_messages:
@@ -258,7 +258,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
             return
         ()
 
-    @ commands.command()
+    @ commands.command(aliases=get_aliases("get_all_suggestions"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels')))
     async def get_all_suggestions(self, ctx, report_template: str = "basic_report.html.jinja"):
@@ -287,7 +287,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
             await ctx.send(file=file)
         ()
 
-    @ commands.command(name="remove_all_my_data")
+    @ commands.command(aliases=get_aliases("remove_all_userdata"))
     @commands.dm_only()
     async def remove_all_userdata(self, ctx):
         user = ctx.author
@@ -325,7 +325,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
             return
         ()
 
-    @ commands.command()
+    @ commands.command(aliases=get_aliases("request_my_data"))
     @commands.dm_only()
     async def request_my_data(self, ctx):
         user = ctx.author
@@ -381,7 +381,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
 
 # region [Embeds]
 
-
     async def make_add_success_embed(self, suggestion_item: SUGGESTION_DATA_ITEM):
         _filtered_content = []
         if suggestion_item.name is not None:
@@ -425,7 +424,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
 # endregion [Embeds]
 
 # region [HelperMethods]
-
 
     async def _collect_title(self, content):
         name_result = self.suggestion_name_regex.search(content)

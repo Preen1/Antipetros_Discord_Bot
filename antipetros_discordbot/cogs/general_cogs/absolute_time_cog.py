@@ -54,6 +54,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.misc import save_commands, STANDARD_DATETIME_FORMAT
 from antipetros_discordbot.utility.checks import in_allowed_channels
 from antipetros_discordbot.utility.named_tuples import COUNTRY_ITEM, CITY_ITEM
+from antipetros_discordbot.cogs import get_aliases
 # endregion[Imports]
 
 # region [TODO]
@@ -170,7 +171,7 @@ class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "Abso
 
 # region [Commands]
 
-    @commands.command()
+    @commands.command(aliases=get_aliases("to_absolute_times"))
     @ commands.has_any_role(*COGS_CONFIG.getlist("absolute_time", 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist("absolute_time", 'allowed_channels')))
     async def to_absolute_times(self, ctx):
@@ -178,7 +179,7 @@ class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "Abso
 
         pass
 
-    @commands.command()
+    @commands.command(aliases=get_aliases("register_timezone_city"))
     @ commands.has_any_role(*COGS_CONFIG.getlist("absolute_time", 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist("absolute_time", 'allowed_channels')))
     async def register_timezone_city(self, ctx, in_data):
@@ -192,7 +193,7 @@ class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "Abso
         writejson([reg_item.id for reg_item in registered_items], self.registered_timezones_file)
         await ctx.send(f'added timezone {str(item.timezone)} to the registered timezones')
 
-    @commands.command()
+    @commands.command(aliases=get_aliases("tell_all_registered_timezones"))
     @ commands.has_any_role(*COGS_CONFIG.getlist("absolute_time", 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist("absolute_time", 'allowed_channels')))
     async def tell_all_registered_timezones(self, ctx):

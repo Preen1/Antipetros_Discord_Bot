@@ -26,6 +26,8 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.misc import save_commands
 from antipetros_discordbot.utility.checks import in_allowed_channels
+
+from antipetros_discordbot.cogs import get_aliases
 # endregion[Imports]
 
 # region [TODO]
@@ -88,7 +90,6 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
 # endregion[Init]
 
 # region [Properties]
-
 
     @property
     def allowed_channels(self):
@@ -226,11 +227,11 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
             embed.set_image(url=f"attachment://{name.replace('_','')}.{image_format}")
             await ctx.send(embed=embed, file=out_file, delete_after=delete_after)
 
-    @commands.command(name='antistasify')
+    @commands.command(aliases=get_aliases("stamp_image"))
     @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels')))
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
-    async def stamp_image(self, ctx, stamp='ASLOGO1', first_pos='bottom', second_pos='right', factor: float = None):
+    async def stamp_image(self, ctx, stamp: str = 'ASLOGO1', first_pos: str = 'bottom', second_pos: str = 'right', factor: float = None):
         async with ctx.channel.typing():
             if ctx.channel.name not in self.allowed_channels:
                 return
@@ -268,9 +269,8 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
                     name = 'antistasified_' + os.path.splitext(_file.filename)[0]
                     # TODO: make as embed
                     await self._send_image(ctx, in_image, name, f"__**{name}**__")
-            ()
 
-    @commands.command()
+    @commands.command(aliases=get_aliases("available_stamps"))
     @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels')))
     @commands.cooldown(1, 120, commands.BucketType.channel)
@@ -289,9 +289,8 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
                 embed.add_field(name='Stamp Name:', value=name)
                 embed.set_image(url=f"attachment://{name}.png")
                 await ctx.send(embed=embed, file=_file, delete_after=120)
-        ()
 
-    @commands.command()
+    @commands.command(aliases=get_aliases("member_avatar"))
     @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_avatar_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels')))
     @commands.cooldown(1, 30, commands.BucketType.member)
@@ -311,7 +310,6 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
             await self._send_image(ctx, modified_avatar, name, f"**Your New Avatar {ctx.author.name}**")
         else:
             await self._send_image(ctx, modified_avatar, name, f"**Your New Avatar {user.name}**", delete_after=90)
-        ()
 
     async def get_avatar_from_user(self, user):
         avatar = user.avatar_url
@@ -327,7 +325,6 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
 
 
 # region [SpecialMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

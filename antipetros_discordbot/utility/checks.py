@@ -72,7 +72,7 @@ log.info(glog.imported(__name__))
 
 def in_allowed_channels(allowed_channels: Iterable):
     def predicate(ctx):
-        return ctx.channel.name in allowed_channels
+        return ctx.channel.name in allowed_channels if not isinstance(ctx.channel, discord.DMChannel) else False
     return commands.check(predicate)
 
 

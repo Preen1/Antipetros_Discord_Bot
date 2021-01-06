@@ -10,10 +10,8 @@ classifiers = ["License :: OSI Approved :: MIT License"]
 description-file = "README.md"
 license = "MIT"
 requires = [
-
-
 ]
 
 [tool.flit.scripts]
-info_run = "antipetros_discordbot.__main__:info_run"
-command_info_run="antipetros_discordbot.__main__:command_info_run"
+antipetrosbot = "antipetros_discordbot.__main__:cli"
+new_soldier_class="antipetros_discordbot.dev_tools.cli.new_command_staff_soldier:new_command_staff_soldier"

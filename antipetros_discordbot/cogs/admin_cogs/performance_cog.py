@@ -55,6 +55,8 @@ from antipetros_discordbot.utility.misc import save_commands, seconds_to_pretty,
 from antipetros_discordbot.utility.checks import in_allowed_channels, log_invoker
 from antipetros_discordbot.utility.named_tuples import MemoryUsageMeasurement, LatencyMeasurement
 from antipetros_discordbot.utility.enums import DataSize
+from antipetros_discordbot.cogs import get_aliases
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 # endregion[Imports]
 
 # region [TODO]
@@ -85,7 +87,7 @@ BASE_CONFIG = SupportKeeper.get_config('base_config')
 COGS_CONFIG = SupportKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-DATA_COLLECT_INTERVALL = 30 if os.getenv('IS_DEV').casefold() in ['yes', 'true', '1'] else 150 # seconds
+DATA_COLLECT_INTERVALL = 90 if os.getenv('IS_DEV').casefold() in ['yes', 'true', '1'] else 160  # seconds
 DEQUE_SIZE = (24 * 60 * 60) // DATA_COLLECT_INTERVALL  # seconds in day divided by collect interval, full deque is data of one day
 DATA_DUMP_INTERVALL = {'hours': 1, 'minutes': 0, 'seconds': 0} if os.getenv('IS_DEV').casefold() in ['yes', 'true', '1'] else {'hours': 24, 'minutes': 1, 'seconds': 0}
 # endregion[Constants]
@@ -145,7 +147,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
 
     @tasks.loop(**DATA_DUMP_INTERVALL, reconnect=True)
     async def report_data_loop(self):
-
+        # TODO: limit amount of saved data, maybe archive it
         if datetime.utcnow() <= self.start_time + timedelta(seconds=DATA_COLLECT_INTERVALL * 2):
             return
         log.info("%s creating performance reports %s", '#' * 10, '#' * 10)
@@ -176,10 +178,10 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
     async def before_report_data_loop(self):
         await self.bot.wait_until_ready()
 
-    @commands.command()
+    @commands.command(aliases=get_aliases("report_latency"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('performance', 'allowed_roles'))
     @ in_allowed_channels(set(COGS_CONFIG.getlist('performance', 'allowed_channels')))
-    async def report_latency(self, ctx, with_graph=True, since_last_hours: int = 24):
+    async def report_latency(self, ctx, with_graph: bool = True, since_last_hours: int = 24):
         report_data = []
         for item in list(self.latency_data.copy()):
             if item.date_time >= datetime.utcnow() - timedelta(hours=since_last_hours):
@@ -196,10 +198,10 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
             embed.set_image(url=_url)
         await ctx.send(embed=embed, file=_file)
 
-    @commands.command()
+    @commands.command(aliases=get_aliases("report_memory"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('performance', 'allowed_roles'))
     @ in_allowed_channels(set(COGS_CONFIG.getlist('performance', 'allowed_channels')))
-    async def report_memory(self, ctx, with_graph=True, since_last_hours: int = 24):
+    async def report_memory(self, ctx, with_graph: bool = True, since_last_hours: int = 24):
         report_data = []
 
         for item in list(self.memory_data.copy()):
@@ -226,7 +228,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
     async def make_graph(self, data, typus: str, save_to=None):
         plt.style.use('ggplot')
         x = [item.date_time for item in data]
-        log.debug("setting_datapoints")
+
         if typus == 'latency':
             y = [item.latency for item in data]
             max_y = max(y)
@@ -243,52 +245,36 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
             ymax = round(max_y * 1.1)
             h_line_height = max_y
         await asyncio.sleep(0.25)
-        log.debug('formatting x axis to only time')
 
         plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
-        plt.gca().xaxis.set_major_locator(mdates.MinuteLocator(interval=max(DATA_COLLECT_INTERVALL // 60, 1)))
+        plt.gca().xaxis.set_major_locator(mdates.MinuteLocator(interval=max(DATA_COLLECT_INTERVALL // 60, 10)))
+        plt.rcParams["font.family"] = "Consolas"
+        plt.rc('xtick.major', size=6, pad=10)
+        plt.rc('xtick', labelsize=9)
+
         if typus == 'latency':
             plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%d ms'))
         else:
             plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%d gb'))
-        log.debug('plotting')
-        plt.plot(x, y, self.plot_formatting_info.get(typus), markersize=5, linewidth=0.75, alpha=0.5)
-        log.debug('calling autoformat on x axis')
+
+        plt.plot(x, y, self.plot_formatting_info.get(typus), markersize=2, linewidth=0.6, alpha=1)
+
         plt.gcf().autofmt_xdate()
-        log.debug('making hline')
+
         await asyncio.sleep(0.25)
         vline_max = [item.date_time for item in data if item.absolute == max(item.absolute for item in data)][0] if typus == 'memory' else [item.date_time for item in data if item.latency == max(item.latency for item in data)][0]
         plt.axvline(x=vline_max, color='g', linestyle=':')
         plt.axhline(y=h_line_height, color='r', linestyle='--')
-        log.debug('setting yaxis min and max')
+
         plt.axis(ymin=ymin, ymax=ymax)
-        log.debug('starting annotate')
-        # for item in data:
-        #     log.debug('annotating item from time %s', item.date_time.isoformat(timespec='seconds'))
-        #     if typus == 'memory':
-        #         plt.annotate(await self.convert_memory_size(item.absolute, DataSize.GigaBytes, annotate=True, extra_digits=1),
-        #                      (item.date_time, await self.convert_memory_size(item.absolute, DataSize.GigaBytes)),
-        #                      textcoords='offset points',
-        #                      xytext=(0, 5),
-        #                      ha='center',
-        #                      fontsize='x-small',
-        #                      fontfamily='Roboto')
-        #     else:
-        #         plt.annotate(str(item.latency) + ' ms',
-        #                      (item.date_time, item.latency),
-        #                      textcoords='offset points',
-        #                      xytext=(0, 10),
-        #                      ha='center',
-        #                      fontsize='x-small',
-        #                      fontfamily='Roboto')
-        log.debug('creating title')
+
         plt.title(f'{typus.title()} -- {datetime.utcnow().strftime("%Y.%m.%d")}')
 
         plt.xticks(rotation=90)
         await asyncio.sleep(0.25)
         if save_to is not None:
             plt.savefig(save_to, format='png')
-        log.debug('writing plot do bytesIO')
+
         with BytesIO() as image_binary:
             plt.savefig(image_binary, format='png')
             plt.close()
@@ -311,17 +297,23 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
                     _out = item.date_time
         return _out
 
-    @commands.command()
+    @commands.command(aliases=get_aliases("get_command_stats"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('performance', 'allowed_roles'))
     @ in_allowed_channels(set(COGS_CONFIG.getlist('performance', 'allowed_channels')))
     async def get_command_stats(self, ctx):
-        data_dict = {item.name:item.data for item in self.bot.command_staff.get_todays_invoke_data()}
+        data_dict = {item.name: f"{ZERO_WIDTH}\n{item.data}\n{ZERO_WIDTH}" for item in await self.bot.command_staff.get_todays_invoke_data()}
         date = self.bot.command_staff.date_today
-        embed = await make_basic_embed(titel=ctx.command.name, text=f'data of the last 24hrs - {date}',symbol='data', **data_dict)
 
+        embed = await make_basic_embed(title=ctx.command.name, text=f'data of the last 24hrs - {date}', symbol='data', **data_dict)
 
         await ctx.send(embed=embed)
 
+    @commands.command(aliases=get_aliases("report"))
+    @ commands.has_any_role(*COGS_CONFIG.getlist('performance', 'allowed_roles'))
+    @ in_allowed_channels(set(COGS_CONFIG.getlist('performance', 'allowed_channels')))
+    async def report(self, ctx):
+        await ctx.invoke(self.bot.get_command('report_memory'))
+        await ctx.invoke(self.bot.get_command('report_latency'))
 
     def __str__(self) -> str:
         return self.__class__.__name__

@@ -26,6 +26,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed, EMBED_SYMBOLS
 from antipetros_discordbot.utility.misc import save_commands
 from antipetros_discordbot.utility.checks import in_allowed_channels
+from antipetros_discordbot.cogs import get_aliases
 # endregion [Imports]
 
 # region [Logging]
@@ -115,20 +116,22 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         Downloads Blacklist and saves it to json, after processing (-->_process_raw_blocklist_content)
         """
         if self.bot.aio_request_session is None:
-            await asyncio.sleep(5)
-        async with self.bot.aio_request_session as session:
-            async with session.get(self.blocklist_hostfile_url) as _response:
-                if RequestStatus(_response.status) is RequestStatus.Ok:
-                    _content = await _response.read()
-                    _content = _content.decode('utf-8', errors='ignore')
-                    forbidden_links = await self._process_raw_blocklist_content(_content)
+            await asyncio.sleep(2)
 
-                    _path = APPDATA["forbidden_link_list.json"]
-                    writejson(list(map(lambda x: urlparse('https://' + x).netloc.replace('www.', ''), forbidden_links)), _path)  # converting to list as set is not json serializable
+        async with self.bot.aio_request_session.get(self.blocklist_hostfile_url) as _response:
+            if RequestStatus(_response.status) is RequestStatus.Ok:
+                _content = await _response.read()
+                _content = _content.decode('utf-8', errors='ignore')
+                forbidden_links = await self._process_raw_blocklist_content(_content)
+
+                _path = APPDATA["forbidden_link_list.json"]
+                writejson(list(map(lambda x: urlparse('https://' + x).netloc.replace('www.', ''), forbidden_links)), _path)  # converting to list as set is not json serializable
 
     def cog_unload(self):
         self.fresh_blacklist_loop.stop()
         self.fresh_blacklist_loop.stop()
+        super().unload()
+        log.info("Cog '%s' has been unloaded", str(self))
 
     @tasks.loop(hours=24.0, reconnect=True)
     async def fresh_blacklist_loop(self):
@@ -224,7 +227,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
 
 # region [Commands]
 
-    @commands.command()
+    @commands.command(aliases=get_aliases("add_forbidden_word"))
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_admin_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
     async def add_forbidden_word(self, ctx, word: str):
@@ -242,10 +245,10 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         writejson(_forbidden_list, self.forbidden_url_words_file)
         await ctx.send(embed=await make_basic_embed(title='Added Word', text=f'The Word "{word}" was added to the forbidden url word list', symbol='update'))
 
-    @commands.command()
+    @commands.command(aliases=get_aliases("remove_forbidden_word"))
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_admin_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
-    async def remove_forbidden_word(self, ctx, word):
+    async def remove_forbidden_word(self, ctx, word: str):
         """
         removes a word from the forbidden url word list, caseinsensitive.
 
@@ -261,11 +264,11 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         writejson(_new_list, self.forbidden_url_words_file)
         await ctx.send(embed=await make_basic_embed(title='Removed Word', text=f'The Word "{word}" was removed from the forbidden url word list', symbol='update'))
 
-    @commands.command()
+    @commands.command(aliases=get_aliases("clear_all_links"))
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'delete_all_allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
-    async def clear_all_links(self, ctx, sure=False):
+    async def clear_all_links(self, ctx, sure: bool = False):
         """
         Clears the datastorage (database) and sets it up empty again.
 
@@ -286,13 +289,12 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
                 await ctx.send(embed=await make_basic_embed(title='No answer received', text='canceling request to delete all links, nothing was deleted', symbol='cancelled'))
         else:
             await self._clear_links(ctx, 'yes')
-        ()
 
-    @commands.command(hidden=False)
+    @commands.command(hidden=False, aliases=get_aliases("get_link"))
     @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
-    async def get_link(self, ctx, name):
+    async def get_link(self, ctx, name: str):
         """
         Get a previously saved link by link_name.
 
@@ -308,13 +310,12 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
             return
         await ctx.send(embed=await make_basic_embed(title='Retrieved link!', text='Link was successfully retrieved from storage', symbol='link', **{'available for the next': '1 Hour', _name: _link}), delete_after=60 * 60)
         log.info("retrieve link '%s'", _link)
-        ()
 
-    @ commands.command(hidden=False)
+    @ commands.command(hidden=False, aliases=get_aliases("get_all_links"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
-    async def get_all_links(self, ctx, in_format='txt'):
+    async def get_all_links(self, ctx, in_format: str = 'txt'):
         """
         Get a list of all previously saved links, as a file.
 
@@ -347,9 +348,8 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
                 return
             _file = discord.File(_path, _name)
             await ctx.send(file=_file)
-        ()
 
-    @ commands.command(hidden=False)
+    @ commands.command(hidden=False, aliases=get_aliases("save_link"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
@@ -363,24 +363,19 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
             days_to_hold (int, optional): time befor the link will be deleted from storage channel in days, if not give will be retrieved from config. Defaults to None.
         """
         # TODO: refractor that monster of an function
-        log.debug("command was triggered in %s", ctx.channel.name)
-        log.info("command was initiated by '%s'", ctx.author.name)
-        # check if it is a forbidden link, before computing all that expansive shit
+
         to_check_link = await self._make_check_link(link)
-        log.debug("link transformed to  check link: '%s'", to_check_link)
         parsed_link = urlparse(link, scheme='https').geturl().replace('///', '//')
         date_and_time = datetime.utcnow()
         if all(to_check_link != forbidden_link for forbidden_link in self.forbidden_links) and all(forbidden_word not in to_check_link for forbidden_word in self.forbidden_url_words):
-            log.debug("'%s' NOT in forbidden link list and does not contain a forbidden word", parsed_link)
-            # create link name if none was supplied
+
             if link_name is None:
-                log.debug("No Link name provided")
                 link_name = await self._make_link_name(link)
             link_name = link_name.upper()
 
             # check if link name is already occupied
             if await self._check_link_name_existing(link_name) is True:
-                log.error("link name '%s' already in DataStorage", link_name)
+
                 await ctx.send(embed=await make_basic_embed(title='Link name already in use', text=f"The link_name '{link_name}', is already taken, please choose a different Name.", symbol='not_possible'))
                 return None
 
@@ -408,40 +403,40 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
             await ctx.send(embed=await make_basic_embed(title='success', text='✅ Link was successfully saved', symbol='save'))
 
         else:
-            log.warning("link '%s' matched against a forbidden link or contained a forbidden word", parsed_link)
-            delete_answer = None
 
-            # send warning for forbidden link infraction
-            await ctx.send(embed=await self._bad_link_embed(), file=await self._get_bad_link_image(), delete_after=delete_answer)
-            if ctx.channel.permissions_for(ctx.me).manage_messages:
-                # if channel permissions for bot allows it, because it has an forbidden link in it and should most likely be deleted from the discord
-                await ctx.message.delete(delay=None)
-                log.debug("was able to delete the offending link")
-                was_deleted = True
-            else:
-                log.error("was NOT able to delete the offending link")
-                was_deleted = False
+            await self._handle_forbidden_link(ctx, date_and_time, parsed_link, to_check_link)
 
-            # notify users specified in the config of the attempt at saving an forbidden link
-            notify_embed = await self._notify_dm_embed(was_deleted=was_deleted,
-                                                       author=ctx.author,
-                                                       date_time=date_and_time,
-                                                       channel=ctx.channel.name,
-                                                       link=parsed_link,
-                                                       matches_link=await self.get_matched_forbidden_link(to_check_link),
-                                                       matches_word=await self.get_matched_forbidden_word(to_check_link))
+    async def _handle_forbidden_link(self, ctx, date_time, parsed_link, to_check_link):
+        log.warning("link '%s' matched against a forbidden link or contained a forbidden word", parsed_link)
 
-            for user_id in COGS_CONFIG.getlist(self.config_name, 'member_to_notifiy_bad_link'):
-                user = self.bot.get_user(int(user_id))
-                await user.send(embed=notify_embed, delete_after=delete_answer)
-                log.debug("notified '%s' about the offending link", user.name)
-        ()
+        await ctx.send(embed=await self._bad_link_embed(), file=await self._get_bad_link_image())
+        if ctx.channel.permissions_for(ctx.me).manage_messages:
+            await ctx.message.delete(delay=None)
+            log.debug("was able to delete the offending link")
+            was_deleted = True
 
-    @ commands.command(hidden=False)
+        else:
+            log.error("was NOT able to delete the offending link")
+            was_deleted = False
+
+        notify_embed = await self._notify_dm_embed(was_deleted=was_deleted,
+                                                   author=ctx.author,
+                                                   date_time=date_time,
+                                                   channel=ctx.channel.name,
+                                                   link=parsed_link,
+                                                   matches_link=await self.get_matched_forbidden_link(to_check_link),
+                                                   matches_word=await self.get_matched_forbidden_word(to_check_link))
+
+        for user_id in COGS_CONFIG.getlist(self.config_name, 'member_to_notifiy_bad_link'):
+            user = self.bot.get_user(int(user_id))
+            await user.send(embed=notify_embed)
+            log.debug("notified '%s' about the offending link", user.name)
+
+    @ commands.command(hidden=False, aliases=get_aliases("get_forbidden_list"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
     @ in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
-    async def get_forbidden_list(self, ctx, file_format='json'):
+    async def get_forbidden_list(self, ctx, file_format: str = 'json'):
         """
         Get the forbidden link list as an file.
 
@@ -457,13 +452,12 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
                 _file = discord.File(_path, filename=_name)
                 await ctx.send(file=_file, delete_after=60)
                 log.info("send forbidden link list to '%s'", ctx.author.name)
-        ()
 
-    @ commands.command()
+    @ commands.command(aliases=get_aliases("delete_link"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
     @ in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
-    async def delete_link(self, ctx, name, scope='channel'):
+    async def delete_link(self, ctx, name: str, scope: str = 'channel'):
         """
         Deletes an link by name (name will be fuzzy matched).
 
@@ -492,7 +486,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
                 await message.delete()
                 answer["deleted_from_channel"] = "✅"
         await ctx.send(embed=await make_basic_embed(title="Deleted Link", text='Link was deleted from: ', symbol='trash', **answer))
-        ()
+
 
 # endregion [Commands]
 

@@ -10,6 +10,7 @@ from asyncio import Future
 from contextlib import suppress
 import sys
 from inspect import iscoroutinefunction, iscoroutine
+import time
 # * Third Party Imports -->
 from discord.ext import commands, tasks
 import discord
@@ -27,13 +28,13 @@ import gidlogger as glog
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, readit
-from antipetros_discordbot.utility.misc import sync_to_async
+from antipetros_discordbot.utility.misc import sync_to_async, save_bin_file
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.named_tuples import CreatorMember
-from antipetros_discordbot.engine.staff_invoke_statistician import InvokeStatistician
-from antipetros_discordbot.engine.staff_error_handler import ErrorHandler
+from antipetros_discordbot.command_staff.staff_invoke_statistician import InvokeStatistician
+from antipetros_discordbot.command_staff.staff_error_handler import ErrorHandler
 from antipetros_discordbot.engine.global_checks import user_not_blacklisted
-from antipetros_discordbot.engine.command_staff import CommandStaffRoster
+from antipetros_discordbot.command_staff import CommandStaffRoster, ErrorHandler, InvokeStatistician, TimeKeeper, ChannelStatistician
 # endregion[Imports]
 
 
@@ -69,11 +70,12 @@ class AntiPetrosBot(commands.Bot):
     bot_feature_suggestion_folder = APPDATA["bot_feature_suggestion_data"]
     bot_feature_suggestion_json_file = APPDATA['bot_feature_suggestions.json']
     cog_import_base_path = BASE_CONFIG.get('general_settings', 'cogs_location')
-    available_staff = (InvokeStatistician,ErrorHandler)
+
+    available_staff = (InvokeStatistician, ErrorHandler, TimeKeeper, ChannelStatistician)
 
     def __init__(self, *args, ** kwargs):
-        super().__init__(*args, owner_id=self.creator.id, **kwargs)
-        self.case_insensitive = BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive')
+        super().__init__(*args, owner_id=self.creator.id, case_insensitive=BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive'), **kwargs)
+
         self.description = readit(APPDATA['bot_description.md'])
         self.command_staff = CommandStaffRoster(self, self.available_staff)
         self.general_data = loadjson(APPDATA['general_data.json'])
@@ -82,14 +84,11 @@ class AntiPetrosBot(commands.Bot):
         self.bot_member = None
         self.aio_request_session = None
         self.urban_client = None
-        self.all_bot_roles = []
+        self.all_bot_roles = None
         self.current_day = datetime.utcnow().day
+        self.clients_to_close = []
         user_not_blacklisted(self, log)
 
-        if BASE_CONFIG.getboolean('startup_message', 'use_startup_message') is True:
-            self.startup_message = (BASE_CONFIG.getint('startup_message', 'channel'), BASE_CONFIG.get('startup_message', 'message'))
-        else:
-            self.startup_message = None
         self._setup()
 
         glog.class_init_notification(log, self)
@@ -98,22 +97,58 @@ class AntiPetrosBot(commands.Bot):
 
     def _setup(self):
         self._get_initial_cogs()
-        self.get_bot_roles_loop.start()
-
+        self.update_check_loop.start()
 
     async def on_ready(self):
         log.info('%s has connected to Discord!', self.user.name)
-        channel = self.get_channel(BASE_CONFIG.getint('startup_message', 'channel'))
-        if self.startup_message is not None:
-            delete_time = 240 if self.is_debug is True else 600
-            await self.get_channel(self.startup_message[0]).send(self.startup_message[1], delete_after=delete_time)
-        await asyncio.sleep(2)
-        self.command_staff.staff_memo(attribute_name='on_ready')
+        if BASE_CONFIG.getboolean('startup_message', 'use_startup_message') is True:
+            await self.send_startup_message()
+        await self.command_staff.staff_memo(attribute_name='if_ready')
+        await self.to_all_cogs('on_ready_setup')
+        await self._get_bot_info()
+        await self._start_sessions()
         if self.is_debug:
             await self.debug_function()
 
+    async def on_message(self, message: discord.Message) -> None:
+        await self.command_staff.record_channel_usage(message)
+        await self.process_commands(message)
+
+    async def send_startup_message(self):
+        channel = self.get_channel(BASE_CONFIG.getint('startup_message', 'channel'))
+        msg = BASE_CONFIG.get('startup_message', 'message')
+        delete_time = 240 if self.is_debug is True else 600
+        await channel.send(msg, delete_after=delete_time)
+
+    async def to_all_cogs(self, command, *args, **kwargs):
+        for cog_name, cog_object in self.cogs.items():
+            if hasattr(cog_object, command):
+                await getattr(cog_object, command)(*args, **kwargs)
+
+    async def _get_bot_info(self):
+        if self.all_bot_roles is None:
+            self.all_bot_roles = []
+            self.bot_member = await self.retrieve_member(self.antistasi_guild.id, self.id)
+            for index, role in enumerate(self.bot_member.roles):
+                if index != 0:
+                    self.all_bot_roles.append(role)
+        self.command_prefix = BASE_CONFIG.get('prefix', 'command_prefix')
+        if BASE_CONFIG.getboolean('prefix', 'invoke_by_role_and_mention') is True:
+            self.command_prefix = when_mentioned_or_roles_or(BASE_CONFIG.get('prefix', 'command_prefix'))
+
+        AntiPetrosBot.creator = self.creator._replace(**{'member_object': await self.retrieve_antistasi_member(self.creator.id), 'user_object': await self.fetch_user(self.creator.id)})
+
+    async def _start_sessions(self):
+        if self.aio_request_session is None:
+            self.aio_request_session = aiohttp.ClientSession(loop=self.loop)
+            self.clients_to_close.append(self.aio_request_session)
+            log.debug("'%s' was started", str(self.aio_request_session))
+        if self.urban_client is None:
+            self.urban_client = AsyncUrbanClient()
+            self.clients_to_close.append(self.urban_client)
+            log.debug("'%s' was started", str(self.urban_client))
+
     def _get_initial_cogs(self):
-        load_dev = BASE_CONFIG.getboolean('general_settings', 'load_dev_cogs')
         self.load_extension(self.admin_cog_import_path)
         log.debug("loaded extension\cog: '%s' from '%s'", self.admin_cog_import_path.split('.')[-1], self.admin_cog_import_path)
         for _cog in BASE_CONFIG.options('extensions'):
@@ -127,17 +162,22 @@ class AntiPetrosBot(commands.Bot):
 
     async def close(self):
         # TODO: check the needs for everything here, currently copied from official Python Discord Bot
-        self.command_staff.staff_memo('retire')
-        for ext in list(self.extensions):
-            with suppress(Exception):
-                self.unload_extension(ext)
+        log.info("shutting down bot loops")
+        self.update_check_loop.stop()
 
-        if self.aio_request_session:
-            await self.aio_request_session.close()
-            log.debug('aiosession closed: %s', str(self.aio_request_session.closed))
+        log.info("retiring troops")
+        self.command_staff.retire_troops()
+
+        log.debug('aiosession closed: %s', str(self.aio_request_session.closed))
+        log.info("shutting down executor")
+        self.executor.shutdown()
+        for session in self.clients_to_close:
+            await session.close()
+            log.info("'%s' was shut down", str(session))
+
+        log.info("closing bot")
         await super().close()
-        if self.loop.is_closed():
-            sys.exit()
+        time.sleep(5)
 
     @staticmethod
     def activity_from_config(option='standard_activity'):
@@ -154,49 +194,23 @@ class AntiPetrosBot(commands.Bot):
         return discord.Activity(name=text, type=activity_type)
 
     async def on_command_error(self, ctx, error):
-        _call_item = self.command_staff.handle_errors
-        if iscoroutinefunction(_call_item):
-            await _call_item(ctx,error)
-        else:
-            _call_item(ctx,error)
+        await self.command_staff.handle_errors(ctx, error, traceback.format_exc())
 
-    #     elif isinstance(error, commands.CommandOnCooldown):
-    #         await ctx.channel.send(f'{ctx.author.mention} your mother was a hamster and your father smelt of elderberries, STOP SPAMMING!', delete_after=30)
-    #         await ctx.message.delete()
-    #     else:
-    #         log.error('Ignoring exception in command {}:'.format(ctx.command))
-    #         log.error(str(error), exc_info=True)
-
-    @tasks.loop(minutes=10, reconnect=True)
+    @tasks.loop(minutes=5, reconnect=True)
     async def update_check_loop(self):
         if self.current_day != datetime.utcnow().day:
             self.current_day = datetime.utcnow().day
-            self.command_staff.staff_memo('update')
+            await self.command_staff.staff_memo('update')
+            await self.to_all_cogs('updated')
 
-
-    @tasks.loop(minutes=30, reconnect=True)
-    async def get_bot_roles_loop(self):
-        log.info('Starting Refreshing Bot Roles')
-        if self.aio_request_session is None:
-            self.aio_request_session = aiohttp.ClientSession(loop=self.loop)
-        if self.urban_client is None:
-            self.urban_client = AsyncUrbanClient()
-        self.all_bot_roles = []
-        self.bot_member = await self.retrieve_member(self.antistasi_guild.id, self.id)
-        for index, role in enumerate(self.bot_member.roles):
-            if index != 0:
-                self.all_bot_roles.append(role)
-        if BASE_CONFIG.getboolean('prefix', 'invoke_by_role_and_mention') is True:
-            self.command_prefix = when_mentioned_or_roles_or(BASE_CONFIG.get('prefix', 'command_prefix'))
-        else:
-            self.command_prefix = BASE_CONFIG.get('prefix', 'command_prefix')
-
-        AntiPetrosBot.creator = self.creator._replace(**{'member_object': await self.retrieve_antistasi_member(self.creator.id), 'user_object': await self.fetch_user(self.creator.id)})
-        log.info('Finished Refreshing Bot Roles')
-
-    @get_bot_roles_loop.before_loop
-    async def before_get_bot_roles_loop(self):
+    @update_check_loop.before_loop
+    async def before_update_check_loop(self):
         await self.wait_until_ready()
+
+    def all_cog_commands(self):
+        for cog_name, cog_object in self.cogs.items():
+            for command in cog_object.get_commands():
+                yield command
 
     @property
     def antistasi_guild(self):
@@ -269,13 +283,9 @@ class AntiPetrosBot(commands.Bot):
     async def execute_in_thread(self, func, *args, **kwargs):
         return await self.loop.run_in_executor(self.executor, func, *args, **kwargs)
 
-    def save_bin_file(self, path, data):
-        with open(path, 'wb') as f:
-            f.write(data)
-
     async def save_feature_suggestion_extra_data(self, data_name, data_content):
         path = pathmaker(self.bot_feature_suggestion_folder, data_name)
-        await self.execute_in_thread(self.save_bin_file, path, data_content)
+        await self.execute_in_thread(save_bin_file, path, data_content)
         return path
 
     async def add_to_feature_suggestions(self, item):
@@ -283,13 +293,12 @@ class AntiPetrosBot(commands.Bot):
         feat_suggest_json.append(item._asdict())
         writejson(feat_suggest_json, self.bot_feature_suggestion_json_file)
 
-
     async def debug_function(self):
         log.debug("debug function triggered")
-        log.warning('nothing set in debug function for "%s"', self.user.name)
-
-
-
+        _out = [cog_name for cog_name, cog_object in self.cogs.items()]
+        writejson(_out, 'cog_names.json')
+        _out2 = [role.name for index, role in enumerate(self.roles)]
+        writejson(_out2, 'bot_roles.json')
 
     def __repr__(self):
         return f"{self.__class__.__name__}()"

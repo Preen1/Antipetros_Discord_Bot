@@ -618,3 +618,9 @@ pyproject.toml
 *_latency_graph.png
 *_memory_graph.png
 antipetros_discordbot/reports
+token.env
+tools/_project_devmeta.env
+antipetros_discordbot/init_userdata/data_pack/image_files/other_images/armaimage.png
+antipetros_discordbot/init_userdata/data_pack/misc/boston.ttf
+tools/_project_devmeta.env
+antipetros_discordbot/init_userdata/data_pack/temp_files/last_shutdown_message.pkl

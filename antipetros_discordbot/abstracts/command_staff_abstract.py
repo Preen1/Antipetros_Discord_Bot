@@ -131,9 +131,10 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[Constants]
 
+
 class CommandStaffSoldierBase(ABC):
     @abstractmethod
-    def on_ready(self):
+    async def if_ready(self):
         ...
 
     @abstractmethod
@@ -141,7 +142,7 @@ class CommandStaffSoldierBase(ABC):
         ...
 
     @abstractmethod
-    def update(self):
+    async def update(self):
         ...
 
     def __str__(self) -> str:

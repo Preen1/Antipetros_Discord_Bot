@@ -4,6 +4,9 @@
 # * Standard Library Imports -->
 from collections import namedtuple
 
+import discord
+from discord.ext import commands
+from discord import File, Embed
 # endregion[Imports]
 
 # for saved links
@@ -38,4 +41,10 @@ LatencyMeasurement = namedtuple("LatencyMeasurement", ['date_time', 'latency'])
 MemoryUsageMeasurement = namedtuple("MemoryUsageMeasurement", ["date_time", "total", "absolute", "as_percent", 'is_warning', 'is_critical'], defaults=(False, False))
 
 
-InvokedCommandsDataItem=namedtuple("InvokedCommandsDataItem",['name', 'date', 'data'])
+InvokedCommandsDataItem = namedtuple("InvokedCommandsDataItem", ['name', 'date', 'data'])
+
+
+NewCommandStaffItem = namedtuple("NewCommandStaffItem", ['name'])
+
+
+StartupMessageInfo = namedtuple('StartupMessageInfo', ['channel_id', 'message'])

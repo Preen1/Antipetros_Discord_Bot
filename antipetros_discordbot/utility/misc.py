@@ -8,6 +8,8 @@ import discord
 from pprint import pprint, pformat
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, loadjson, writejson, readit, readbin, writeit, work_in, writebin
 import gidlogger as glog
+from datetime import datetime
+
 log = glog.aux_logger(__name__)
 glog.import_notification(log, __name__)
 
@@ -90,24 +92,32 @@ EVENTS = sorted(_IMPORTANT_EVENTS) + list(set(['on_shard_disconnect',
                                                'on_relationship_update']))
 
 
-def seconds_to_pretty(seconds: int):
+def seconds_to_pretty(seconds: int, decimal_places: int = 1):
     out_string = ''
     rest = seconds
     for name, factor in FACTORS.items():
         sub_result, rest = divmod(rest, factor)
         if sub_result != 0:
-            out_string += f"**{name.title()}:** {str(sub_result)} | "
+            out_string += f"**{name.title()}:** {str(int(round(sub_result,ndigits=decimal_places)))} | "
     return out_string
 
 
-async def async_seconds_to_pretty_normal(seconds: int):
+async def async_seconds_to_pretty_normal(seconds: int, decimal_places: int = 1):
     out_string = ''
     rest = seconds
     for name, factor in FACTORS.items():
         sub_result, rest = divmod(rest, factor)
         if sub_result != 0:
-            out_string += f"{str(sub_result)} {name.lower()} "
+            out_string += f"{str(int(round(sub_result,ndigits=decimal_places)))} {name.lower()} "
     return out_string.strip()
+
+
+def date_today():
+    return datetime.utcnow().strftime("%Y-%m-%d")
+
+
+async def async_date_today():
+    return datetime.utcnow().strftime("%Y-%m-%d")
 
 
 def sync_to_async(_func):
@@ -142,3 +152,35 @@ async def image_to_url(image_path):
 
 def color_hex_embed(color_string):
     return int(color_string, base=16)
+
+
+def check_if_int(data):
+    if not isinstance(data, str):
+        data = str(data).strip()
+    if data.isdigit():
+        return int(data)
+
+    return data
+
+
+async def async_split_camel_case_string(string):
+    _out = []
+    for char in string:
+        if char == char.upper():
+            char = ' ' + char
+        _out.append(char)
+    return ''.join(_out).strip()
+
+
+def split_camel_case_string(string):
+    _out = []
+    for char in string:
+        if char == char.upper():
+            char = ' ' + char
+        _out.append(char)
+    return ''.join(_out).strip()
+
+
+def save_bin_file(path, data):
+    with open(path, 'wb') as f:
+        f.write(data)

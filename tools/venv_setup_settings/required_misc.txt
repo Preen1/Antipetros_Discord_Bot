@@ -25,3 +25,9 @@ psutil
 --force-reinstall cchardet
 python-benedict
 udpy
+commonmark
+pyfiglet
+graphviz
+pydot
+lxml
+networkx

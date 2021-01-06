@@ -44,12 +44,13 @@ import gidlogger as glog
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
 from antipetros_discordbot.utility.misc import seconds_to_pretty
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.utility.data_gathering import gather_data
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.misc import save_commands, seconds_to_pretty, async_seconds_to_pretty_normal
 from antipetros_discordbot.utility.checks import in_allowed_channels
 from antipetros_discordbot.utility.named_tuples import FeatureSuggestionItem
+from antipetros_discordbot.cogs import get_aliases
 # endregion[Imports]
 
 # region [TODO]
@@ -87,7 +88,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
     # region [ClassAttributes]
 
     config_name = 'admin'
-
+    shutdown_message_pickle_file = pathmaker(APPDATA['temp_files'], 'last_shutdown_message.pkl')
     # endregion[ClassAttributes]
 
 # region [Init]
@@ -116,6 +117,16 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
 
 # endregion[Properties]
 
+    async def on_ready_setup(self):
+        if os.path.isfile(self.shutdown_message_pickle_file):
+            last_shutdown_message = get_pickled(self.shutdown_message_pickle_file)
+            channel_id = last_shutdown_message.get('channel_id')
+            message_id = last_shutdown_message.get('message_id')
+            channel = await self.bot.fetch_channel(channel_id)
+            message = await channel.fetch_message(message_id)
+            await message.delete()
+            os.remove(self.shutdown_message_pickle_file)
+
     async def _get_available_configs(self):  # sourcery skip: dict-comprehension
         found_configs = {}
         for _file in os.scandir(self.config_dir):
@@ -135,8 +146,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
         else:
             return pathmaker(self.config_dir, available_configs[_result[0]])
 
-
-    @ commands.command(name="new_feature")
+    @ commands.command(aliases=get_aliases("make_feature_suggestion"))
     async def make_feature_suggestion(self, ctx, *, message):
 
         author = ctx.author
@@ -161,7 +171,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
         await self.bot.add_to_feature_suggestions(feature_suggestion_item)
         await ctx.send(content=f"your suggestion has been sent to the bot creator --> **{self.bot.creator.name}** <--")
 
-    @ commands.command(name="reload_all")
+    @ commands.command(aliases=get_aliases("reload_all_ext"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('admin', 'allowed_roles'))
     @ in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
     async def reload_all_ext(self, ctx):
@@ -190,22 +200,28 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
         await ctx.send(embed=await make_basic_embed(title="**successfully reloaded the following extensions**", symbol="update", **reloaded_extensions), delete_after=_delete_time)
         await ctx.message.delete(delay=float(_delete_time))
 
-    @ commands.command(name='die', aliases=['go_away', 'turn_of', 'shutdown', 'exit', 'close'])
+    @ commands.command(aliases=get_aliases("shutdown"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('admin', 'allowed_roles'))
     @ in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
     async def shutdown(self, ctx):
         try:
             log.debug('shutdown command received from "%s"', ctx.author.name)
-            started_at = self.bot.command_staff.start_time.strftime(self.bot.std_date_time_format)
-            embed = await make_basic_embed(title='cya!', text='AntiPetros is shutting down.', symbol='shutdown', was_online_since=started_at)
-            embed.set_image(url='https://media.discordapp.net/attachments/449481990513754114/785601325329023006/2d1ca5fea58e65277ac5c18788b21d03.gif')
-            await ctx.send(embed=embed)
-        except Exception as error:
-            log.error(error,exc_info=True)
-        finally:
-            await self.bot.logout()
+            started_at = self.bot.command_staff.start_time
+            started_at_string = started_at.strftime(self.bot.std_date_time_format)
+            online_duration = datetime.utcnow() - started_at
 
-    @ commands.command(name='list_configs')
+            embed = await make_basic_embed(title='cya!', text='AntiPetros is shutting down.', symbol='shutdown', was_online_since=started_at_string, online_for=await async_seconds_to_pretty_normal(online_duration.total_seconds(), decimal_places=0))
+            embed.set_image(url='https://media.discordapp.net/attachments/449481990513754114/785601325329023006/2d1ca5fea58e65277ac5c18788b21d03.gif')
+            last_shutdown_message = await ctx.send(embed=embed)
+            pickleit({"message_id": last_shutdown_message.id, "channel_id": last_shutdown_message.channel.id}, self.shutdown_message_pickle_file)
+
+        except Exception as error:
+            log.error(error, exc_info=False)
+        finally:
+            await ctx.message.delete()
+            await self.bot.close()
+
+    @ commands.command(aliases=get_aliases("list_configs"))
     @ commands.dm_only()
     async def list_configs(self, ctx):
         if ctx.author.id in self.allowed_dm_invoker_ids:
@@ -216,9 +232,9 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
 
             log.info("config list send to '%s'", ctx.author.name)
 
-    @ commands.command(name='send_config')
+    @ commands.command(aliases=get_aliases("config_request"))
     @ commands.dm_only()
-    async def config_request(self, ctx, config_name='all'):
+    async def config_request(self, ctx, config_name: str = 'all'):
         if ctx.author.id in self.allowed_dm_invoker_ids:
             available_configs = await self.get_available_configs()
             requested_configs = []
@@ -240,9 +256,9 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
                     await ctx.send(_msg, file=_file)
                 log.info("requested configs (%s) send to %s", ", ".join(requested_configs), ctx.author.name)
 
-    @ commands.command(name='overwrite_config')
+    @ commands.command(aliases=get_aliases("overwrite_config_from_file"))
     @ commands.dm_only()
-    async def overwrite_config_from_file(self, ctx, config_name):
+    async def overwrite_config_from_file(self, ctx, config_name: str):
 
         if len(ctx.message.attachments) > 1:
             # TODO: make as embed
@@ -260,7 +276,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
                 # TODO: make as embed
             await ctx.send(f'saved your file as `{os.path.basename(_config_path)}`.\n\n_You may have to reload the Cogs or restart the bot for it to take effect!_')
 
-    @ commands.command()
+    @ commands.command(aliases=get_aliases("add_to_blacklist"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     @ in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
     async def add_to_blacklist(self, ctx, user_id: int):
@@ -287,7 +303,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
             # TODO: make as embed
         await ctx.send(f"User '{user.name}' with the id '{user.id}' was added to my blacklist, he wont be able to invoke my commands!\n\nI have also notified him by DM of this fact!")
 
-    @ commands.command()
+    @ commands.command(aliases=get_aliases("remove_from_blacklist"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     @ in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
     async def remove_from_blacklist(self, ctx, user_id: int):
@@ -319,19 +335,19 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
             # TODO: make as embed
         await ctx.send(f"User '{user.name}' with User_id '{user.id}' was removed from my Blacklist.\n\nHe is now able again, to invoke my commands!")
 
-    @ commands.command()
+    @ commands.command(aliases=get_aliases("tell_uptime"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     @ in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
     async def tell_uptime(self, ctx):
 
         now_time = datetime.utcnow()
-        delta_time = now_time - self.bot.start_time
+        delta_time = now_time - await self.bot.command_staff.start_time
         seconds = round(delta_time.total_seconds())
         # TODO: make as embed
         await ctx.send(f"__Uptime__ -->\n\t\t| {str(seconds_to_pretty(seconds))}")
         log.info(f"reported uptime to '{ctx.author.name}'")
 
-    @ commands.command()
+    @ commands.command(aliases=get_aliases("delete_msg"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     @ in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
     async def delete_msg(self, ctx, msg_id: int):
@@ -341,20 +357,14 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
         await message.delete()
         await ctx.message.delete()
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self.bot.user.name})"
-
-    def __str__(self):
-        return self.__class__.__name__
-
-    @ commands.command()
+    @ commands.command(aliases=get_aliases("write_data"))
     @ commands.is_owner()
     @ in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
     async def write_data(self, ctx):
         await gather_data(self.bot)
         await ctx.send(embed=await make_basic_embed(title='Data Collected', text='Data was gathered and written to the assigned files', symbol='save', collected_data='This command only collected fixed data like role_ids, channel_ids,...\n', reason='Data is collected and saved to a json file so to not relying on getting it at runtime, as this kind of data is unchanging', if_it_changes='then this command can just be run again'))
 
-    @ commands.command()
+    @ commands.command(aliases=get_aliases("show_command_names"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     @ in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
     async def show_command_names(self, ctx):
@@ -365,6 +375,12 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
             for command in cog_object.get_commands():
                 _out.append('__**' + str(command.name) + '**__' + ': ```\n' + str(command.help).split('\n')[0] + '\n```')
         await self.bot.split_to_messages(ctx, '\n---\n'.join(_out), split_on='\n---\n')
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.bot.user.name})"
+
+    def __str__(self):
+        return self.__class__.__name__
 
 
 def setup(bot):

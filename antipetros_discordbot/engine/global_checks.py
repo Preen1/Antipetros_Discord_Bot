@@ -56,7 +56,7 @@ from importlib.machinery import SourceFileLoader
 
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
 
-# import discord
+import discord
 
 # import requests
 
@@ -139,7 +139,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 def user_not_blacklisted(bot, logger):
     def predicate(ctx):
-        if ctx.invoked_with != 'help':
+        if ctx.invoked_with != 'help' and not isinstance(ctx.channel, discord.DMChannel):
             if BASE_CONFIG.getboolean('general_settings', 'is_debug'):
                 logger.info("command '%s' as '%s' -- invoked by: name: '%s', id: %s -- in channel: '%s' -- raw invoking message: '%s'",
                             ctx.command.name, ctx.invoked_with, ctx.author.name, ctx.author.id, ctx.channel.name, ctx.message.content)

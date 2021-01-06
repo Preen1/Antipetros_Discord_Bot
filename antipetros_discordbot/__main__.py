@@ -40,9 +40,11 @@ import gidlogger as glog
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.exceptions import TokenError
 from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-
+from antipetros_discordbot.utility.misc import check_if_int
 from antipetros_discordbot.utility.gidtools_functions import writejson, writeit, pathmaker, loadjson, readit
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
+from antipetros_discordbot.utility.token_handling import load_tokenfile, store_token_file
+from antipetros_discordbot import MAIN_DIR
 # endregion[Imports]
 
 # region [Constants]
@@ -67,28 +69,6 @@ if os.getenv('IS_DEV') == 'yes':
 
 # region [Helper_Functions]
 
-def find_env_files():
-    env_files = {}
-    if os.getenv('IS_DEV').casefold() in ['yes', 'true', 1, 'y']:
-        env_files['.env'] = pathmaker(os.path.abspath('.env'))
-    else:
-        for env_folder in [APPDATA['env_files'], APPDATA['user_env_files']]:
-            for env_file in os.scandir(env_folder):
-                if os.path.isfile(env_file.path) is True:
-                    env_files[env_file.name] = pathmaker(env_file.path)
-    return env_files
-
-
-@contextmanager
-def load_env_files():
-    env_files = find_env_files()
-    excludes = BASE_CONFIG.getlist('env_files', 'auto_load_excluded')
-    for key, value in env_files.items():
-        if all(key.casefold() != excl_filename.casefold() for excl_filename in excludes):
-            load_dotenv(value)
-    yield
-    os.environ['DISCORD_TOKEN'] = 'xxxxxxxxxxxxx'
-
 
 def get_intents():
     if BASE_CONFIG.get('intents', 'convenience_setting') == 'all':
@@ -103,82 +83,86 @@ def get_intents():
     return intents
 
 
-def get_token():
-    """
-    Reloads env file then reads and returns the Token.
-
-    Args:
-        envfile (str, optional): path to env file. Defaults to None.
-
-    Raises:
-        TokenError: raised if Token is not set in the env or set to nothing or set to 'xxxx'
-
-    Returns:
-        str: Token
-    """
-    # if BASE_CONFIG.getboolean('env_files', 'auto_load') is True:
-    #     load_env_files()
-    with load_env_files():
-        _temp_token = os.getenv('DISCORD_TOKEN')
-        if _temp_token not in [None, '', 'xxxx']:
-            return _temp_token
-        else:
-            raise TokenError('token loaded from enviroment is empty or not set')
-
-
 # endregion [Helper_Functions]
 
 # region [Main_function]
-@click.command()
+
+@click.group()
+def cli():
+    pass
+
+
+@cli.command(name='only_command_info')
 def command_info_run():
-    ANTI_PETROS_BOT = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
+    anti_petros_bot = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
     _commands = {}
-    for cog in ANTI_PETROS_BOT.cogs.items():
-        for command in cog.get_commands():
+    for cog_name, cog_object in anti_petros_bot.cogs.items():
+        for command in cog_object.get_commands():
+            clean_params = {}
+            for name, parameter in command.clean_params.items():
+
+                clean_params[name] = {'annotation': str(parameter.annotation).replace("<class '", '').replace("'>", '').strip() if parameter.annotation is not parameter.empty else None,
+                                      'default': check_if_int(parameter.default) if parameter.default is not parameter.empty else None,
+                                      'kind': parameter.kind.description}
+
             _commands[command.name] = {'cog_name': command.cog_name,
                                        'aliases': command.aliases,
                                        'brief': command.brief,
-                                       'clean_params': command.clean_params,
+                                       'clean_params': clean_params,
                                        'description': command.description,
                                        'enabled': command.enabled,
                                        'help': command.help,
                                        'hidden': command.hidden,
                                        'short_doc': command.short_doc,
                                        'signature': command.signature,
-                                       'usage': command.usage}
-    writejson(_commands, pathmaker(APPDATA['docs'], 'command_data.json'))
+                                       'usage': command.usage,
+                                       'require_var_positional': command.require_var_positional}
+    writejson(_commands, pathmaker(APPDATA['docs'], 'command_data.json'), sort_keys=True)
 
 
-@click.command()
+@cli.command(name='only_info')
 def info_run():
-    ANTI_PETROS_BOT = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
+    anti_petros_bot = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
 
 
-def main():
+@cli.command(name='run')
+@click.option('--token_file', '-t', default=None)
+@click.option('--save-token-file/--dont-save-token-file', '-save/-nosave', default=False)
+def run(token_file, save_token_file):
+    main(token_file, save_token_file)
+
+
+def main(token_file=None, save_token_file=False):
     """
     Starts the Antistasi Discord Bot 'AntiPetros'.
 
     creates the bot, loads the extensions and starts the bot with the Token.
     """
 
-    ANTI_PETROS_BOT = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
+    if token_file is not None and save_token_file is True:
+        store_token_file(token_file)
 
-    if len(sys.argv) == 1 or sys.argv[1] != 'get_info_run':
-        log.info('trying to log on as %s!', str(ANTI_PETROS_BOT))
-        if UV_LOOP_IMPORTED is True:
-            uvloop.install()
-        ANTI_PETROS_BOT.run(get_token(), bot=True, reconnect=True)
+    token_file = pathmaker(APPDATA["user_env_files"], 'token.env') if token_file is None else pathmaker(token_file)
+    with load_tokenfile(token_file):
+        discord_token = os.getenv('DISCORD_TOKEN')
+
+    anti_petros_bot = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
+
+    if UV_LOOP_IMPORTED is True:
+        uvloop.install()
+    try:
+        anti_petros_bot.run(discord_token, bot=True, reconnect=True)
+    finally:
+        discord_token = 'xxxxxxxxxxxxxxxx'
 
 
 # endregion [Main_function]
-
 # region [Main_Exec]
-
 if __name__ == '__main__':
-    try:
+    if os.getenv('IS_DEV') == 'true':
+        main(pathmaker(MAIN_DIR, 'token.env'))
+    else:
         main()
-    except:
-        log.exception(sys.exc_info()[0])
-        raise
+
 
 # endregion[Main_Exec]
