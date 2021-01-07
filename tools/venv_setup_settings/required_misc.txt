@@ -31,3 +31,4 @@ graphviz
 pydot
 lxml
 networkx
+pyowm

@@ -155,6 +155,12 @@ class InvokeStatistician(CommandStaffSoldierBase):
         glog.class_init_notification(log, self)
         self.after_action()
 
+    def cog_name_list(self):
+        return [str(cog_object) for cog_name, cog_object in self.bot.cogs.items()]
+
+    def command_name_list(self):
+        return [command.name for command in self.bot.all_cog_commands()]
+
     async def if_ready(self):
         self.command_staff = self.bot.command_staff
         self.stats_holder = []
@@ -163,8 +169,8 @@ class InvokeStatistician(CommandStaffSoldierBase):
         if self.command_invoked_stats is not None and self.command_invoked_stats.is_empty is False:
             self.command_invoked_stats.save_data()
             self.command_invoked_stats.save_overall()
-        self.cog_invoked_stats = CommandStatDict(self.cog_invoked_stats_file, [str(cog_object) for cog_name, cog_object in self.bot.cogs.items()])
-        self.command_invoked_stats = CommandStatDict(self.command_invoked_stats_file, [command.name for command in self.bot.all_cog_commands()])
+        self.cog_invoked_stats = CommandStatDict(self.cog_invoked_stats_file, self.cog_name_list)
+        self.command_invoked_stats = CommandStatDict(self.command_invoked_stats_file, self.command_name_list)
         self.stats_holder.append(self.cog_invoked_stats)
         self.stats_holder.append(self.command_invoked_stats)
         log.debug("'%s' command staff soldier was READY", str(self))

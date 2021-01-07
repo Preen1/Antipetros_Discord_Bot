@@ -51,7 +51,7 @@ from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
 from antipetros_discordbot.utility.misc import seconds_to_pretty
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, bytes2human
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed, make_basic_embed_inline
-from antipetros_discordbot.utility.misc import save_commands, seconds_to_pretty, async_seconds_to_pretty_normal
+from antipetros_discordbot.utility.misc import save_commands, seconds_to_pretty, async_seconds_to_pretty_normal, date_today
 from antipetros_discordbot.utility.checks import in_allowed_channels, log_invoker
 from antipetros_discordbot.utility.named_tuples import MemoryUsageMeasurement, LatencyMeasurement
 from antipetros_discordbot.utility.enums import DataSize
@@ -87,7 +87,7 @@ BASE_CONFIG = SupportKeeper.get_config('base_config')
 COGS_CONFIG = SupportKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-DATA_COLLECT_INTERVALL = 90 if os.getenv('IS_DEV').casefold() in ['yes', 'true', '1'] else 160  # seconds
+DATA_COLLECT_INTERVALL = 150 if os.getenv('IS_DEV').casefold() in ['yes', 'true', '1'] else 300  # seconds
 DEQUE_SIZE = (24 * 60 * 60) // DATA_COLLECT_INTERVALL  # seconds in day divided by collect interval, full deque is data of one day
 DATA_DUMP_INTERVALL = {'hours': 1, 'minutes': 0, 'seconds': 0} if os.getenv('IS_DEV').casefold() in ['yes', 'true', '1'] else {'hours': 24, 'minutes': 1, 'seconds': 0}
 # endregion[Constants]
@@ -309,7 +309,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
     @ in_allowed_channels(set(COGS_CONFIG.getlist('performance', 'allowed_channels')))
     async def get_command_stats(self, ctx):
         data_dict = {item.name: f"{ZERO_WIDTH}\n{item.data}\n{ZERO_WIDTH}" for item in await self.bot.command_staff.get_todays_invoke_data()}
-        date = self.bot.command_staff.date_today
+        date = date_today()
 
         embed = await make_basic_embed(title=ctx.command.name, text=f'data of the last 24hrs - {date}', symbol='data', **data_dict)
 
@@ -323,7 +323,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         await ctx.invoke(self.bot.get_command('report_latency'))
 
     def __str__(self) -> str:
-        return self.__class__.__name__
+        return self.qualified_name
 
 
 def setup(bot):

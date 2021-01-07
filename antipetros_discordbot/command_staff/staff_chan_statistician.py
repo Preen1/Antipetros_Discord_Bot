@@ -132,6 +132,9 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class ChannelStatistician(CommandStaffSoldierBase):
     save_folder = APPDATA['stats']
+    temp_folder = APPDATA['temp_files']
+    exclude_channels = ["website-admin-team", "wiki-mods", "sponsors", "probationary-list", "mute-appeals", "moderator-book", "moderation-team", "event-team", "black-book", "admin-team", "admin-meeting-notes"]
+    exclude_categories = ["admin info", "staff rooms", "voice channels"]
     channel_usage_stats_file = pathmaker(APPDATA['stats'], "channel_usage_stats.json")
 
     def __init__(self, bot):
@@ -156,18 +159,7 @@ class ChannelStatistician(CommandStaffSoldierBase):
         log.debug('channel usage was logged, for channel "%s"', channel.name)
 
     async def make_heat_map(self):
-        graph = Digraph("ANTISTASI DISCORD CHANNELS")
-        graph.attr(rankdir='LR', splines='false', pack='true', packmode="clust", nslimit="100.0", remincross="true", ranksep="1.0", samehead='true', sametail="true")
-        graph.node_attr["shape"] = "component"
-        graph.node('Antistasi Discord', color="cadetblue1", shape="tripleoctagon", style="filled")
-        for category in self.bot.antistasi_guild.categories:
-            graph.edge('Antistasi Discord', category.name)
-            for channel in category.channels:
-                with graph.subgraph(name=f'cluster_{category.name}') as c:
-                    c.attr(rank="same")
-                    c.edge(str(category.name), str(channel.name))
-
-        graph.render(pathmaker(self.save_folder, 'test_graph'), view=False, format='png', cleanup=True)
+        pass
 
     async def if_ready(self):
         self.command_staff = self.bot.command_staff

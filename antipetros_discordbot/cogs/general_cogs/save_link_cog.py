@@ -710,7 +710,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         return f"{self.__class__.__name__}({self.bot.user.name})"
 
     def __str__(self):
-        return self.__class__.__name__
+        return self.qualified_name
 
 # endregion [DunderMethods]
 

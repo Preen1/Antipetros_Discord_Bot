@@ -22,6 +22,7 @@ from watchgod import awatch, DefaultDirWatcher, Change
 from concurrent.futures import ThreadPoolExecutor
 import aiohttp
 from udpy import AsyncUrbanClient
+import pyowm
 # * Gid Imports -->
 import gidlogger as glog
 
@@ -122,6 +123,8 @@ class AntiPetrosBot(commands.Bot):
                     if extension.casefold() == 'trigger':
                         if name.casefold() == 'shutdown':
                             await self.close()
+                        elif name.casefold() == 'emergency_shutdown':
+                            sys.exit()
 
     async def on_message(self, message: discord.Message) -> None:
         await self.command_staff.record_channel_usage(message)
@@ -210,10 +213,11 @@ class AntiPetrosBot(commands.Bot):
 
     @tasks.loop(minutes=5, reconnect=True)
     async def update_check_loop(self):
-        if self.current_day != datetime.utcnow().day:
-            self.current_day = datetime.utcnow().day
-            await self.command_staff.staff_memo('update')
-            await self.to_all_cogs('updated')
+        if self.current_day == datetime.utcnow().day:
+            return
+        self.current_day = datetime.utcnow().day
+        await self.command_staff.staff_memo('update')
+        await self.to_all_cogs('updated')
 
     @update_check_loop.before_loop
     async def before_update_check_loop(self):

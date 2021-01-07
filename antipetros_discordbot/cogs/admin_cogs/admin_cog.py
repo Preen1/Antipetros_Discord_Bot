@@ -379,6 +379,9 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
     @commands.is_owner()
     @ in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
     async def purge_channel(self, ctx, num_to_delete: int = None):
+
+        def check_is_bot_or_giddi(message):
+            return message.author.bot or message.author.id == 576522029470056450
         start_time = time.time()
         channel = ctx.channel
         limit = num_to_delete
@@ -388,7 +391,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
         deleted_report = []
         deleted_json_report = []
         if num_to_delete is not None:
-            for msg in await channel.purge(limit=num_to_delete, check=check, bulk=True):
+            for msg in await channel.purge(limit=num_to_delete, check=check_is_bot_or_giddi, bulk=True):
                 author = msg.author.name
                 content = ' '.join(msg.content.splitlines())
                 if len(content) > 96:
@@ -409,13 +412,13 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
                 duration = await async_seconds_to_pretty_normal(duration_seconds)
                 await ctx.send(embed=await make_basic_embed(title='**Deleted Messages Report**', text=f"{ZERO_WIDTH}\n{str(len(deleted_report))} Messages where deleted in channel '{channel.name}'!\n\n*reports are attached.*", duration=duration), files=[out_file, out_file2])
         else:
-            await channel.purge(limit=num_to_delete, check=check, bulk=True)
+            await channel.purge(limit=1000, check=None, bulk=True)
             duration_seconds = int(round(time.time() - start_time))
             duration = await async_seconds_to_pretty_normal(duration_seconds)
             await ctx.send(embed=await make_basic_embed(title='**Deleted Messages Report**', text=f"{ZERO_WIDTH}\nAll Messages where deleted in channel '{channel.name}'!", symbol='trash', duration=duration))
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.bot.user.name})"
+        return f"{self.name}({self.bot.user.name})"
 
     def __str__(self):
         return self.__class__.__name__

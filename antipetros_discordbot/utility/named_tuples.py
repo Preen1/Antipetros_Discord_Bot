@@ -48,3 +48,6 @@ NewCommandStaffItem = namedtuple("NewCommandStaffItem", ['name'])
 
 
 StartupMessageInfo = namedtuple('StartupMessageInfo', ['channel_id', 'message'])
+
+
+MovieQuoteItem = namedtuple('MovieQuoteItem', ["quote", "movie", "type", "year"])

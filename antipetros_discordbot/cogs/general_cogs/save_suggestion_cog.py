@@ -148,6 +148,8 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
         if reaction_user.bot is True or reaction_user.id in self.bot.blacklisted_user_ids():
             return
         message = await channel.fetch_message(payload.message_id)
+        if isinstance(payload.emoji.name, str):
+            return
         emoji_name = unicodedata.name(payload.emoji.name)
 
         if emoji_name == self.command_emojis['save']:
@@ -508,7 +510,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
         return f"{self.__class__.__name__}({self.bot.user.name})"
 
     def __str__(self):
-        return self.__class__.__name__
+        return self.qualified_name
 
 # endregion [SpecialMethods]
 

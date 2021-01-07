@@ -9,6 +9,7 @@ from pprint import pprint, pformat
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, loadjson, writejson, readit, readbin, writeit, work_in, writebin
 import gidlogger as glog
 from datetime import datetime
+import sys
 
 log = glog.aux_logger(__name__)
 glog.import_notification(log, __name__)
@@ -213,3 +214,19 @@ async def handle_arguments_string(argument_string):
             value = _check_convert_value_type(raw_argument.strip())
             arg_arguments.append(value)
     return arg_arguments, kwarg_arguments
+
+
+EPSILON = sys.float_info.epsilon  # Smallest possible difference.
+
+
+def convert_to_rgb(minval, maxval, val, colors):
+
+    i_f = float(val - minval) / float(maxval - minval) * (len(colors) - 1)
+
+    i, f = int(i_f // 1), i_f % 1
+
+    if f < EPSILON:
+        return colors[i]
+    else:
+        (r1, g1, b1), (r2, g2, b2) = colors[i], colors[i + 1]
+        return int(r1 + f * (r2 - r1)), int(g1 + f * (g2 - g1)), int(b1 + f * (b2 - b1))

@@ -10,8 +10,37 @@ classifiers = ["License :: OSI Approved :: MIT License"]
 description-file = "README.md"
 license = "MIT"
 requires = [
+    "fuzzywuzzy==0.18.0",
+    "pyfiglet==0.8.post1",
+    "graphviz==0.16",
+    "aiohttp==3.6.3",
+    "google_auth_oauthlib==0.4.2",
+    "pytz==2020.5",
+    "Jinja2==2.11.2",
+    "click==7.1.2",
+    "networkx==2.5",
+    "pdfkit==0.6.1",
+    "python_benedict==0.22.4",
+    "psutil==5.8.0",
+    "dpytest==0.0.22",
+    "googletrans==4.0.0rc1",
+    "async_property==0.2.1",
+    "matplotlib==3.3.3",
+    "WeasyPrint==52.2",
+    "pyowm==3.1.1",
+    "watchgod==0.6",
+    "benedict==0.3.2",
+    "discord==1.0.1",
+    "gidappdata==0.1.1",
+    "gidlogger==0.1.3",
+    "google_api_python_client==1.12.8",
+    "Pillow==8.1.0",
+    "protobuf==3.14.0",
+    "PyQt5==5.15.2",
+    "python-dotenv==0.15.0",
+    "udpy==2.0.0",
 ]
 
 [tool.flit.scripts]
 antipetrosbot = "antipetros_discordbot.__main__:cli"
-new_soldier_class="antipetros_discordbot.dev_tools.cli.new_command_staff_soldier:new_command_staff_soldier"
+new_soldier_class = "antipetros_discordbot.dev_tools.cli.new_command_staff_soldier:new_command_staff_soldier"

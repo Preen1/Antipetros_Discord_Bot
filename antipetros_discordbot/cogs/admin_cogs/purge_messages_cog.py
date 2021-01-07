@@ -99,10 +99,31 @@ class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": "Pur
         if self.bot.is_debug:
             save_commands(self)
         glog.class_init_notification(log, self)
+
+    @commands.command(aliases=get_aliases("purge_antipetros"))
+    @ commands.has_any_role(*COGS_CONFIG.getlist("purge", 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("purge", 'allowed_channels')))
+    async def purge_antipetros(self, ctx, and_giddi: bool = False):
+
+        def is_antipetros(message):
+            if and_giddi is False:
+                return message.author.id == self.bot.id
+            return message.author.id in [self.bot.id, self.bot.creator.id]
+
+        await ctx.channel.purge(limit=1000, check=is_antipetros, bulk=True)
+        await ctx.send('done')
+
+    def __repr__(self):
+        return f"{self.name}({self.bot.user.name})"
+
+    def __str__(self):
+        return self.qualified_name
+
+
 # region[Main_Exec]
 
 
-if __name__ == '__main__':
-    pass
+def setup(bot):
+    bot.add_cog(PurgeMessagesCog(bot))
 
 # endregion[Main_Exec]

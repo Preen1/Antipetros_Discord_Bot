@@ -138,10 +138,11 @@ from antipetros_discordbot.utility.misc import date_today, async_date_today
 class CommandStatDict(UserDict):
     overall_data_file = pathmaker(APPDATA['stats'], "overall_invoked_stats.json")
 
-    def __init__(self, file: str, default_content_keys: Iterable):
+    def __init__(self, file: str, default_content_function: Callable):
         self.file = pathmaker(file)
         super().__init__({})
-        self.default_content_keys = default_content_keys
+        self.default_content_function = default_content_function
+        self.default_content = None
         self.last_initialized = None
         self.load_data()
 
@@ -161,12 +162,12 @@ class CommandStatDict(UserDict):
         return _out
 
     def initialize_data(self):
-        self.default_content_keys = list(set(self.default_content_keys))
+        self.default_content = list(set(self.default_content_function()))
         if 'overall' not in self.data:
             self.data['overall'] = {}
         if date_today() not in self.data:
             self.data[date_today()] = {}
-        for item in self.default_content_keys:
+        for item in self.default_content:
             if item not in self.data['overall']:
                 self.data['overall'][item] = {'successful': 0, 'unsuccessful': 0}
             if item not in self.data[date_today()]:
@@ -179,15 +180,10 @@ class CommandStatDict(UserDict):
         if self.last_initialized + timedelta(days=1) <= datetime.utcnow():
             self.save_data()
             self.initialize_data()
-        if key not in self.default_content_keys:
-            self.handle_missing_key(key)
+
         typus = 'unsuccessful' if unsuccessful is True else "successful"
         self.data['overall'][key][typus] += 1
         self.data[date_today()][key][typus] += 1
-
-    def handle_missing_key(self, key):
-        self.default_content_keys.append(key)
-        self.initialize_data()
 
     def load_data(self):
         if os.path.isfile(self.file) is False:

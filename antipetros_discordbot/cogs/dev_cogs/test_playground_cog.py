@@ -32,7 +32,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_help
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
-from antipetros_discordbot.utility.misc import save_commands, async_load_json, image_to_url
+from antipetros_discordbot.utility.misc import save_commands, async_load_json, image_to_url, color_hex_embed
 from antipetros_discordbot.utility.checks import in_allowed_channels
 from antipetros_discordbot.utility.regexes import DATE_REGEX, TIME_REGEX
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
@@ -157,20 +157,13 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
             embed.set_image(url=f"attachment://{name.replace('_','')}.{image_format}")
             await ctx.send(embed=embed, file=out_file, delete_after=delete_after)
 
-    @commands.command(aliases=get_aliases("make_channel_graph"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist("test_playground", 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
-    async def make_channel_graph(self, ctx):
-        await self.bot.command_staff.make_heat_map()
-        await ctx.send('done')
-
         # region [SpecialMethods]
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"
 
     def __str__(self):
-        return self.__class__.__name__
+        return self.qualified_name
 
 # endregion [SpecialMethods]
 
