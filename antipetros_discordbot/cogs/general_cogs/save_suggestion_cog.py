@@ -89,6 +89,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
 
 # region [Properties]
 
+
     @property
     def command_emojis(self):
         if self.bot.is_debug:
@@ -263,7 +264,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
     @in_allowed_channels(set(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels')))
     async def get_all_suggestions(self, ctx, report_template: str = "basic_report.html.jinja"):
 
-        log.info("command was initiated by '%s'", ctx.author.name)
         query = self.data_storage_handler.get_all_suggestion_not_discussed()
         var_dict = {'all_suggestions': query, 'style_sheet': "basic_report_style.css"}
         log.debug('getting template')
@@ -381,6 +381,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
 
 # region [Embeds]
 
+
     async def make_add_success_embed(self, suggestion_item: SUGGESTION_DATA_ITEM):
         _filtered_content = []
         if suggestion_item.name is not None:
@@ -424,6 +425,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
 # endregion [Embeds]
 
 # region [HelperMethods]
+
 
     async def _collect_title(self, content):
         name_result = self.suggestion_name_regex.search(content)

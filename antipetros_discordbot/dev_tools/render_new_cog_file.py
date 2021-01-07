@@ -49,7 +49,7 @@ from antipetros_discordbot.dev_tools.templates import TEMPLATES_DIR
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
+
 
 # endregion[Logging]
 

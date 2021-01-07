@@ -3,5 +3,5 @@
     {% raw %}@ commands.has_any_role(*COGS_CONFIG.getlist('$$config_name$$', 'allowed_roles')){% endraw %}
     {% raw %}@in_allowed_channels(set(COGS_CONFIG.getlist('$$config_name$$', 'allowed_channels'))){% endraw %}
     async def {{ command_item.name }}(self, ctx):
-        log.debug("command was triggered, by '%s'", ctx.author.name)
+
         pass

@@ -43,14 +43,15 @@ import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
-from antipetros_discordbot.utility.misc import seconds_to_pretty
+from antipetros_discordbot.utility.misc import seconds_to_pretty, handle_arguments_string
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.utility.data_gathering import gather_data
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.misc import save_commands, seconds_to_pretty, async_seconds_to_pretty_normal
-from antipetros_discordbot.utility.checks import in_allowed_channels
+from antipetros_discordbot.utility.checks import in_allowed_channels, PURGE_CHECK_TABLE, purge_check_always_false, purge_check_always_true
 from antipetros_discordbot.utility.named_tuples import FeatureSuggestionItem
 from antipetros_discordbot.cogs import get_aliases
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 # endregion[Imports]
 
 # region [TODO]
@@ -105,7 +106,6 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
 # endregion[Init]
 
 # region [Properties]
-
 
     @ property
     def allowed_dm_invoker_ids(self):
@@ -345,7 +345,6 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
         seconds = round(delta_time.total_seconds())
         # TODO: make as embed
         await ctx.send(f"__Uptime__ -->\n\t\t| {str(seconds_to_pretty(seconds))}")
-        log.info(f"reported uptime to '{ctx.author.name}'")
 
     @ commands.command(aliases=get_aliases("delete_msg"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
@@ -375,6 +374,45 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
             for command in cog_object.get_commands():
                 _out.append('__**' + str(command.name) + '**__' + ': ```\n' + str(command.help).split('\n')[0] + '\n```')
         await self.bot.split_to_messages(ctx, '\n---\n'.join(_out), split_on='\n---\n')
+
+    @ commands.command(aliases=get_aliases("purge_channel"))
+    @commands.is_owner()
+    @ in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
+    async def purge_channel(self, ctx, num_to_delete: int = None):
+        start_time = time.time()
+        channel = ctx.channel
+        limit = num_to_delete
+
+        check = None
+
+        deleted_report = []
+        deleted_json_report = []
+        if num_to_delete is not None:
+            for msg in await channel.purge(limit=num_to_delete, check=check, bulk=True):
+                author = msg.author.name
+                content = ' '.join(msg.content.splitlines())
+                if len(content) > 96:
+                    content = content[:96] + ' ...'
+                created_at = msg.created_at.strftime(self.bot.std_date_time_format)
+                deleted_report.append(f"author: {author}, content: {content}, created_at: {created_at}")
+                deleted_json_report.append({"author_name": author, 'content': msg.content, 'created_at': created_at})
+            timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
+            json_report_path = pathmaker(APPDATA['debug'], f"{channel.name}_deletion_report_[{timestamp}].json")
+            writejson(deleted_json_report, json_report_path)
+            with BytesIO() as bytefile:
+                bytefile.write(bytes('\n'.join(deleted_report), encoding='utf-8', errors='replace'))
+                bytefile.seek(0)
+
+                out_file = discord.File(bytefile, filename=f"{channel.name}_deletion_report_[{timestamp}].txt")
+                out_file2 = discord.File(json_report_path, os.path.basename(json_report_path))
+                duration_seconds = int(round(time.time() - start_time))
+                duration = await async_seconds_to_pretty_normal(duration_seconds)
+                await ctx.send(embed=await make_basic_embed(title='**Deleted Messages Report**', text=f"{ZERO_WIDTH}\n{str(len(deleted_report))} Messages where deleted in channel '{channel.name}'!\n\n*reports are attached.*", duration=duration), files=[out_file, out_file2])
+        else:
+            await channel.purge(limit=num_to_delete, check=check, bulk=True)
+            duration_seconds = int(round(time.time() - start_time))
+            duration = await async_seconds_to_pretty_normal(duration_seconds)
+            await ctx.send(embed=await make_basic_embed(title='**Deleted Messages Report**', text=f"{ZERO_WIDTH}\nAll Messages where deleted in channel '{channel.name}'!", symbol='trash', duration=duration))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

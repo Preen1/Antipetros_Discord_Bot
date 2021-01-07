@@ -123,7 +123,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
+
 
 # endregion[Logging]
 
@@ -141,11 +141,13 @@ def user_not_blacklisted(bot, logger):
     def predicate(ctx):
         if ctx.invoked_with != 'help' and not isinstance(ctx.channel, discord.DMChannel):
             if BASE_CONFIG.getboolean('general_settings', 'is_debug'):
-                logger.info("command '%s' as '%s' -- invoked by: name: '%s', id: %s -- in channel: '%s' -- raw invoking message: '%s'",
-                            ctx.command.name, ctx.invoked_with, ctx.author.name, ctx.author.id, ctx.channel.name, ctx.message.content)
+                logger.debug("command '%s' as '%s' -- invoked by: name: '%s', id: %s -- in channel: '%s' -- raw invoking message: '%s'",
+                             ctx.command.name, ctx.invoked_with, ctx.author.name, ctx.author.id, ctx.channel.name, ctx.message.content)
             else:
-                logger.info("command '%s' as '%s' -- invoked by: name: '%s' -- in channel: '%s' -- args used: %s",
-                            ctx.command.name, ctx.invoked_with, ctx.author.name, ctx.channel.name, ctx.args)
+                logger.debug("command '%s' as '%s' -- invoked by: name: '%s' -- in channel: '%s' -- args used: %s",
+                             ctx.command.name, ctx.invoked_with, ctx.author.name, ctx.channel.name, ctx.args)
+            if ctx.author.id in bot.blacklisted_user_ids():
+                log.warning('Tried invocation by blacklisted user: %s', ctx.author.name)
         return ctx.author.id not in bot.blacklisted_user_ids()
     return bot.add_check(predicate)
 

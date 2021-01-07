@@ -116,7 +116,7 @@ from antipetros_discordbot.utility.misc import date_today, async_date_today
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
+
 
 # endregion[Logging]
 
@@ -153,7 +153,7 @@ class ChannelStatistician(CommandStaffSoldierBase):
             return
         self.channel_usage_stats['overall'][channel.name] += 1
         self.channel_usage_stats[await async_date_today()][channel.name] += 1
-        log.info('channel usage was logged, for channel "%s"', channel.name)
+        log.debug('channel usage was logged, for channel "%s"', channel.name)
 
     async def make_heat_map(self):
         graph = Digraph("ANTISTASI DISCORD CHANNELS")
@@ -174,13 +174,15 @@ class ChannelStatistician(CommandStaffSoldierBase):
         if os.path.isfile(self.channel_usage_stats_file) is False:
             self.channel_usage_stats = {'overall': {}}
             writejson(self.channel_usage_stats, self.channel_usage_stats_file)
+        if self.channel_usage_stats is not None:
+            writejson(self.channel_usage_stats, self.channel_usage_stats_file)
         self.channel_usage_stats = loadjson(self.channel_usage_stats_file)
         for channel in self.bot.antistasi_guild.channels:
             if channel.name not in self.channel_usage_stats['overall']:
                 self.channel_usage_stats['overall'][channel.name] = 0
         writejson(self.channel_usage_stats, self.channel_usage_stats_file)
         await self.update()
-        log.info("'%s' command staff soldier is READY", str(self))
+        log.debug("'%s' command staff soldier is READY", str(self))
 
     async def update(self):
         writejson(self.channel_usage_stats, self.channel_usage_stats_file)
@@ -191,11 +193,11 @@ class ChannelStatistician(CommandStaffSoldierBase):
                 self.channel_usage_stats[await async_date_today()][channel.name] = 0
         writejson(self.channel_usage_stats, self.channel_usage_stats_file)
 
-        log.info("'%s' command staff soldier was UPDATED", str(self))
+        log.debug("'%s' command staff soldier was UPDATED", str(self))
 
     def retire(self):
         writejson(self.channel_usage_stats, self.channel_usage_stats_file)
-        log.info("'%s' command staff soldier was RETIRED", str(self))
+        log.debug("'%s' command staff soldier was RETIRED", str(self))
 
 
 # region[Main_Exec]

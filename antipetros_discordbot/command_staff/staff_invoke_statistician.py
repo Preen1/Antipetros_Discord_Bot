@@ -125,7 +125,7 @@ from antipetros_discordbot.command_staff.helper.command_stats_dict import Comman
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
+
 
 # endregion[Logging]
 
@@ -158,11 +158,16 @@ class InvokeStatistician(CommandStaffSoldierBase):
     async def if_ready(self):
         self.command_staff = self.bot.command_staff
         self.stats_holder = []
+        if self.cog_invoked_stats is not None and self.cog_invoked_stats.is_empty is False:
+            self.cog_invoked_stats.save_data()
+        if self.command_invoked_stats is not None and self.command_invoked_stats.is_empty is False:
+            self.command_invoked_stats.save_data()
+            self.command_invoked_stats.save_overall()
         self.cog_invoked_stats = CommandStatDict(self.cog_invoked_stats_file, [str(cog_object) for cog_name, cog_object in self.bot.cogs.items()])
         self.command_invoked_stats = CommandStatDict(self.command_invoked_stats_file, [command.name for command in self.bot.all_cog_commands()])
         self.stats_holder.append(self.cog_invoked_stats)
         self.stats_holder.append(self.command_invoked_stats)
-        log.info("'%s' command staff soldier was READY", str(self))
+        log.debug("'%s' command staff soldier was READY", str(self))
 
     async def get_todays_invoke_data(self):
         overall_data = self.command_invoked_stats.sum_data.get(date_today())
@@ -182,13 +187,13 @@ class InvokeStatistician(CommandStaffSoldierBase):
 
     async def update(self):
         self.command_invoked_stats.save_overall()
-        log.info("'%s' command staff soldier was UPDATED", str(self))
+        log.debug("'%s' command staff soldier was UPDATED", str(self))
 
     def retire(self):
         for holder in self.stats_holder:
             holder.save_data()
         self.command_invoked_stats.save_overall()
-        log.info("'%s' command staff soldier was RETIRED", str(self))
+        log.debug("'%s' command staff soldier was RETIRED", str(self))
 
     def after_action(self):
 

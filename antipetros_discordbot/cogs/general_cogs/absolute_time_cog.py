@@ -69,7 +69,7 @@ from antipetros_discordbot.cogs import get_aliases
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
+
 
 # endregion[Logging]
 
@@ -171,11 +171,11 @@ class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "Abso
 
 # region [Commands]
 
+
     @commands.command(aliases=get_aliases("to_absolute_times"))
     @ commands.has_any_role(*COGS_CONFIG.getlist("absolute_time", 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist("absolute_time", 'allowed_channels')))
     async def to_absolute_times(self, ctx):
-        log.debug("command was triggered, by '%s'", ctx.author.name)
 
         pass
 
@@ -183,7 +183,7 @@ class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "Abso
     @ commands.has_any_role(*COGS_CONFIG.getlist("absolute_time", 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist("absolute_time", 'allowed_channels')))
     async def register_timezone_city(self, ctx, in_data):
-        log.debug("command was triggered, by '%s'", ctx.author.name)
+
         registered_items = self.registered_timezones
 
         item = await self.get_city_or_country(in_data)
@@ -197,7 +197,7 @@ class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "Abso
     @ commands.has_any_role(*COGS_CONFIG.getlist("absolute_time", 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist("absolute_time", 'allowed_channels')))
     async def tell_all_registered_timezones(self, ctx):
-        log.debug("command was triggered, by '%s'", ctx.author.name)
+
         _out = [item.name + ' ' + str(item.id) + ' ' + str(item.timezone) + ' ----> ' + datetime.now(tz=item.timezone).strftime(STANDARD_DATETIME_FORMAT) for item in self.registered_timezones]
         await self.bot.split_to_messages(ctx, '\n'.join(_out))
 
@@ -214,7 +214,6 @@ class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "Abso
 # endregion [Embeds]
 
 # region [HelperMethods]
-
 
     @staticmethod
     def id_to_item(in_id, in_items):

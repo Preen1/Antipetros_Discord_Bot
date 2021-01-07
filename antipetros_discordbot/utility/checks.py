@@ -60,7 +60,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
+
 
 # endregion[Logging]
 
@@ -86,6 +86,48 @@ def log_invoker(logger):
                         ctx.command.name, ctx.invoked_with, ctx.author.name, ctx.channel.name, ctx.args)
         return True
     return commands.check(predicate)
+
+
+def purge_check_from_user(user_id: int):
+    def is_from_user(message):
+        return message.author.id == user_id
+    return is_from_user
+
+
+def purge_check_contains(word: str, case_sensitive=False):
+    def contains_in_content(message):
+        content = message.content
+        check_word = word
+        if case_sensitive is False:
+            content = message.content.casefold()
+            check_word = word.casefold()
+        return check_word in content.split()
+    return contains_in_content
+
+
+def purge_check_is_bot():
+    def message_is_from_bot(message):
+        return message.author.bot
+    return message_is_from_bot
+
+
+def purge_check_always_true():
+    def always_true(message):
+        return True
+    return always_true
+
+
+def purge_check_always_false():
+    def always_false(message):
+        return False
+    return always_false
+
+
+PURGE_CHECK_TABLE = {'is_bot': purge_check_is_bot,
+                     'contains': purge_check_contains,
+                     'from_user': purge_check_from_user,
+                     'all': purge_check_always_true}
+
 # region[Main_Exec]
 
 

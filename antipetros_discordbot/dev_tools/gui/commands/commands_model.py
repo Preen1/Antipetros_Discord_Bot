@@ -79,7 +79,7 @@ from antipetros_discordbot.utility.named_tuples import NEW_COMMAND_ITEM
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
+
 
 # endregion[Logging]
 

@@ -121,7 +121,7 @@ import gidlogger as glog
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
+
 
 # endregion[Logging]
 
@@ -139,6 +139,7 @@ class CommandStaffRoster:
         self.staff = []
         self.available_soldiers = soldiers
         self.recruit_soldiers()
+        log.info("soldiers loaded into command-staff: %s", ', '.join(map(str, self.staff)))
 
     def recruit_soldiers(self):
         for soldier in self.available_soldiers:
@@ -152,7 +153,15 @@ class CommandStaffRoster:
                 return _out
         return partial(self.log_attribute_not_found, attribute_name)
 
+    def really_has_attribute(self, attribute_name):
+        return hasattr(self, attribute_name) and all(hasattr(staff_object, attribute_name) is False for staff_object in self.staff)
+
     async def staff_memo(self, attribute_name, *args, **kwargs):
+        if self.really_has_attribute(attribute_name):
+            if iscoroutine(getattr(self, attribute_name)):
+                await getattr(self, attribute_name)(*args, **kwargs)
+            else:
+                getattr(self, attribute_name)(*args, **kwargs)
         for soldier in self.staff:
             if hasattr(soldier, attribute_name):
                 if iscoroutinefunction(getattr(soldier, attribute_name)):
@@ -164,7 +173,7 @@ class CommandStaffRoster:
         for soldier in self.staff:
             soldier.retire()
 
-    @staticmethod
+    @ staticmethod
     def log_attribute_not_found(*args, **kwargs):
         return log.critical("'%s' was not found in any troop, args used: '%s', kwargs used: '%s'", str(args[0]), str(args), str(kwargs))
 

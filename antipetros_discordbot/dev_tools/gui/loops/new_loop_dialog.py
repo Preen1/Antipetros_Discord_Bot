@@ -78,7 +78,7 @@ from antipetros_discordbot.dev_tools.gui.converted.Ui_new_loop_dialog import Ui_
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
+
 
 # endregion[Logging]
 

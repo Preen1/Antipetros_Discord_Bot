@@ -84,7 +84,7 @@ from antipetros_discordbot.dev_tools.render_new_cog_file import create_cog_file
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
+
 
 # endregion[Logging]
 

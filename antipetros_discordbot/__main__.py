@@ -19,7 +19,9 @@ import shutil
 from pprint import pprint, pformat
 import inspect
 import asyncio
+from datetime import datetime
 from contextlib import contextmanager
+from time import time, sleep
 # * Third Party Imports -->
 import discord
 from dotenv import load_dotenv
@@ -123,6 +125,16 @@ def command_info_run():
 @cli.command(name='only_info')
 def info_run():
     anti_petros_bot = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
+
+
+@cli.command(name='stop')
+def stop():
+    shutdown_trigger_path = pathmaker(APPDATA['shutdown_trigger'], 'shutdown.trigger')
+    writeit(shutdown_trigger_path, 'shutdown')
+    sleep(10)
+    if os.path.isfile(shutdown_trigger_path) is True:
+        os.remove(shutdown_trigger_path)
+    print(f'AntiPetrosBot was shut down at {datetime.utcnow().strftime("%H:%M:%S on the %Y.%m.%d")}')
 
 
 @cli.command(name='run')

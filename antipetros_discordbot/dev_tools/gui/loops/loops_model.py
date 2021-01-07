@@ -80,7 +80,7 @@ from antipetros_discordbot.dev_tools.gui.loops.new_loop_dialog import AddLoopDia
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
+
 
 # endregion[Logging]
 

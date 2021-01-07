@@ -78,7 +78,7 @@ from antipetros_discordbot.utility.gidtools_functions import pathmaker, writeit,
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
+
 
 # endregion[Logging]
 

@@ -6,10 +6,11 @@ from datetime import datetime
 from collections import namedtuple
 import traceback
 import asyncio
-from asyncio import Future
+from asyncio import Future, wait_for
 from contextlib import suppress
 import sys
-from inspect import iscoroutinefunction, iscoroutine
+from pprint import pprint, pformat
+from inspect import iscoroutinefunction, iscoroutine, getmro, getsource, getmembers
 import time
 # * Third Party Imports -->
 from discord.ext import commands, tasks
@@ -17,7 +18,7 @@ import discord
 
 from async_property import async_property
 from discord import Embed, File
-from watchgod import awatch
+from watchgod import awatch, DefaultDirWatcher, Change
 from concurrent.futures import ThreadPoolExecutor
 import aiohttp
 from udpy import AsyncUrbanClient
@@ -27,7 +28,7 @@ import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, readit
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, readit, writeit
 from antipetros_discordbot.utility.misc import sync_to_async, save_bin_file
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.named_tuples import CreatorMember
@@ -101,14 +102,26 @@ class AntiPetrosBot(commands.Bot):
 
     async def on_ready(self):
         log.info('%s has connected to Discord!', self.user.name)
-        if BASE_CONFIG.getboolean('startup_message', 'use_startup_message') is True:
-            await self.send_startup_message()
-        await self.command_staff.staff_memo(attribute_name='if_ready')
-        await self.to_all_cogs('on_ready_setup')
         await self._get_bot_info()
         await self._start_sessions()
+        await self.wait_until_ready()
+        await asyncio.sleep(2)
+        await self.command_staff.staff_memo(attribute_name='if_ready')
+        await self.to_all_cogs('on_ready_setup')
         if self.is_debug:
             await self.debug_function()
+        if BASE_CONFIG.getboolean('startup_message', 'use_startup_message') is True:
+            await self.send_startup_message()
+        await self._watch_for_shutdown_trigger()
+
+    async def _watch_for_shutdown_trigger(self):
+        async for changes in awatch(APPDATA['shutdown_trigger'], loop=self.loop):
+            for change_typus, change_path in changes:
+                if change_typus is Change.added:
+                    name, extension = os.path.basename(change_path).split('.')
+                    if extension.casefold() == 'trigger':
+                        if name.casefold() == 'shutdown':
+                            await self.close()
 
     async def on_message(self, message: discord.Message) -> None:
         await self.command_staff.record_channel_usage(message)
@@ -144,8 +157,7 @@ class AntiPetrosBot(commands.Bot):
             self.clients_to_close.append(self.aio_request_session)
             log.debug("'%s' was started", str(self.aio_request_session))
         if self.urban_client is None:
-            self.urban_client = AsyncUrbanClient()
-            self.clients_to_close.append(self.urban_client)
+            self.urban_client = AsyncUrbanClient(self.aio_request_session)
             log.debug("'%s' was started", str(self.urban_client))
 
     def _get_initial_cogs(self):
@@ -161,23 +173,23 @@ class AntiPetrosBot(commands.Bot):
         log.info("extensions-cogs loaded: %s", ', '.join(self.cogs))
 
     async def close(self):
-        # TODO: check the needs for everything here, currently copied from official Python Discord Bot
         log.info("shutting down bot loops")
         self.update_check_loop.stop()
 
         log.info("retiring troops")
         self.command_staff.retire_troops()
 
-        log.debug('aiosession closed: %s', str(self.aio_request_session.closed))
         log.info("shutting down executor")
         self.executor.shutdown()
         for session in self.clients_to_close:
             await session.close()
             log.info("'%s' was shut down", str(session))
+        log.debug('aiosession closed: %s', str(self.aio_request_session.closed))
 
         log.info("closing bot")
+        await self.wait_until_ready()
         await super().close()
-        time.sleep(5)
+        time.sleep(2)
 
     @staticmethod
     def activity_from_config(option='standard_activity'):
@@ -240,6 +252,10 @@ class AntiPetrosBot(commands.Bot):
     def std_date_time_format(self):
         return "%Y-%m-%d %H:%M:%S"
 
+    @property
+    def shutdown_command(self):
+        return self.get_command('shutdown')
+
     def blacklisted_user_ids(self):
         for user_item in self.blacklisted_users:
             yield user_item.get('id')
@@ -264,7 +280,7 @@ class AntiPetrosBot(commands.Bot):
                 _out += chunk + split_on
             else:
                 await ctx.send(_out)
-                await asyncio.sleep(0.25)
+                await asyncio.sleep(0.5)
                 _out = ''
         await ctx.send(_out)
 
@@ -295,10 +311,11 @@ class AntiPetrosBot(commands.Bot):
 
     async def debug_function(self):
         log.debug("debug function triggered")
-        _out = [cog_name for cog_name, cog_object in self.cogs.items()]
-        writejson(_out, 'cog_names.json')
-        _out2 = [role.name for index, role in enumerate(self.roles)]
-        writejson(_out2, 'bot_roles.json')
+        path = pathmaker(APPDATA['debug'], 'general_debug')
+        extension = 'json'
+        _out = []
+
+        writejson(_out, path + '.' + extension)
 
     def __repr__(self):
         return f"{self.__class__.__name__}()"

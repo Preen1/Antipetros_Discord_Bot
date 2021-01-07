@@ -118,6 +118,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def latency_measure_loop(self):
+        start_time = time.time()
         log.info("measuring latency")
         now = datetime.utcnow()
         latency = round(self.bot.latency * 1000)
@@ -126,9 +127,11 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
             await self.bot.message_creator(embed=await make_basic_embed(title='LATENCY WARNING!', text='Latency is very high!', symbol='warning', **{'Time': now.strftime(self.bot.std_date_time_format), 'latency': str(latency) + ' ms'}))
 
         self.latency_data.append(LatencyMeasurement(now, latency))
+        log.debug(f'collecting latency data took {await async_seconds_to_pretty_normal(int(round(time.time()-start_time)))}')
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def memory_measure_loop(self):
+        start_time = time.time()
         log.info("measuring memory usage")
         now = datetime.utcnow()
         _mem_item = virtual_memory()
@@ -144,13 +147,15 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
             is_warning = True
             log.warning("Memory usage is high! Memory in use: %s", DataSize.GigaBytes.convert(memory_in_use, annotate=True))
         self.memory_data.append(MemoryUsageMeasurement(now, _mem_item.total, _mem_item.total - _mem_item.available, _mem_item.percent, is_warning, is_critical))
+        log.debug(f'collecting memory data took {await async_seconds_to_pretty_normal(int(round(time.time()-start_time)))}')
 
     @tasks.loop(**DATA_DUMP_INTERVALL, reconnect=True)
     async def report_data_loop(self):
+
         # TODO: limit amount of saved data, maybe archive it
         if datetime.utcnow() <= self.start_time + timedelta(seconds=DATA_COLLECT_INTERVALL * 2):
             return
-        log.info("%s creating performance reports %s", '#' * 10, '#' * 10)
+        log.info("creating performance reports")
         collected_latency_data = list(self.latency_data.copy())
         collected_memory_data = list(self.memory_data.copy())
         for name, collected_data in [("latency", collected_latency_data), ("memory", collected_memory_data)]:
@@ -225,8 +230,18 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
             embed.set_image(url=_url)
         await ctx.send(embed=embed, file=_file)
 
+    async def format_graph(self):
+        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+        plt.gca().xaxis.set_major_locator(mdates.MinuteLocator(interval=max(DATA_COLLECT_INTERVALL // 60, 10)))
+        plt.rcParams["font.family"] = "Consolas"
+        plt.rc('xtick.major', size=6, pad=10)
+        plt.rc('xtick', labelsize=9)
+
     async def make_graph(self, data, typus: str, save_to=None):
+        start_time = time.time()
         plt.style.use('ggplot')
+
+        await asyncio.wait_for(self.format_graph(), timeout=10)
         x = [item.date_time for item in data]
 
         if typus == 'latency':
@@ -237,6 +252,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
 
             ymax = max_y + (max_y // 6)
             h_line_height = max_y
+            plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%d ms'))
         else:
             y = [bytes2human(item.absolute) for item in data]
             raw_max_y = bytes2human(max(item.absolute for item in data))
@@ -244,18 +260,8 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
             ymin = 0
             ymax = round(max_y * 1.1)
             h_line_height = max_y
-        await asyncio.sleep(0.25)
-
-        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
-        plt.gca().xaxis.set_major_locator(mdates.MinuteLocator(interval=max(DATA_COLLECT_INTERVALL // 60, 10)))
-        plt.rcParams["font.family"] = "Consolas"
-        plt.rc('xtick.major', size=6, pad=10)
-        plt.rc('xtick', labelsize=9)
-
-        if typus == 'latency':
-            plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%d ms'))
-        else:
             plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%d gb'))
+        await asyncio.sleep(0.25)
 
         plt.plot(x, y, self.plot_formatting_info.get(typus), markersize=2, linewidth=0.6, alpha=1)
 
@@ -279,6 +285,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
             plt.savefig(image_binary, format='png')
             plt.close()
             image_binary.seek(0)
+            log.debug(f'making graph took {await async_seconds_to_pretty_normal(int(round(time.time()-start_time)))}')
             return discord.File(image_binary, filename=f'{typus}graph.png'), f"attachment://{typus}graph.png"
 
     async def convert_memory_size(self, in_bytes, new_unit: DataSize, annotate: bool = False, extra_digits=2):
@@ -321,3 +328,11 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
 
 def setup(bot):
     bot.add_cog(PerformanceCog(bot))
+
+
+# region[Main_Exec]
+
+if __name__ == '__main__':
+    pass
+
+# endregion[Main_Exec]

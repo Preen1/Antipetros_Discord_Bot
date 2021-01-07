@@ -184,3 +184,32 @@ def split_camel_case_string(string):
 def save_bin_file(path, data):
     with open(path, 'wb') as f:
         f.write(data)
+
+
+def _check_convert_value_type(value):
+    try:
+        _out = int(value)
+    except ValueError:
+        if value == 'True':
+            _out = True
+        elif value == 'False':
+            _out = False
+        else:
+            _out = value
+    return _out
+
+
+async def handle_arguments_string(argument_string):
+    raw_arguments = argument_string.split('|')
+    raw_arguments = list(map(lambda x: x.strip(), raw_arguments))
+    arg_arguments = []
+    kwarg_arguments = {}
+    for raw_argument in raw_arguments:
+        if '=' in raw_argument:
+            key, value = raw_argument.split('=')
+            value = _check_convert_value_type(value.strip())
+            kwarg_arguments[key.strip()] = value
+        else:
+            value = _check_convert_value_type(raw_argument.strip())
+            arg_arguments.append(value)
+    return arg_arguments, kwarg_arguments

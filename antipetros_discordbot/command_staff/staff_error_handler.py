@@ -123,7 +123,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.special_characters im
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
+
 
 # endregion[Logging]
 
@@ -155,7 +155,6 @@ class ErrorHandler(CommandStaffSoldierBase):
         log.error('Ignoring exception in command {}:'.format(ctx.command))
         log.error(str(error), exc_info=True)
         await self.bot.message_creator(embed=await self.error_reply_embed(ctx, error, 'Error With No Special Handling Occured', msg=str(error), error_traceback=error_traceback))
-        print(error_traceback)
 
     async def _handle_bad_argument(self, ctx, error, error_traceback):
         await ctx.channel.send(delete_after=60, embed=await self.error_reply_embed(ctx,
@@ -164,17 +163,17 @@ class ErrorHandler(CommandStaffSoldierBase):
                                                                                    f'{ctx.author.mention}\n{ZERO_WIDTH}\n **You tried to invoke `{ctx.command.name}` with an wrong argument**\n{ZERO_WIDTH}\n```shell\n{ctx.command.name} {ctx.command.signature}\n```',
                                                                                    error_traceback=error_traceback))
         await ctx.message.delete()
-        log.info("Error '%s' was caused by '%s' on the command '%s' with args '%s'", error.__class__.__name__, ctx.author.name, ctx.command.name, ctx.args)
+        log.error("Error '%s' was caused by '%s' on the command '%s' with args '%s'", error.__class__.__name__, ctx.author.name, ctx.command.name, ctx.args)
 
     async def _handle_command_on_cooldown(self, ctx, error, error_traceback):
         await ctx.channel.send(embed=await self.error_reply_embed(ctx, error, 'STOP SPAMMING!', f'{ctx.author.mention}\n{ZERO_WIDTH}\n **Your mother was a hamster and your father smelt of elderberries!**', error_traceback=error_traceback), delete_after=60)
         await ctx.message.delete()
-        log.info("Error '%s' was caused by '%s' on the command '%s' with args '%s'", error.__class__.__name__, ctx.author.name, ctx.command.name, ctx.args)
+        log.error("Error '%s' was caused by '%s' on the command '%s' with args '%s'", error.__class__.__name__, ctx.author.name, ctx.command.name, ctx.args)
 
     async def _handle_max_concurrency(self, ctx, error, error_traceback):
         await ctx.channel.send(embed=await self.error_reply_embed(ctx, error, 'STOP SPAMMING!', f'{ctx.author.mention}\n{ZERO_WIDTH}\n **Your mother was a hamster and your father smelt of elderberries!**', error_traceback=error_traceback), delete_after=60)
         await ctx.message.delete()
-        log.info("Error '%s' was caused by '%s' on the command '%s' with args '%s'", error.__class__.__name__, ctx.author.name, ctx.command.name, ctx.args)
+        log.error("Error '%s' was caused by '%s' on the command '%s' with args '%s'", error.__class__.__name__, ctx.author.name, ctx.command.name, ctx.args)
 
     async def error_reply_embed(self, ctx, error, title, msg, error_traceback):
         embed = Embed(title=title, description=f"{ZERO_WIDTH}\n{msg}\n{ZERO_WIDTH}", color=color_hex_embed('0xFF0000'), timestamp=datetime.utcnow())
@@ -189,13 +188,13 @@ class ErrorHandler(CommandStaffSoldierBase):
         return embed
 
     async def if_ready(self):
-        log.info("'%s' command staff soldier is READY", str(self))
+        log.debug("'%s' command staff soldier is READY", str(self))
 
     async def update(self):
-        log.info("'%s' command staff soldier was UPDATED", str(self))
+        log.debug("'%s' command staff soldier was UPDATED", str(self))
 
     def retire(self):
-        log.info("'%s' command staff soldier was RETIRED", str(self))
+        log.debug("'%s' command staff soldier was RETIRED", str(self))
 
 
 # region[Main_Exec]

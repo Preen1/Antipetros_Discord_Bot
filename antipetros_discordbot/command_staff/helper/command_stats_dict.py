@@ -121,7 +121,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
+
 
 # endregion[Logging]
 
@@ -144,6 +144,10 @@ class CommandStatDict(UserDict):
         self.default_content_keys = default_content_keys
         self.last_initialized = None
         self.load_data()
+
+    @property
+    def is_empty(self):
+        return self.data == {}
 
     @property
     def sum_data(self):

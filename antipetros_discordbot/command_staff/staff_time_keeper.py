@@ -110,7 +110,7 @@ from antipetros_discordbot.abstracts.command_staff_abstract import CommandStaffS
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
+
 
 # endregion[Logging]
 
@@ -135,13 +135,13 @@ class TimeKeeper(CommandStaffSoldierBase):
 
     async def if_ready(self):
         self.start_time = datetime.utcnow()
-        log.info("'%s' command staff soldier is READY", str(self))
+        log.debug("'%s' command staff soldier is READY", str(self))
 
     async def update(self):
-        log.info("'%s' command staff soldier was UPDATED", str(self))
+        log.debug("'%s' command staff soldier was UPDATED", str(self))
 
     def retire(self):
-        log.info("'%s' command staff soldier was RETIRED", str(self))
+        log.debug("'%s' command staff soldier was RETIRED", str(self))
 
 
 # region[Main_Exec]

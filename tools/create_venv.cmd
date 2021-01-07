@@ -53,6 +53,10 @@ ECHO -------------------------- Calling %%A with %%B --------------^>
 CALL %%A %%B
 ECHO.
 )
+ECHO.
+ECHO -------------------------------------------- Clearing Pip Cache --------------------------------------------
+RD /S /Q %LocalAppData%\pip\Cache
+ECHO.
 
 
 
@@ -80,7 +84,8 @@ CALL %WORKSPACE_FOLDER%\.venv\Scripts\activate.bat
 ECHO.
 
 ECHO ################# upgrading pip to get rid of stupid warning
-CALL get-pip.py
+call curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+call get-pip.py --force-reinstall
 ECHO.
 
 ECHO.
