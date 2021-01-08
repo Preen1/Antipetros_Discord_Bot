@@ -3,3 +3,4 @@ pytest-qt
 pytest-cov
 dpytest
 pytest-venv
+pytest-click

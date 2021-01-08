@@ -113,6 +113,14 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": "Gene
         embed.set_thumbnail(url="https://cdn4.iconfinder.com/data/icons/planner-color/64/popcorn-movie-time-512.png")
         await ctx.send(embed=embed)
 
+    @commands.command(aliases=get_aliases("multiple_quotes"))
+    @ commands.has_any_role(*COGS_CONFIG.getlist("general_debug", 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("general_debug", 'allowed_channels')))
+    async def multiple_quotes(self, ctx, amount: int = 10):
+        for i in range(amount):
+            await ctx.invoke(self.bot.get_command("quote"))
+        await ctx.send('done')
+
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"
 

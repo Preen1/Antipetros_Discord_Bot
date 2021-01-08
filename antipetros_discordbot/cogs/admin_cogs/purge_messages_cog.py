@@ -19,7 +19,7 @@ import subprocess
 from enum import Enum, Flag, auto
 from time import sleep
 from pprint import pprint, pformat
-from typing import Union
+from typing import Union, Optional
 from datetime import tzinfo, datetime, timezone, timedelta
 from functools import wraps, lru_cache, singledispatch, total_ordering, partial
 from contextlib import contextmanager
@@ -31,7 +31,7 @@ from io import BytesIO
 from copy import deepcopy, copy
 # * Third Party Imports -->
 
-from discord.ext import commands, tasks
+from discord.ext import commands, tasks, flags
 from discord import DiscordException
 import discord
 from fuzzywuzzy import process as fuzzprocess
@@ -40,6 +40,7 @@ from psutil import virtual_memory
 import matplotlib.dates as mdates
 from matplotlib.ticker import FormatStrFormatter
 from benedict import benedict
+
 # * Gid Imports -->
 
 import gidlogger as glog
@@ -103,14 +104,14 @@ class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": "Pur
     @commands.command(aliases=get_aliases("purge_antipetros"))
     @ commands.has_any_role(*COGS_CONFIG.getlist("purge", 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist("purge", 'allowed_channels')))
-    async def purge_antipetros(self, ctx, and_giddi: bool = False):
+    async def purge_antipetros(self, ctx, and_giddi: Optional[str] = None, number_of_messages: Optional[int] = 1000):
 
         def is_antipetros(message):
-            if and_giddi is False:
+            if and_giddi != "and_giddi":
                 return message.author.id == self.bot.id
             return message.author.id in [self.bot.id, self.bot.creator.id]
 
-        await ctx.channel.purge(limit=1000, check=is_antipetros, bulk=True)
+        await ctx.channel.purge(limit=number_of_messages, check=is_antipetros, bulk=True)
         await ctx.send('done')
 
     def __repr__(self):

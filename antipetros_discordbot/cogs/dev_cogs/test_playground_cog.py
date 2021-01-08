@@ -16,6 +16,7 @@ from discord.utils import escape_markdown
 from PIL import Image, ImageDraw, ImageFont
 from textwrap import wrap
 from discord.ext import commands
+from typing import Optional
 from fuzzywuzzy import process as fuzzprocess
 import gidlogger as glog
 from googleapiclient.discovery import build
@@ -157,7 +158,9 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
             embed.set_image(url=f"attachment://{name.replace('_','')}.{image_format}")
             await ctx.send(embed=embed, file=out_file, delete_after=delete_after)
 
-        # region [SpecialMethods]
+
+# region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

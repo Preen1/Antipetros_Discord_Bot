@@ -217,13 +217,14 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
                           _resized_stamp)
         return input_image
 
-    async def _send_image(self, ctx, image, name, message_title, image_format=None, delete_after=None):
+    async def _send_image(self, ctx, image, name, message_title, message_text=None, image_format=None, delete_after=None):
         image_format = 'png' if image_format is None else image_format
         with BytesIO() as image_binary:
             image.save(image_binary, image_format.upper(), optimize=True)
             image_binary.seek(0)
             out_file = discord.File(image_binary, filename=name + '.' + image_format)
-            embed = discord.Embed(title=message_title)
+            embed = discord.Embed(title=message_title, description=message_text)
+            embed.set_thumbnail(url="https://userscontent2.emaze.com/images/20605779-4667-427c-a954-343bbc02a65f/c8b5d9a464d4288e9a951d3728772236.png")
             embed.set_image(url=f"attachment://{name.replace('_','')}.{image_format}")
             await ctx.send(embed=embed, file=out_file, delete_after=delete_after)
 
@@ -294,22 +295,16 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
     @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_avatar_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels')))
     @commands.cooldown(1, 30, commands.BucketType.member)
-    async def member_avatar(self, ctx, target_id: int = None):
+    async def other_members_avatar(self, ctx, members: commands.Greedy[discord.Member]):
 
-        if target_id is None:
-            avatar_image = await self.get_avatar_from_user(ctx.author)
-        else:
-            guild_id = ctx.guild.id
-            user = await self.bot.retrieve_member(guild_id, target_id)
-            avatar_image = await self.get_avatar_from_user(user)
-        stamp = self.avatar_stamp
-        modified_avatar = await self.bot.execute_in_thread(self._to_bottom_right, avatar_image, stamp, self.avatar_stamp_fraction)
+        for member in members:
+            avatar_image = await self.get_avatar_from_user(member)
+            stamp = self.avatar_stamp
+            modified_avatar = await self.bot.execute_in_thread(self._to_bottom_right, avatar_image, stamp, self.avatar_stamp_fraction)
 
-        name = f"{ctx.author.name}_Member_avatar"
-        if target_id is None:
-            await self._send_image(ctx, modified_avatar, name, f"**Your New Avatar {ctx.author.name}**")
-        else:
-            await self._send_image(ctx, modified_avatar, name, f"**Your New Avatar {user.name}**", delete_after=90)
+            name = f"{member.name}_Member_avatar"
+            await ctx.send(f"{member.mention} hey!")
+            await self._send_image(ctx, modified_avatar, name, "**Your New Avatar**", f"__**{member.name}**__")
 
     async def get_avatar_from_user(self, user):
         avatar = user.avatar_url
