@@ -89,6 +89,7 @@ def log_invoker(logger):
 
 
 def purge_check_from_user(user_id: int):
+
     def is_from_user(message):
         return message.author.id == user_id
     return is_from_user

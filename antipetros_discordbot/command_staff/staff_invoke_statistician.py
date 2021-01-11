@@ -79,7 +79,7 @@ from importlib.machinery import SourceFileLoader
 # from natsort import natsorted
 
 # from fuzzywuzzy import fuzz, process
-from benedict import benedict
+
 
 # * PyQt5 Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
@@ -163,17 +163,18 @@ class InvokeStatistician(CommandStaffSoldierBase):
 
     async def if_ready(self):
         self.command_staff = self.bot.command_staff
-        self.stats_holder = []
-        if self.cog_invoked_stats is not None and self.cog_invoked_stats.is_empty is False:
-            self.cog_invoked_stats.save_data()
-        if self.command_invoked_stats is not None and self.command_invoked_stats.is_empty is False:
-            self.command_invoked_stats.save_data()
-            self.command_invoked_stats.save_overall()
-        self.cog_invoked_stats = CommandStatDict(self.cog_invoked_stats_file, self.cog_name_list)
-        self.command_invoked_stats = CommandStatDict(self.command_invoked_stats_file, self.command_name_list)
-        self.stats_holder.append(self.cog_invoked_stats)
-        self.stats_holder.append(self.command_invoked_stats)
-        log.debug("'%s' command staff soldier was READY", str(self))
+        if self.stats_holder is None:
+            self.stats_holder = []
+            if self.cog_invoked_stats is not None and self.cog_invoked_stats.is_empty is False:
+                self.cog_invoked_stats.save_data()
+            if self.command_invoked_stats is not None and self.command_invoked_stats.is_empty is False:
+                self.command_invoked_stats.save_data()
+                self.command_invoked_stats.save_overall()
+            self.cog_invoked_stats = CommandStatDict(self.cog_invoked_stats_file, self.cog_name_list)
+            self.command_invoked_stats = CommandStatDict(self.command_invoked_stats_file, self.command_name_list)
+            self.stats_holder.append(self.cog_invoked_stats)
+            self.stats_holder.append(self.command_invoked_stats)
+            log.debug("'%s' command staff soldier was READY", str(self))
 
     async def get_todays_invoke_data(self):
         overall_data = self.command_invoked_stats.sum_data.get(date_today())

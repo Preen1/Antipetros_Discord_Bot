@@ -303,7 +303,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
             modified_avatar = await self.bot.execute_in_thread(self._to_bottom_right, avatar_image, stamp, self.avatar_stamp_fraction)
 
             name = f"{member.name}_Member_avatar"
-            await ctx.send(f"{member.mention} hey!")
+            await ctx.send(f"{member.name} hey!")
             await self._send_image(ctx, modified_avatar, name, "**Your New Avatar**", f"__**{member.name}**__")
 
     async def get_avatar_from_user(self, user):

@@ -9,7 +9,9 @@ from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 import random
 import asyncio
+import subprocess
 import platform
+from tempfile import TemporaryDirectory
 # * Third Party Imports -->
 import discord
 from discord.utils import escape_markdown
@@ -38,6 +40,7 @@ from antipetros_discordbot.utility.checks import in_allowed_channels
 from antipetros_discordbot.utility.regexes import DATE_REGEX, TIME_REGEX
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.cogs import get_aliases
+from antipetros_discordbot.utility.converters import DateTimeFullConverter, DateOnlyConverter
 
 # region [Logging]
 
@@ -158,9 +161,35 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
             embed.set_image(url=f"attachment://{name.replace('_','')}.{image_format}")
             await ctx.send(embed=embed, file=out_file, delete_after=delete_after)
 
+    @commands.command(aliases=get_aliases("check_date_converter"))
+    @ commands.has_any_role(*COGS_CONFIG.getlist("test_playground", 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
+    async def check_date_converter(self, ctx, in_date: DateOnlyConverter):
+        year = in_date.year
+        month = in_date.month
+        day = in_date.day
+        hour = in_date.hour
+        minute = in_date.minute
+        second = in_date.second
+
+        await ctx.send(f"__year:__ {year} | __month:__ {month} | __day:__ {day} || __hour:__ {hour} | __minute:__ {minute} | __second:__ {second}")
+
+    @commands.command(aliases=get_aliases("check_template"))
+    @ commands.has_any_role(*COGS_CONFIG.getlist("test_playground", 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
+    async def check_template(self, ctx):
+        if len(ctx.message.attachments) == 0:
+            await ctx.send('no template file attached')
+        _file = ctx.message.attachments[0]
+        if _file.filename.endswith('.sqf'):
+            with ctx.typing():
+                with TemporaryDirectory() as tempdir:
+                    tempfile_path = pathmaker(tempdir, _file.filename)
+                    await _file.save(tempfile_path)
+                    cmd = subprocess.run([APPDATA["antistasi_template_checker.exe"], tempfile_path], check=True, capture_output=True)
+                    await self.bot.split_to_messages(ctx, cmd.stdout.decode('utf-8', errors='replace').split('#########################')[0].replace('\n\n', '').replace(f"Errors for {_file.filename}:", "").strip(), in_codeblock=True)
 
 # region [SpecialMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

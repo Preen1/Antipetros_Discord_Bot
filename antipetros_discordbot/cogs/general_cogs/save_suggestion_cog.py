@@ -148,8 +148,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
         if reaction_user.bot is True or reaction_user.id in self.bot.blacklisted_user_ids():
             return
         message = await channel.fetch_message(payload.message_id)
-        if isinstance(payload.emoji.name, str):
-            return
         emoji_name = unicodedata.name(payload.emoji.name)
 
         if emoji_name == self.command_emojis['save']:
@@ -276,7 +274,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
             pdf_path = pathmaker(tempfold, 'suggestion_report.pdf')
             log.debug('rendering template and writing to file')
             writeit(html_path, await self.bot.execute_in_thread(template.render, var_dict))
-            writeit('test.html', await self.bot.execute_in_thread(template.render, var_dict))
             log.debug('copying stylesheet')
             shutil.copyfile(self.css_files.get('basic_report_style.css')[0], pathmaker(tempfold, self.css_files.get('basic_report_style.css')[1]))
             log.debug('transforming html to pdf')
@@ -393,8 +390,10 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
             _filtered_content = '\n'.join(_filtered_content)
         else:
             _filtered_content = suggestion_item.message.content
-        _filtered_content = f"```\n{_filtered_content.strip()}\n```"
+        _filtered_content = f"```fix\n{_filtered_content.strip()}\n```"
 
+        if len(_filtered_content) >= 900:
+            _filtered_content = _filtered_content[:900] + '...```'
         embed = discord.Embed(title="**Suggestion was Saved!**", description="Your suggestion was saved for the Dev Team.\n\n", color=0xf2ea48)
         embed.set_thumbnail(url=EMBED_SYMBOLS.get('save', None))
         embed.add_field(name="Title:", value=f"__{suggestion_item.name}__", inline=False)

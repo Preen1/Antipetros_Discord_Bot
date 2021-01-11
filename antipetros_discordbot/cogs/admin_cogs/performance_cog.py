@@ -39,7 +39,7 @@ import matplotlib.pyplot as plt
 from psutil import virtual_memory
 import matplotlib.dates as mdates
 from matplotlib.ticker import FormatStrFormatter
-from benedict import benedict
+
 # * Gid Imports -->
 
 import gidlogger as glog

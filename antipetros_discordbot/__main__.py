@@ -119,7 +119,7 @@ def command_info_run():
                                        'signature': command.signature,
                                        'usage': command.usage,
                                        'require_var_positional': command.require_var_positional}
-    writejson(_commands, pathmaker(APPDATA['docs'], 'command_data.json'), sort_keys=True)
+    writejson(_commands, pathmaker(APPDATA['documentation'], 'command_data.json'), sort_keys=True)
 
 
 @cli.command(name='only_info')

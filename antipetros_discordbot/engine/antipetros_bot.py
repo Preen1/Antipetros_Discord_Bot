@@ -276,16 +276,20 @@ class AntiPetrosBot(commands.Bot):
         guild = self.get_guild(guild_id)
         return await guild.fetch_member(user_id)
 
-    async def split_to_messages(self, ctx, message, split_on='\n'):
+    async def split_to_messages(self, ctx, message, split_on='\n', in_codeblock=False):
         _out = ''
         chunks = message.split(split_on)
         for chunk in chunks:
             if sum(map(len, _out)) + len(chunk + split_on) < self.max_message_length:
                 _out += chunk + split_on
             else:
+                if in_codeblock is True:
+                    _out = f"```json\n{_out}\n```"
                 await ctx.send(_out)
                 await asyncio.sleep(0.5)
                 _out = ''
+        if in_codeblock is True:
+            _out = f"```json\n{_out}\n```"
         await ctx.send(_out)
 
     @sync_to_async

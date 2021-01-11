@@ -98,6 +98,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
         self.bot = bot
         self.all_configs = [BASE_CONFIG, COGS_CONFIG]
         self.config_dir = APPDATA['config']
+        self.do_not_reload_cogs = ['admin_cog', 'performance_cog']
         if self.bot.is_debug:
             save_commands(self)
         glog.class_init_notification(log, self)
@@ -181,7 +182,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
         reloaded_extensions = {}
         _base_location = BASE_CONFIG.get('general_settings', 'cogs_location')
         for _extension in BASE_CONFIG.options('extensions'):
-            if BASE_CONFIG.getboolean('extensions', _extension) is True:
+            if _extension not in self.do_not_reload_cogs and BASE_CONFIG.getboolean('extensions', _extension) is True:
                 _location = _base_location + '.' + _extension
                 try:
                     self.bot.unload_extension(_location)
@@ -374,48 +375,6 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
             for command in cog_object.get_commands():
                 _out.append('__**' + str(command.name) + '**__' + ': ```\n' + str(command.help).split('\n')[0] + '\n```')
         await self.bot.split_to_messages(ctx, '\n---\n'.join(_out), split_on='\n---\n')
-
-    @ commands.command(aliases=get_aliases("purge_channel"))
-    @commands.is_owner()
-    @ in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
-    async def purge_channel(self, ctx, num_to_delete: int = None):
-
-        def check_is_bot_or_giddi(message):
-            return message.author.bot or message.author.id == 576522029470056450
-        start_time = time.time()
-        channel = ctx.channel
-        limit = num_to_delete
-
-        check = None
-
-        deleted_report = []
-        deleted_json_report = []
-        if num_to_delete is not None:
-            for msg in await channel.purge(limit=num_to_delete, check=check_is_bot_or_giddi, bulk=True):
-                author = msg.author.name
-                content = ' '.join(msg.content.splitlines())
-                if len(content) > 96:
-                    content = content[:96] + ' ...'
-                created_at = msg.created_at.strftime(self.bot.std_date_time_format)
-                deleted_report.append(f"author: {author}, content: {content}, created_at: {created_at}")
-                deleted_json_report.append({"author_name": author, 'content': msg.content, 'created_at': created_at})
-            timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
-            json_report_path = pathmaker(APPDATA['debug'], f"{channel.name}_deletion_report_[{timestamp}].json")
-            writejson(deleted_json_report, json_report_path)
-            with BytesIO() as bytefile:
-                bytefile.write(bytes('\n'.join(deleted_report), encoding='utf-8', errors='replace'))
-                bytefile.seek(0)
-
-                out_file = discord.File(bytefile, filename=f"{channel.name}_deletion_report_[{timestamp}].txt")
-                out_file2 = discord.File(json_report_path, os.path.basename(json_report_path))
-                duration_seconds = int(round(time.time() - start_time))
-                duration = await async_seconds_to_pretty_normal(duration_seconds)
-                await ctx.send(embed=await make_basic_embed(title='**Deleted Messages Report**', text=f"{ZERO_WIDTH}\n{str(len(deleted_report))} Messages where deleted in channel '{channel.name}'!\n\n*reports are attached.*", duration=duration), files=[out_file, out_file2])
-        else:
-            await channel.purge(limit=1000, check=None, bulk=True)
-            duration_seconds = int(round(time.time() - start_time))
-            duration = await async_seconds_to_pretty_normal(duration_seconds)
-            await ctx.send(embed=await make_basic_embed(title='**Deleted Messages Report**', text=f"{ZERO_WIDTH}\nAll Messages where deleted in channel '{channel.name}'!", symbol='trash', duration=duration))
 
     def __repr__(self):
         return f"{self.name}({self.bot.user.name})"

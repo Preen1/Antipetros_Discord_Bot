@@ -11,6 +11,7 @@ import gidlogger as glog
 from datetime import datetime
 import sys
 
+
 log = glog.aux_logger(__name__)
 glog.import_notification(log, __name__)
 
@@ -135,7 +136,12 @@ def save_commands(cog):
     command_json = loadjson(command_json_file)
     command_json[str(cog)] = {'file_path': pathmaker(os.path.abspath(inspect.getfile(cog.__class__))),
                               'description': dedent(str(inspect.getdoc(cog.__class__))),
-                              'commands': {(com.name + ' ' + com.signature).replace('<ctx>', '').replace('  ', ' ').strip(): com.help for com in cog.get_commands()}}
+                              "commands": {}}
+    for command in cog.get_commands():
+        command_json[str(cog)]["commands"][command.name.strip()] = {"signature": command.signature.replace('<ctx>', '').replace('  ', ' ').strip(),
+                                                                    "aliases": command.aliases,
+                                                                    "parameter": [param_string for param_string, _ in command.clean_params.items() if param_string != 'ctx'],
+                                                                    "checks": [str(check).split()[1].split('.')[0] for check in command.checks]}
     writejson(command_json, command_json_file, indent=4)
     log.debug("commands for %s saved to %s", cog, command_json_file)
 

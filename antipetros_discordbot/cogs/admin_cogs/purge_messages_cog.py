@@ -39,7 +39,7 @@ import matplotlib.pyplot as plt
 from psutil import virtual_memory
 import matplotlib.dates as mdates
 from matplotlib.ticker import FormatStrFormatter
-from benedict import benedict
+
 
 # * Gid Imports -->
 
@@ -58,6 +58,7 @@ from antipetros_discordbot.utility.named_tuples import MemoryUsageMeasurement, L
 from antipetros_discordbot.utility.enums import DataSize
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from antipetros_discordbot.utility.converters import DateTimeFullConverter, DateOnlyConverter
 # endregion[Imports]
 
 # region [TODO]
@@ -102,7 +103,7 @@ class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": "Pur
         glog.class_init_notification(log, self)
 
     @commands.command(aliases=get_aliases("purge_antipetros"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist("purge", 'allowed_roles'))
+    @commands.is_owner()
     @in_allowed_channels(set(COGS_CONFIG.getlist("purge", 'allowed_channels')))
     async def purge_antipetros(self, ctx, and_giddi: Optional[str] = None, number_of_messages: Optional[int] = 1000):
 
@@ -120,6 +121,16 @@ class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": "Pur
     def __str__(self):
         return self.qualified_name
 
+    @commands.command(aliases=get_aliases("purge_msg_from_user"))
+    @ commands.has_any_role(*COGS_CONFIG.getlist("general_debug", 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("purge", 'allowed_channels')))
+    async def purge_msg_from_user(self, ctx, user: discord.User, number_of_messages: Optional[int] = 1000, since: Optional[DateOnlyConverter] = None):
+
+        def is_user(message):
+            return message.author.id == user.id
+
+        messages_deleted = await ctx.channel.purge(limit=number_of_messages, check=is_user, after=since, bulk=True)
+        await ctx.send(f"deleted {len(messages_deleted)} messages from {user.name}")
 
 # region[Main_Exec]
 
