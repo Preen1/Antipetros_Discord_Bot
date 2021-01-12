@@ -106,10 +106,10 @@ from antipetros_discordbot.utility.gidtools_functions import (readit, clearit, r
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.abstracts.command_staff_abstract import CommandStaffSoldierBase
+from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.utility.named_tuples import InvokedCommandsDataItem
 from antipetros_discordbot.utility.misc import date_today, async_date_today
-from antipetros_discordbot.command_staff.helper.command_stats_dict import CommandStatDict
+from antipetros_discordbot.bot_support.sub_support.sub_support_helper import CommandStatDict
 # endregion[Imports]
 
 # region [TODO]
@@ -139,16 +139,16 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class InvokeStatistician(CommandStaffSoldierBase):
+class InvokeStatistician(SubSupportBase):
     save_folder = APPDATA['stats']
     cog_invoked_stats_file = pathmaker(save_folder, 'cog_invoked_stats.json')
     command_invoked_stats_file = pathmaker(save_folder, 'command_invoked_stats.json')
 
-    def __init__(self, bot, command_staff):
+    def __init__(self, bot, support):
         self.bot = bot
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
-        self.command_staff = command_staff
+        self.support = support
         self.cog_invoked_stats = None
         self.command_invoked_stats = None
         self.stats_holder = None
@@ -193,13 +193,13 @@ class InvokeStatistician(CommandStaffSoldierBase):
 
     async def update(self):
         self.command_invoked_stats.save_overall()
-        log.debug("'%s' command staff soldier was UPDATED", str(self))
+        log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self):
         for holder in self.stats_holder:
             holder.save_data()
         self.command_invoked_stats.save_overall()
-        log.debug("'%s' command staff soldier was RETIRED", str(self))
+        log.debug("'%s' sub_support was RETIRED", str(self))
 
     def after_action(self):
 
@@ -223,7 +223,11 @@ class InvokeStatistician(CommandStaffSoldierBase):
         return self.__class__.__name__
 
 
+def get_class():
+    return InvokeStatistician
+
 # region[Main_Exec]
+
 
 if __name__ == '__main__':
     pass

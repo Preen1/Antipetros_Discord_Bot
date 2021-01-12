@@ -32,3 +32,4 @@ lxml
 networkx
 pyowm
 colormap
+aiosqlite

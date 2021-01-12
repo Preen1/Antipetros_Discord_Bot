@@ -92,7 +92,7 @@ from antipetros_discordbot.utility.gidtools_functions import (readit, clearit, r
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.abstracts.command_staff_abstract import CommandStaffSoldierBase
+from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 
 # endregion[Imports]
 
@@ -123,11 +123,11 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class TimeKeeper(CommandStaffSoldierBase):
+class TimeKeeper(SubSupportBase):
 
-    def __init__(self, bot, command_staff):
+    def __init__(self, bot, support):
         self.bot = bot
-        self.command_staff = command_staff
+        self.support = support
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
         self.start_time = None
@@ -135,14 +135,17 @@ class TimeKeeper(CommandStaffSoldierBase):
 
     async def if_ready(self):
         self.start_time = datetime.utcnow()
-        log.debug("'%s' command staff soldier is READY", str(self))
+        log.debug("'%s' sub_support is READY", str(self))
 
     async def update(self):
-        log.debug("'%s' command staff soldier was UPDATED", str(self))
+        log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self):
-        log.debug("'%s' command staff soldier was RETIRED", str(self))
+        log.debug("'%s' sub_support was RETIRED", str(self))
 
+
+def get_class():
+    return TimeKeeper
 
 # region[Main_Exec]
 

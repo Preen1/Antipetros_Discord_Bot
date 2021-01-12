@@ -152,7 +152,7 @@ class AntiPetrosBot(commands.Bot):
 
         AntiPetrosBot.creator = self.creator._replace(**{'member_object': await self.retrieve_antistasi_member(self.creator.id), 'user_object': await self.fetch_user(self.creator.id)})
         os.environ['BOT_CREATOR_NAME'] = self.creator.name
-        os.environ['BOT_CREATOR_ID'] = self.creator.id
+        os.environ['BOT_CREATOR_ID'] = str(self.creator.id)
 
     async def _start_sessions(self):
         if self.aio_request_session is None:
@@ -209,7 +209,7 @@ class AntiPetrosBot(commands.Bot):
         return discord.Activity(name=text, type=activity_type)
 
     async def on_command_error(self, ctx, error):
-        await self.command_staff.handle_errors(ctx, error, traceback.format_exc())
+        await self.support.handle_errors(ctx, error, traceback.format_exc())
 
     @tasks.loop(minutes=5, reconnect=True)
     async def update_check_loop(self):

@@ -105,7 +105,7 @@ from antipetros_discordbot.utility.gidtools_functions import (readit, clearit, r
 
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.abstracts.command_staff_abstract import CommandStaffSoldierBase
+from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.utility.misc import color_hex_embed, async_split_camel_case_string
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.exceptions import MissingAttachmentError
@@ -140,11 +140,11 @@ EMBED_SYMBOLS = loadjson(APPDATA["embed_symbols.json"])
 # endregion[Constants]
 
 
-class ErrorHandler(CommandStaffSoldierBase):
+class ErrorHandler(SubSupportBase):
 
-    def __init__(self, bot, command_staff):
+    def __init__(self, bot, support):
         self.bot = bot
-        self.command_staff = command_staff
+        self.support = support
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
         self.error_handle_table = {commands.MaxConcurrencyReached: self._handle_max_concurrency,
@@ -218,15 +218,17 @@ class ErrorHandler(CommandStaffSoldierBase):
         return embed
 
     async def if_ready(self):
-        log.debug("'%s' command staff soldier is READY", str(self))
+        log.debug("'%s' sub_support is READY", str(self))
 
     async def update(self):
-        log.debug("'%s' command staff soldier was UPDATED", str(self))
+        log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self):
-        log.debug("'%s' command staff soldier was RETIRED", str(self))
+        log.debug("'%s' sub_support was RETIRED", str(self))
 
 
+def get_class():
+    return ErrorHandler
 # region[Main_Exec]
 
 

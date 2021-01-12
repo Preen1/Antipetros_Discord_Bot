@@ -92,7 +92,7 @@ from antipetros_discordbot.utility.gidtools_functions import (readit, clearit, r
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.abstracts.command_staff_abstract import CommandStaffSoldierBase
+from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.utility.named_tuples import RegexItem
 from antipetros_discordbot.utility.exceptions import DuplicateNameError
 
@@ -125,12 +125,12 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class RegexKeeper(CommandStaffSoldierBase):
+class RegexKeeper(SubSupportBase):
     regex_file = APPDATA['regexes_stored.txt']
 
-    def __init__(self, bot, command_staff):
+    def __init__(self, bot, support):
         self.bot = bot
-        self.command_staff = command_staff
+        self.support = support
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
         self.raw_regex_data = ''
@@ -162,14 +162,17 @@ class RegexKeeper(CommandStaffSoldierBase):
 
     async def if_ready(self):
         await self.bot.execute_in_thread(self._compile_all_regexes)
-        log.debug("'%s' command staff soldier is READY", str(self))
+        log.debug("'%s' sub_support is READY", str(self))
 
     async def update(self):
-        log.debug("'%s' command staff soldier was UPDATED", str(self))
+        log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self):
-        log.debug("'%s' command staff soldier was RETIRED", str(self))
+        log.debug("'%s' sub_support was RETIRED", str(self))
 
+
+def get_class():
+    return RegexKeeper
 
 # region[Main_Exec]
 

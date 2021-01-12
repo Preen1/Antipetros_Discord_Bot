@@ -136,9 +136,9 @@ class ChannelStatistician(SubSupportBase):
     exclude_categories = ["admin info", "staff rooms", "voice channels"]
     channel_usage_stats_file = pathmaker(APPDATA['stats'], "channel_usage_stats.json")
 
-    def __init__(self, bot, command_staff):
+    def __init__(self, bot, support):
         self.bot = bot
-        self.command_staff = command_staff
+        self.support = support
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
         self.channel_usage_stats = None
@@ -172,7 +172,7 @@ class ChannelStatistician(SubSupportBase):
                 self.channel_usage_stats['overall'][channel.name] = 0
         writejson(self.channel_usage_stats, self.channel_usage_stats_file)
         await self.update()
-        log.debug("'%s' command staff soldier is READY", str(self))
+        log.debug("'%s' sub_support is READY", str(self))
 
     async def update(self):
         writejson(self.channel_usage_stats, self.channel_usage_stats_file)
@@ -183,11 +183,11 @@ class ChannelStatistician(SubSupportBase):
                 self.channel_usage_stats[await async_date_today()][channel.name] = 0
         writejson(self.channel_usage_stats, self.channel_usage_stats_file)
 
-        log.debug("'%s' command staff soldier was UPDATED", str(self))
+        log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self):
         writejson(self.channel_usage_stats, self.channel_usage_stats_file)
-        log.debug("'%s' command staff soldier was RETIRED", str(self))
+        log.debug("'%s' sub_support was RETIRED", str(self))
 
 
 def get_class():

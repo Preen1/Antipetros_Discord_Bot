@@ -127,9 +127,9 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 class ColorKeeper(SubSupportBase):
     all_colors_json_file = APPDATA['all_color_list.json']
 
-    def __init__(self, bot, command_staff):
+    def __init__(self, bot, support):
         self.bot = bot
-        self.command_staff = command_staff
+        self.support = support
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
         self.colors = {}
@@ -153,15 +153,17 @@ class ColorKeeper(SubSupportBase):
 
     async def if_ready(self):
 
-        log.debug("'%s' command staff soldier is READY", str(self))
+        log.debug("'%s' sub_support is READY", str(self))
 
     async def update(self):
-        log.debug("'%s' command staff soldier was UPDATED", str(self))
+        log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self):
-        log.debug("'%s' command staff soldier was RETIRED", str(self))
+        log.debug("'%s' sub_support was RETIRED", str(self))
 
 
+def get_class():
+    return ColorKeeper
 # region[Main_Exec]
 
 
