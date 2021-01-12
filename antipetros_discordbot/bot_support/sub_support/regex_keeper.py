@@ -93,6 +93,8 @@ from antipetros_discordbot.utility.gidtools_functions import (readit, clearit, r
 
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.abstracts.command_staff_abstract import CommandStaffSoldierBase
+from antipetros_discordbot.utility.named_tuples import RegexItem
+from antipetros_discordbot.utility.exceptions import DuplicateNameError
 
 # endregion[Imports]
 
@@ -123,20 +125,43 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class {{ soldier.name }}(CommandStaffSoldierBase):
+class RegexKeeper(CommandStaffSoldierBase):
+    regex_file = APPDATA['regexes_stored.txt']
 
     def __init__(self, bot, command_staff):
         self.bot = bot
         self.command_staff = command_staff
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
-
-
+        self.raw_regex_data = ''
+        self.regexes = {}
         glog.class_init_notification(log, self)
 
+    def _load_regexes(self):
+        self.raw_regex_data = readit(self.regex_file)
+
+    def _process_raw_regexes(self):
+        self._load_regexes()
+        self.regexes = {}
+        for line in self.raw_regex_data.splitlines():
+            name, _regex = line.split('=', maxsplit=1)
+            name = name.strip()
+            _regex = _regex.strip()
+            if name not in self.regexes:
+                self.regexes[name] = RegexItem(name, _regex)
+            else:
+                raise DuplicateNameError(name, str(self))
+
+    def _compile_all_regexes(self):
+        self._process_raw_regexes()
+        for key, value in self.regexes.items():
+            self.regexes[key] = value._replace(compiled=re.compile(value.raw))
+
+    def regex(self, regex_name):
+        return self.regexes.get(regex_name)
 
     async def if_ready(self):
-
+        await self.bot.execute_in_thread(self._compile_all_regexes)
         log.debug("'%s' command staff soldier is READY", str(self))
 
     async def update(self):

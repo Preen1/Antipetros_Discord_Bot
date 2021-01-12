@@ -36,7 +36,7 @@ import gidlogger as glog
 import antipetros_discordbot
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writeit, readit, readbin, writebin, appendwriteit, linereadit, writejson, loadjson, pickleit, get_pickled
 
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.named_tuples import NEW_COG_ITEM, NEW_COMMAND_ITEM, NEW_LISTENER_ITEM, NEW_LOOP_ITEM
 from antipetros_discordbot.dev_tools.templates import TEMPLATES_DIR
 # endregion[Imports]
@@ -54,9 +54,9 @@ log = glog.aux_logger(__name__)
 # endregion[Logging]
 
 # region [Constants]
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
-COGS_CONFIG = SupportKeeper.get_config('cogs_config')
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 

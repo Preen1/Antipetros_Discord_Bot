@@ -81,12 +81,6 @@ from discord.ext import commands, tasks
 # from fuzzywuzzy import fuzz, process
 
 
-import networkx as nx
-
-import matplotlib.pyplot as plt
-
-from graphviz import Digraph
-
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
 
 import gidlogger as glog
@@ -97,9 +91,10 @@ from antipetros_discordbot.utility.gidtools_functions import (readit, clearit, r
 
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
-from antipetros_discordbot.abstracts.command_staff_abstract import CommandStaffSoldierBase
-from antipetros_discordbot.utility.misc import date_today, async_date_today
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
+from antipetros_discordbot.utility.gidtools_functions import writejson, loadjson
+from antipetros_discordbot.utility.named_tuples import ColorItem
 # endregion[Imports]
 
 # region [TODO]
@@ -121,72 +116,49 @@ log = glog.aux_logger(__name__)
 
 # region [Constants]
 
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[Constants]
 
 
-class ChannelStatistician(CommandStaffSoldierBase):
-    save_folder = APPDATA['stats']
-    temp_folder = APPDATA['temp_files']
-    exclude_channels = ["website-admin-team", "wiki-mods", "sponsors", "probationary-list", "mute-appeals", "moderator-book", "moderation-team", "event-team", "black-book", "admin-team", "admin-meeting-notes"]
-    exclude_categories = ["admin info", "staff rooms", "voice channels"]
-    channel_usage_stats_file = pathmaker(APPDATA['stats'], "channel_usage_stats.json")
+class ColorKeeper(SubSupportBase):
+    all_colors_json_file = APPDATA['all_color_list.json']
 
     def __init__(self, bot, command_staff):
         self.bot = bot
         self.command_staff = command_staff
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
-        self.channel_usage_stats = None
-
+        self.colors = {}
+        self._make_color_items()
         glog.class_init_notification(log, self)
 
-    async def record_channel_usage(self, msg):
-        if isinstance(msg.channel, discord.DMChannel):
-            return
-        if msg.author.id == self.bot.id:
-            return
-        channel = msg.channel
-        if self.is_debug and channel.name == BASE_CONFIG.get('debug', 'current_testing_channel'):
-            return
-        self.channel_usage_stats['overall'][channel.name] += 1
-        self.channel_usage_stats[await async_date_today()][channel.name] += 1
-        log.debug('channel usage was logged, for channel "%s"', channel.name)
+    @property
+    def color_item_list(self):
+        return [item for name, item in self.colors.items()]
 
-    async def make_heat_map(self):
-        pass
+    def _make_color_items(self):
+        for name, values in loadjson(self.all_colors_json_file).items():
+            self.colors[name.casefold()] = ColorItem(name=name.casefold(), **values)
+
+    def color(self, color_name: str):
+        return self.colors.get(color_name)
+
+    @property
+    def random_color(self):
+        return random.choice(self.color_item_list)
 
     async def if_ready(self):
-        if os.path.isfile(self.channel_usage_stats_file) is False:
-            self.channel_usage_stats = {'overall': {}}
-            writejson(self.channel_usage_stats, self.channel_usage_stats_file)
-        if self.channel_usage_stats is not None:
-            writejson(self.channel_usage_stats, self.channel_usage_stats_file)
-        self.channel_usage_stats = loadjson(self.channel_usage_stats_file)
-        for channel in self.bot.antistasi_guild.channels:
-            if channel.name not in self.channel_usage_stats['overall']:
-                self.channel_usage_stats['overall'][channel.name] = 0
-        writejson(self.channel_usage_stats, self.channel_usage_stats_file)
-        await self.update()
+
         log.debug("'%s' command staff soldier is READY", str(self))
 
     async def update(self):
-        writejson(self.channel_usage_stats, self.channel_usage_stats_file)
-        if await async_date_today() not in self.channel_usage_stats:
-            self.channel_usage_stats[await async_date_today()] = {}
-        for channel in self.bot.antistasi_guild.channels:
-            if channel.name not in self.channel_usage_stats[await async_date_today()]:
-                self.channel_usage_stats[await async_date_today()][channel.name] = 0
-        writejson(self.channel_usage_stats, self.channel_usage_stats_file)
-
         log.debug("'%s' command staff soldier was UPDATED", str(self))
 
     def retire(self):
-        writejson(self.channel_usage_stats, self.channel_usage_stats_file)
         log.debug("'%s' command staff soldier was RETIRED", str(self))
 
 

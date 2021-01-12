@@ -91,7 +91,7 @@ from antipetros_discordbot.utility.gidtools_functions import (readit, clearit, r
 
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.abstracts.command_staff_abstract import CommandStaffSoldierBase
 
 # endregion[Imports]
@@ -115,8 +115,8 @@ log = glog.aux_logger(__name__)
 
 # region [Constants]
 
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 

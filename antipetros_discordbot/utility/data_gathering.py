@@ -53,7 +53,7 @@ from gidtools.gidfiles import (QuickFile, readit, clearit, readbin, writeit, loa
 
 
 # * Local Imports -->
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 
 # endregion[Imports]
 
@@ -63,9 +63,9 @@ from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 # endregion [TODO]
 
 # region [AppUserData]
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
-COGS_CONFIG = SupportKeeper.get_config('cogs_config')
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 
 # endregion [AppUserData]
 

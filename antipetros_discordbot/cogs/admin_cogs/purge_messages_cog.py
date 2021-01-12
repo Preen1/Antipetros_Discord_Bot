@@ -47,7 +47,7 @@ import gidlogger as glog
 
 
 # * Local Imports -->
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
 from antipetros_discordbot.utility.misc import seconds_to_pretty
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, bytes2human
@@ -84,9 +84,9 @@ glog.import_notification(log, __name__)
 # endregion[Logging]
 
 # region [Constants]
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
-COGS_CONFIG = SupportKeeper.get_config('cogs_config')
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 

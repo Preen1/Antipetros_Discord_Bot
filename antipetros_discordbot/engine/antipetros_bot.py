@@ -27,16 +27,15 @@ import pyowm
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, readit, writeit
 from antipetros_discordbot.utility.misc import sync_to_async, save_bin_file
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.named_tuples import CreatorMember
-from antipetros_discordbot.command_staff.staff_invoke_statistician import InvokeStatistician
-from antipetros_discordbot.command_staff.staff_error_handler import ErrorHandler
+
 from antipetros_discordbot.engine.global_checks import user_not_blacklisted
-from antipetros_discordbot.command_staff import CommandStaffRoster, ErrorHandler, InvokeStatistician, TimeKeeper, ChannelStatistician, RegexKeeper, ColorKeeper
+from antipetros_discordbot.bot_support import BotSupporter
 # endregion[Imports]
 
 
@@ -53,8 +52,8 @@ glog.import_notification(log, __name__)
 
 # region [Constants]
 
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -73,13 +72,11 @@ class AntiPetrosBot(commands.Bot):
     bot_feature_suggestion_json_file = APPDATA['bot_feature_suggestions.json']
     cog_import_base_path = BASE_CONFIG.get('general_settings', 'cogs_location')
 
-    available_staff = (InvokeStatistician, ErrorHandler, TimeKeeper, ChannelStatistician, RegexKeeper, ColorKeeper)
-
     def __init__(self, help_invocation='help', ** kwargs):
         super().__init__(owner_id=self.creator.id, case_insensitive=BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive'), **kwargs)
         self.help_invocation = help_invocation
         self.description = readit(APPDATA['bot_description.md'])
-        self.command_staff = CommandStaffRoster(self, self.available_staff)
+        self.support = BotSupporter(self)
         self.general_data = loadjson(APPDATA['general_data.json'])
         self.max_message_length = 1900
         self.commands_executed = 0
@@ -108,7 +105,7 @@ class AntiPetrosBot(commands.Bot):
         await self._start_sessions()
         await self.wait_until_ready()
         await asyncio.sleep(2)
-        await self.command_staff.staff_memo(attribute_name='if_ready')
+        await self.support.to_all_subsupports(attribute_name='if_ready')
         await self.to_all_cogs('on_ready_setup')
         if self.is_debug:
             await self.debug_function()
@@ -128,7 +125,7 @@ class AntiPetrosBot(commands.Bot):
                             sys.exit()
 
     async def on_message(self, message: discord.Message) -> None:
-        await self.command_staff.record_channel_usage(message)
+        await self.support.record_channel_usage(message)
         await self.process_commands(message)
 
     async def send_startup_message(self):
@@ -154,6 +151,8 @@ class AntiPetrosBot(commands.Bot):
             self.command_prefix = when_mentioned_or_roles_or(BASE_CONFIG.get('prefix', 'command_prefix'))
 
         AntiPetrosBot.creator = self.creator._replace(**{'member_object': await self.retrieve_antistasi_member(self.creator.id), 'user_object': await self.fetch_user(self.creator.id)})
+        os.environ['BOT_CREATOR_NAME'] = self.creator.name
+        os.environ['BOT_CREATOR_ID'] = self.creator.id
 
     async def _start_sessions(self):
         if self.aio_request_session is None:
@@ -181,7 +180,7 @@ class AntiPetrosBot(commands.Bot):
         self.update_check_loop.stop()
 
         log.info("retiring troops")
-        self.command_staff.retire_troops()
+        self.support.retire_subsupport()
 
         log.info("shutting down executor")
         self.executor.shutdown()
@@ -217,7 +216,7 @@ class AntiPetrosBot(commands.Bot):
         if self.current_day == datetime.utcnow().day:
             return
         self.current_day = datetime.utcnow().day
-        await self.command_staff.staff_memo('update')
+        await self.support.to_all_subsupports('update')
         await self.to_all_cogs('updated')
 
     @update_check_loop.before_loop

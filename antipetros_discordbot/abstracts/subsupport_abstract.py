@@ -56,7 +56,7 @@ from importlib.machinery import SourceFileLoader
 
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
 
-import discord
+# import discord
 
 # import requests
 
@@ -68,9 +68,9 @@ import discord
 
 # from dotenv import load_dotenv
 
-from discord import Embed, File
+# from discord import Embed, File
 
-from discord.ext import commands, tasks
+# from discord.ext import commands, tasks
 
 # from github import Github, GithubException
 
@@ -81,20 +81,31 @@ from discord.ext import commands, tasks
 # from fuzzywuzzy import fuzz, process
 
 
+# * PyQt5 Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
+
+# from PyQt5.QtGui import QFont, QIcon, QBrush, QColor, QCursor, QPixmap, QStandardItem, QRegExpValidator
+
+# from PyQt5.QtCore import (Qt, QRect, QSize, QObject, QRegExp, QThread, QMetaObject, QCoreApplication,
+#                           QFileSystemWatcher, QPropertyAnimation, QAbstractTableModel, pyqtSlot, pyqtSignal)
+
+# from PyQt5.QtWidgets import (QMenu, QFrame, QLabel, QAction, QDialog, QLayout, QWidget, QWizard, QMenuBar, QSpinBox, QCheckBox, QComboBox, QGroupBox, QLineEdit,
+#                              QListView, QCompleter, QStatusBar, QTableView, QTabWidget, QDockWidget, QFileDialog, QFormLayout, QGridLayout, QHBoxLayout,
+#                              QHeaderView, QListWidget, QMainWindow, QMessageBox, QPushButton, QSizePolicy, QSpacerItem, QToolButton, QVBoxLayout, QWizardPage,
+#                              QApplication, QButtonGroup, QRadioButton, QFontComboBox, QStackedWidget, QListWidgetItem, QSystemTrayIcon, QTreeWidgetItem,
+#                              QDialogButtonBox, QAbstractItemView, QCommandLinkButton, QAbstractScrollArea, QGraphicsOpacityEffect, QTreeWidgetItemIterator)
+
+
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
 
 import gidlogger as glog
 
-from antipetros_discordbot.utility.gidtools_functions import (readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
-                                                              dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
+# from gidtools.gidfiles import (QuickFile, readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
+#                                dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
 
 
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
-from antipetros_discordbot.abstracts.command_staff_abstract import CommandStaffSoldierBase
-from antipetros_discordbot.utility.gidtools_functions import writejson, loadjson
-from antipetros_discordbot.utility.named_tuples import ColorItem
+
 # endregion[Imports]
 
 # region [TODO]
@@ -116,54 +127,32 @@ log = glog.aux_logger(__name__)
 
 # region [Constants]
 
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
-
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[Constants]
 
 
-class ColorKeeper(CommandStaffSoldierBase):
-    all_colors_json_file = APPDATA['all_color_list.json']
-
-    def __init__(self, bot, command_staff):
-        self.bot = bot
-        self.command_staff = command_staff
-        self.loop = self.bot.loop
-        self.is_debug = self.bot.is_debug
-        self.colors = {}
-        self._make_color_items()
-        glog.class_init_notification(log, self)
-
-    @property
-    def color_item_list(self):
-        return [item for name, item in self.colors.items()]
-
-    def _make_color_items(self):
-        for name, values in loadjson(self.all_colors_json_file).items():
-            self.colors[name.casefold()] = ColorItem(name=name.casefold(), **values)
-
-    def color(self, color_name: str):
-        return self.colors.get(color_name)
-
-    @property
-    def random_color(self):
-        return random.choice(self.color_item_list)
-
+class SubSupportBase(ABC):
+    @abstractmethod
     async def if_ready(self):
+        ...
 
-        log.debug("'%s' command staff soldier is READY", str(self))
-
-    async def update(self):
-        log.debug("'%s' command staff soldier was UPDATED", str(self))
-
+    @abstractmethod
     def retire(self):
-        log.debug("'%s' command staff soldier was RETIRED", str(self))
+        ...
+
+    @abstractmethod
+    async def update(self):
+        ...
+
+    def __str__(self) -> str:
+        return self.__class__.__name__
+
+    def __repr__(self):
+        return str(self)
 
 
 # region[Main_Exec]
-
 
 if __name__ == '__main__':
     pass

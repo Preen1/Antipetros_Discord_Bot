@@ -50,7 +50,7 @@ from pytz import country_timezones, timezone, all_timezones
 # * Gid Imports -->
 import gidlogger as glog
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, readbin, linereadit, writeit, writebin, appendwriteit, loadjson, writejson, pickleit, get_pickled, clearit
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.misc import save_commands, STANDARD_DATETIME_FORMAT
 from antipetros_discordbot.utility.checks import in_allowed_channels
 from antipetros_discordbot.utility.named_tuples import COUNTRY_ITEM, CITY_ITEM
@@ -75,9 +75,9 @@ log = glog.aux_logger(__name__)
 
 # region [Constants]
 
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
-COGS_CONFIG = SupportKeeper.get_config('cogs_config')
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 

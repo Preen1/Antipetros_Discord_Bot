@@ -31,7 +31,7 @@ from fuzzywuzzy import fuzz
 from pyfiglet import Figlet
 # * Local Imports -->
 
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import Bold, Cursive, CodeBlock, LineCode, UnderScore, BlockQuote
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, writeit
@@ -52,9 +52,9 @@ glog.import_notification(log, __name__)
 # endregion[Logging]
 
 
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
-COGS_CONFIG = SupportKeeper.get_config('cogs_config')
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 

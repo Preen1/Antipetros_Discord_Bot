@@ -39,7 +39,7 @@ import click
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.exceptions import TokenError
 from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from antipetros_discordbot.utility.misc import check_if_int
@@ -51,9 +51,9 @@ from antipetros_discordbot import MAIN_DIR
 
 # region [Constants]
 
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
-COGS_CONFIG = SupportKeeper.get_config('cogs_config')
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # endregion [Constants]
 
 # region [Logging]

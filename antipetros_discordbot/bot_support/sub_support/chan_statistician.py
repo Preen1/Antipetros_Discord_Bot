@@ -81,6 +81,12 @@ from discord.ext import commands, tasks
 # from fuzzywuzzy import fuzz, process
 
 
+import networkx as nx
+
+import matplotlib.pyplot as plt
+
+from graphviz import Digraph
+
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
 
 import gidlogger as glog
@@ -91,11 +97,9 @@ from antipetros_discordbot.utility.gidtools_functions import (readit, clearit, r
 
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
-from antipetros_discordbot.abstracts.command_staff_abstract import CommandStaffSoldierBase
-from antipetros_discordbot.utility.named_tuples import RegexItem
-from antipetros_discordbot.utility.exceptions import DuplicateNameError
-
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
+from antipetros_discordbot.utility.misc import date_today, async_date_today
 # endregion[Imports]
 
 # region [TODO]
@@ -117,60 +121,77 @@ log = glog.aux_logger(__name__)
 
 # region [Constants]
 
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[Constants]
 
 
-class RegexKeeper(CommandStaffSoldierBase):
-    regex_file = APPDATA['regexes_stored.txt']
+class ChannelStatistician(SubSupportBase):
+    save_folder = APPDATA['stats']
+    temp_folder = APPDATA['temp_files']
+    exclude_channels = ["website-admin-team", "wiki-mods", "sponsors", "probationary-list", "mute-appeals", "moderator-book", "moderation-team", "event-team", "black-book", "admin-team", "admin-meeting-notes"]
+    exclude_categories = ["admin info", "staff rooms", "voice channels"]
+    channel_usage_stats_file = pathmaker(APPDATA['stats'], "channel_usage_stats.json")
 
     def __init__(self, bot, command_staff):
         self.bot = bot
         self.command_staff = command_staff
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
-        self.raw_regex_data = ''
-        self.regexes = {}
+        self.channel_usage_stats = None
+
         glog.class_init_notification(log, self)
 
-    def _load_regexes(self):
-        self.raw_regex_data = readit(self.regex_file)
+    async def record_channel_usage(self, msg):
+        if isinstance(msg.channel, discord.DMChannel):
+            return
+        if msg.author.id == self.bot.id:
+            return
+        channel = msg.channel
+        if self.is_debug and channel.name == BASE_CONFIG.get('debug', 'current_testing_channel'):
+            return
+        self.channel_usage_stats['overall'][channel.name] += 1
+        self.channel_usage_stats[await async_date_today()][channel.name] += 1
+        log.debug('channel usage was logged, for channel "%s"', channel.name)
 
-    def _process_raw_regexes(self):
-        self._load_regexes()
-        self.regexes = {}
-        for line in self.raw_regex_data.splitlines():
-            name, _regex = line.split('=', maxsplit=1)
-            name = name.strip()
-            _regex = _regex.strip()
-            if name not in self.regexes:
-                self.regexes[name] = RegexItem(name, _regex)
-            else:
-                raise DuplicateNameError(name, str(self))
-
-    def _compile_all_regexes(self):
-        self._process_raw_regexes()
-        for key, value in self.regexes.items():
-            self.regexes[key] = value._replace(compiled=re.compile(value.raw))
-
-    def regex(self, regex_name):
-        return self.regexes.get(regex_name)
+    async def make_heat_map(self):
+        pass
 
     async def if_ready(self):
-        await self.bot.execute_in_thread(self._compile_all_regexes)
+        if os.path.isfile(self.channel_usage_stats_file) is False:
+            self.channel_usage_stats = {'overall': {}}
+            writejson(self.channel_usage_stats, self.channel_usage_stats_file)
+        if self.channel_usage_stats is not None:
+            writejson(self.channel_usage_stats, self.channel_usage_stats_file)
+        self.channel_usage_stats = loadjson(self.channel_usage_stats_file)
+        for channel in self.bot.antistasi_guild.channels:
+            if channel.name not in self.channel_usage_stats['overall']:
+                self.channel_usage_stats['overall'][channel.name] = 0
+        writejson(self.channel_usage_stats, self.channel_usage_stats_file)
+        await self.update()
         log.debug("'%s' command staff soldier is READY", str(self))
 
     async def update(self):
+        writejson(self.channel_usage_stats, self.channel_usage_stats_file)
+        if await async_date_today() not in self.channel_usage_stats:
+            self.channel_usage_stats[await async_date_today()] = {}
+        for channel in self.bot.antistasi_guild.channels:
+            if channel.name not in self.channel_usage_stats[await async_date_today()]:
+                self.channel_usage_stats[await async_date_today()][channel.name] = 0
+        writejson(self.channel_usage_stats, self.channel_usage_stats_file)
+
         log.debug("'%s' command staff soldier was UPDATED", str(self))
 
     def retire(self):
+        writejson(self.channel_usage_stats, self.channel_usage_stats_file)
         log.debug("'%s' command staff soldier was RETIRED", str(self))
 
 
+def get_class():
+    return ChannelStatistician
 # region[Main_Exec]
 
 

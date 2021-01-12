@@ -47,7 +47,7 @@ from functools import wraps, partial, lru_cache, singledispatch, total_ordering
 from importlib import import_module, invalidate_caches
 from contextlib import contextmanager
 from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
+from collections import Counter, ChainMap, deque, namedtuple, defaultdict, UserDict
 from urllib.parse import urlparse
 from importlib.util import find_spec, module_from_spec, spec_from_file_location
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
@@ -99,13 +99,13 @@ from importlib.machinery import SourceFileLoader
 
 import gidlogger as glog
 
-# from gidtools.gidfiles import (QuickFile, readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
-#                                dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
+from antipetros_discordbot.utility.gidtools_functions import (readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
+                                                              dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
 
 
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
-
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 # endregion[Imports]
 
 # region [TODO]
@@ -125,36 +125,82 @@ log = glog.aux_logger(__name__)
 
 # endregion[Logging]
 
+
 # region [Constants]
 
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+from antipetros_discordbot.utility.misc import date_today, async_date_today
 # endregion[Constants]
 
 
-class CommandStaffSoldierBase(ABC):
-    @abstractmethod
-    async def if_ready(self):
-        ...
+class CommandStatDict(UserDict):
+    overall_data_file = pathmaker(APPDATA['stats'], "overall_invoked_stats.json")
 
-    @abstractmethod
-    def retire(self):
-        ...
+    def __init__(self, file: str, default_content_function: Callable):
+        self.file = pathmaker(file)
+        super().__init__({})
+        self.default_content_function = default_content_function
+        self.default_content = None
+        self.last_initialized = None
+        self.load_data()
 
-    @abstractmethod
-    async def update(self):
-        ...
+    @property
+    def is_empty(self):
+        return self.data == {}
 
-    def __str__(self) -> str:
-        return self.__class__.__name__
+    @property
+    def sum_data(self):
+        _out = {'overall': {'successful': sum(value.get('successful') for key, value in self.data['overall'].items()),
+                            'unsuccessful': sum(value.get('unsuccessful') for key, value in self.data['overall'].items())}}
 
-    def __repr__(self):
-        return str(self)
+        for date, value in self.data.items():
+            if date != 'overall':
+                _out[date] = {'successful': sum(value.get('successful') for key, value in self.data[date].items()),
+                              'unsuccessful': sum(value.get('unsuccessful') for key, value in self.data[date].items())}
+        return _out
+
+    def initialize_data(self):
+        self.default_content = list(set(self.default_content_function()))
+        if 'overall' not in self.data:
+            self.data['overall'] = {}
+        if date_today() not in self.data:
+            self.data[date_today()] = {}
+        for item in self.default_content:
+            if item not in self.data['overall']:
+                self.data['overall'][item] = {'successful': 0, 'unsuccessful': 0}
+            if item not in self.data[date_today()]:
+                self.data[date_today()][item] = {'successful': 0, 'unsuccessful': 0}
+        self.last_initialized = datetime.utcnow()
+
+    def add_tick(self, key, unsuccessful=False):
+        if key is None or key == 'None':
+            return
+        if self.last_initialized + timedelta(days=1) <= datetime.utcnow():
+            self.save_data()
+            self.initialize_data()
+
+        typus = 'unsuccessful' if unsuccessful is True else "successful"
+        self.data['overall'][key][typus] += 1
+        self.data[date_today()][key][typus] += 1
+
+    def load_data(self):
+        if os.path.isfile(self.file) is False:
+            self.initialize_data()
+            self.save_data()
+        self.data = loadjson(self.file)
+        self.initialize_data()
+
+    def save_data(self):
+        writejson(self.data, self.file)
+
+    def save_overall(self):
+        writejson(self.sum_data, self.overall_data_file)
 
 
 # region[Main_Exec]
 
 if __name__ == '__main__':
     pass
-
 # endregion[Main_Exec]
