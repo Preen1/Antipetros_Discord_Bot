@@ -10,7 +10,6 @@ Pillow
 PyGithub
 WeasyPrint
 discord.py
-discord_flags
 discord.py-stubs
 url-normalize
 async-property
@@ -32,3 +31,4 @@ pydot
 lxml
 networkx
 pyowm
+colormap

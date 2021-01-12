@@ -136,11 +136,11 @@ class ChannelStatistician(CommandStaffSoldierBase):
     exclude_categories = ["admin info", "staff rooms", "voice channels"]
     channel_usage_stats_file = pathmaker(APPDATA['stats'], "channel_usage_stats.json")
 
-    def __init__(self, bot):
+    def __init__(self, bot, command_staff):
         self.bot = bot
+        self.command_staff = command_staff
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
-        self.command_staff = None
         self.channel_usage_stats = None
 
         glog.class_init_notification(log, self)
@@ -161,7 +161,6 @@ class ChannelStatistician(CommandStaffSoldierBase):
         pass
 
     async def if_ready(self):
-        self.command_staff = self.bot.command_staff
         if os.path.isfile(self.channel_usage_stats_file) is False:
             self.channel_usage_stats = {'overall': {}}
             writejson(self.channel_usage_stats, self.channel_usage_stats_file)

@@ -14,6 +14,7 @@ import platform
 from tempfile import TemporaryDirectory
 # * Third Party Imports -->
 import discord
+from discord.ext.commands import Greedy
 from discord.utils import escape_markdown
 from PIL import Image, ImageDraw, ImageFont
 from textwrap import wrap
@@ -33,14 +34,15 @@ from pyfiglet import Figlet
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import Bold, Cursive, CodeBlock, LineCode, UnderScore, BlockQuote
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, writeit
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.misc import save_commands, async_load_json, image_to_url, color_hex_embed
-from antipetros_discordbot.utility.checks import in_allowed_channels
+from antipetros_discordbot.utility.checks import in_allowed_channels, has_attachments, allowed_channel_and_allowed_role_no_dm, is_not_giddi
 from antipetros_discordbot.utility.regexes import DATE_REGEX, TIME_REGEX
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.converters import DateTimeFullConverter, DateOnlyConverter
+from antipetros_discordbot.utility.converters import DateTimeFullConverter, DateOnlyConverter, FlagArg
+from antipetros_discordbot.utility.discord_markdown_helper.the_dragon import THE_DRAGON
 
 # region [Logging]
 
@@ -83,15 +85,10 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
     @ commands.has_any_role(*COGS_CONFIG.getlist("test_playground", 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     async def make_figlet(self, ctx, *, text: str):
-        for _ in range(3):
-            await ctx.send('#' * 25)
-            await asyncio.sleep(1)
-        for font in loadjson('figlet_fonts.json'):
-            figlet = Figlet(font=font, width=300)
-            new_text = figlet.renderText(text.upper())
-            await ctx.send(f"**{font}**\n{ZERO_WIDTH}\n```fix\n{new_text}\n```\n{ZERO_WIDTH}")
 
-            await asyncio.sleep(2.5)
+        figlet = Figlet(font='gothic', width=300)
+        new_text = figlet.renderText(text.upper())
+        await ctx.send(f"```fix\n{new_text}\n```")
 
     async def get_text_dimensions(self, text_string, font_name, image_size):
         # https://stackoverflow.com/a/46220683/9263761
@@ -177,19 +174,53 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
     @commands.command(aliases=get_aliases("check_template"))
     @ commands.has_any_role(*COGS_CONFIG.getlist("test_playground", 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
+    @has_attachments(1)
     async def check_template(self, ctx):
-        if len(ctx.message.attachments) == 0:
-            await ctx.send('no template file attached')
         _file = ctx.message.attachments[0]
         if _file.filename.endswith('.sqf'):
             with ctx.typing():
                 with TemporaryDirectory() as tempdir:
                     tempfile_path = pathmaker(tempdir, _file.filename)
                     await _file.save(tempfile_path)
-                    cmd = subprocess.run([APPDATA["antistasi_template_checker.exe"], tempfile_path], check=True, capture_output=True)
-                    await self.bot.split_to_messages(ctx, cmd.stdout.decode('utf-8', errors='replace').split('#########################')[0].replace('\n\n', '').replace(f"Errors for {_file.filename}:", "").strip(), in_codeblock=True)
+                    cmd = subprocess.run([APPDATA["antistasi_template_checker.exe"], 'from_file', '-np', tempfile_path], check=True, capture_output=True)
+                    _output = cmd.stdout.decode('utf-8', errors='replace')
+                    print(_output)
+                    await self.bot.split_to_messages(ctx, _output, in_codeblock=True)
+
+    @commands.command(aliases=get_aliases("the_dragon") + ['the_wyvern'])
+    @allowed_channel_and_allowed_role_no_dm("test_playground")
+    async def the_dragon(self, ctx):
+        await ctx.send(THE_DRAGON)
+
+    @commands.command(aliases=get_aliases("random_embed_color"))
+    @allowed_channel_and_allowed_role_no_dm("test_playground")
+    async def random_embed_color(self, ctx):
+        color = self.bot.command_staff.random_color
+        embed = discord.Embed(title='test', description=color.name, color=color.int)
+        await ctx.send(embed=embed)
+
+    @commands.command(aliases=get_aliases("send_all_colors_file"))
+    @allowed_channel_and_allowed_role_no_dm("test_playground")
+    async def send_all_colors_file(self, ctx):
+        _file = discord.File(str(self.bot.command_staff.all_colors_json_file), os.path.basename(str(self.bot.command_staff.all_colors_json_file)))
+        await ctx.send('here', file=_file)
+
+    @commands.command(aliases=get_aliases("send_all_colors_file"))
+    @allowed_channel_and_allowed_role_no_dm("test_playground")
+    async def check_flags(self, ctx, flags: Greedy[FlagArg(['make_embed', 'random_color'])], ending: str):
+        print(flags)
+        if 'make_embed' in flags:
+            color = discord.Embed.Empty
+            if 'random_color' in flags:
+                color = self.bot.command_staff.random_color.int
+            embed = discord.Embed(title='check flags', description=ending, color=color)
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send(ending)
+
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

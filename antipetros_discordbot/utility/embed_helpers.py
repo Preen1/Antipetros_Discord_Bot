@@ -134,6 +134,6 @@ async def make_basic_embed_inline(title, text=None, footer=None, symbol=None, **
 # region[Main_Exec]
 
 if __name__ == '__main__':
-    pass
+    print(standard_embed_color())
 
 # endregion[Main_Exec]

@@ -12,3 +12,5 @@ from .staff_error_handler import *
 from .staff_invoke_statistician import *
 from .staff_time_keeper import *
 from .staff_chan_statistician import *
+from .staff_regex_keeper import *
+from .staff_color_keeper import *

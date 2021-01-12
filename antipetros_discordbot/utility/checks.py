@@ -40,8 +40,8 @@ import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
-
-
+from antipetros_discordbot.utility.exceptions import MissingAttachmentError, NotAllowedChannelError, NotNecessaryRole, IsNotTextChannelError
+from antipetros_discordbot.utility.misc import casefold_list, casefold_contains
 # endregion[Imports]
 
 # region [TODO]
@@ -128,6 +128,40 @@ PURGE_CHECK_TABLE = {'is_bot': purge_check_is_bot,
                      'contains': purge_check_contains,
                      'from_user': purge_check_from_user,
                      'all': purge_check_always_true}
+
+
+def has_attachments(min_amount_attachments: int = 1):
+    def predicate(ctx):
+        if len(ctx.message.attachments) >= min_amount_attachments:
+            return True
+        else:
+            raise MissingAttachmentError(ctx, min_amount_attachments)
+
+    return commands.check(predicate)
+
+
+def is_not_giddi(ctx):
+    if ctx.author.name == 'Giddi':
+        return False
+    return True
+
+
+def allowed_channel_and_allowed_role_no_dm(config_name: str):
+    def predicate(ctx):
+        allowed_channels = COGS_CONFIG.getlist(config_name, "allowed_channels", as_set=True, casefold_items=True)
+        allowed_roles = COGS_CONFIG.getlist(config_name, "allowed_roles", as_set=True, casefold_items=True)
+        channel = ctx.channel.name
+        channel_type = ctx.channel.type
+        author = ctx.author.name
+        roles = ctx.author.roles
+        if channel.casefold() not in allowed_channels:
+            raise NotAllowedChannelError(ctx, COGS_CONFIG.getlist(config_name, "allowed_channels"))
+        if channel_type is not discord.ChannelType.text:
+            raise IsNotTextChannelError(ctx, channel_type)
+        if all(role.name.casefold() not in allowed_roles for role in roles):
+            raise NotNecessaryRole(ctx, COGS_CONFIG.getlist(config_name, "allowed_roles"))
+        return True
+    return commands.check(predicate)
 
 # region[Main_Exec]
 

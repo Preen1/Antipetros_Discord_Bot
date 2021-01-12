@@ -236,3 +236,15 @@ def convert_to_rgb(minval, maxval, val, colors):
     else:
         (r1, g1, b1), (r2, g2, b2) = colors[i], colors[i + 1]
         return int(r1 + f * (r2 - r1)), int(g1 + f * (g2 - g1)), int(b1 + f * (b2 - b1))
+
+
+def casefold_list(in_list: list):
+
+    def casefold_item(item):
+        return item.casefold()
+
+    return list(map(casefold_item, in_list))
+
+
+def casefold_contains(query, data):
+    return query.casefold() in casefold_list(data)

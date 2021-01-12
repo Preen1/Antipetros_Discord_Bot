@@ -125,17 +125,18 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class {{ soldier.name }}(CommandStaffSoldierBase):
 
-    def __init__(self, bot):
+    def __init__(self, bot, command_staff):
         self.bot = bot
+        self.command_staff = command_staff
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
-        self.command_staff = None
+
 
         glog.class_init_notification(log, self)
 
 
     async def if_ready(self):
-        self.command_staff = self.bot.command_staff
+
         log.debug("'%s' command staff soldier is READY", str(self))
 
     async def update(self):

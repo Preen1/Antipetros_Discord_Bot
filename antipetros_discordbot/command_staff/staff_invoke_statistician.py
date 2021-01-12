@@ -144,11 +144,11 @@ class InvokeStatistician(CommandStaffSoldierBase):
     cog_invoked_stats_file = pathmaker(save_folder, 'cog_invoked_stats.json')
     command_invoked_stats_file = pathmaker(save_folder, 'command_invoked_stats.json')
 
-    def __init__(self, bot):
+    def __init__(self, bot, command_staff):
         self.bot = bot
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
-        self.command_staff = None
+        self.command_staff = command_staff
         self.cog_invoked_stats = None
         self.command_invoked_stats = None
         self.stats_holder = None
@@ -159,10 +159,9 @@ class InvokeStatistician(CommandStaffSoldierBase):
         return [str(cog_object) for cog_name, cog_object in self.bot.cogs.items()]
 
     def command_name_list(self):
-        return [command.name for command in self.bot.all_cog_commands()]
+        return [command.name for command in self.bot.all_cog_commands()] + [self.bot.help_invocation]
 
     async def if_ready(self):
-        self.command_staff = self.bot.command_staff
         if self.stats_holder is None:
             self.stats_holder = []
             if self.cog_invoked_stats is not None and self.cog_invoked_stats.is_empty is False:

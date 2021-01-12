@@ -175,7 +175,7 @@ class CommandStatDict(UserDict):
         self.last_initialized = datetime.utcnow()
 
     def add_tick(self, key, unsuccessful=False):
-        if key is None:
+        if key is None or key == 'None':
             return
         if self.last_initialized + timedelta(days=1) <= datetime.utcnow():
             self.save_data()

@@ -105,7 +105,7 @@ import gidlogger as glog
 
 
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-
+from antipetros_discordbot.utility.named_tuples import FlagItem
 
 # endregion[Imports]
 
@@ -165,6 +165,21 @@ class DateOnlyConverter(Converter):
             return datetime.strptime(new_argument, self.format)
         except Exception as error:
             raise CommandError(error)
+
+
+class FlagArg(Converter):
+    def __init__(self, available_flags):
+        self.available_flags = available_flags
+
+    async def convert(self, ctx, argument):
+        if argument.startswith('--'):
+            name = argument.removeprefix('--').replace('-', '_').lower()
+            if name in self.available_flags:
+                return name
+            else:
+                raise CommandError
+        else:
+            raise CommandError
 
 
 # region[Main_Exec]

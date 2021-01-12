@@ -125,8 +125,9 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class TimeKeeper(CommandStaffSoldierBase):
 
-    def __init__(self, bot):
+    def __init__(self, bot, command_staff):
         self.bot = bot
+        self.command_staff = command_staff
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
         self.start_time = None

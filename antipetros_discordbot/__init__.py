@@ -41,3 +41,4 @@ os.environ['AUTHOR_NAME'] = metadata(__name__).get('author')
 os.environ['BASE_FOLDER'] = MAIN_DIR
 os.environ['LOG_FOLDER'] = MAIN_DIR
 os.chdir(old_cd)
+os.environ['DISABLE_IMPORT_LOGCALLS'] = "1"

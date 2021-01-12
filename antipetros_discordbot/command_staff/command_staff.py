@@ -143,7 +143,7 @@ class CommandStaffRoster:
 
     def recruit_soldiers(self):
         for soldier in self.available_soldiers:
-            self.staff.append(soldier(self.bot))
+            self.staff.append(soldier(self.bot, self))
 
     def __getattr__(self, attribute_name):
         _out = None

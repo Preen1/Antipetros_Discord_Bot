@@ -36,7 +36,7 @@ from antipetros_discordbot.utility.named_tuples import CreatorMember
 from antipetros_discordbot.command_staff.staff_invoke_statistician import InvokeStatistician
 from antipetros_discordbot.command_staff.staff_error_handler import ErrorHandler
 from antipetros_discordbot.engine.global_checks import user_not_blacklisted
-from antipetros_discordbot.command_staff import CommandStaffRoster, ErrorHandler, InvokeStatistician, TimeKeeper, ChannelStatistician
+from antipetros_discordbot.command_staff import CommandStaffRoster, ErrorHandler, InvokeStatistician, TimeKeeper, ChannelStatistician, RegexKeeper, ColorKeeper
 # endregion[Imports]
 
 
@@ -73,11 +73,11 @@ class AntiPetrosBot(commands.Bot):
     bot_feature_suggestion_json_file = APPDATA['bot_feature_suggestions.json']
     cog_import_base_path = BASE_CONFIG.get('general_settings', 'cogs_location')
 
-    available_staff = (InvokeStatistician, ErrorHandler, TimeKeeper, ChannelStatistician)
+    available_staff = (InvokeStatistician, ErrorHandler, TimeKeeper, ChannelStatistician, RegexKeeper, ColorKeeper)
 
-    def __init__(self, *args, ** kwargs):
-        super().__init__(*args, owner_id=self.creator.id, case_insensitive=BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive'), **kwargs)
-
+    def __init__(self, help_invocation='help', ** kwargs):
+        super().__init__(owner_id=self.creator.id, case_insensitive=BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive'), **kwargs)
+        self.help_invocation = help_invocation
         self.description = readit(APPDATA['bot_description.md'])
         self.command_staff = CommandStaffRoster(self, self.available_staff)
         self.general_data = loadjson(APPDATA['general_data.json'])
@@ -89,6 +89,7 @@ class AntiPetrosBot(commands.Bot):
         self.all_bot_roles = None
         self.current_day = datetime.utcnow().day
         self.clients_to_close = []
+
         user_not_blacklisted(self, log)
 
         self._setup()
