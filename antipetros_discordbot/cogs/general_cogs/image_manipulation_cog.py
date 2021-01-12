@@ -69,6 +69,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
 
     def __init__(self, bot):
         self.bot = bot
+        self.support = self.bot.support
         self.stamp_location = APPDATA['stamps']
         self.stamps = {}
         self.stamp_pos_functions = {WatermarkPosition.Right | WatermarkPosition.Bottom: self._to_bottom_right,

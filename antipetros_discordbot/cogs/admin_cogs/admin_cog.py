@@ -96,6 +96,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
 
     def __init__(self, bot):
         self.bot = bot
+        self.support = self.bot.support
         self.all_configs = [BASE_CONFIG, COGS_CONFIG]
         self.config_dir = APPDATA['config']
         self.do_not_reload_cogs = ['admin_cog', 'performance_cog']

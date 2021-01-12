@@ -65,6 +65,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": "Gene
 
     def __init__(self, bot):
         self.bot = bot
+        self.support = self.bot.support
         self.movie_quotes = None
         self._make_movie_quote_items()
         if self.bot.is_debug:

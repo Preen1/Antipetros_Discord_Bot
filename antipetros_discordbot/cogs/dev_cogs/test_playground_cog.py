@@ -79,6 +79,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
 
     def __init__(self, bot):
         self.bot = bot
+        self.support = self.bot.support
         self.allowed_channels = set(COGS_CONFIG.getlist('test_playground', 'allowed_channels'))
 
     @commands.command(aliases=get_aliases("make_figlet"))

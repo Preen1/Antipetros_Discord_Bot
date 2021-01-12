@@ -95,6 +95,7 @@ class {{ cog_item.name }}(commands.Cog, command_attrs={{ "{" }}{% for com_attr_n
 
     def __init__(self,bot):
         self.bot = bot
+        self.support = self.bot.support
         {% for cog_loop in cog_item.all_loops %}
         self.{{ cog_loop.name }}.start()
         {% endfor %}

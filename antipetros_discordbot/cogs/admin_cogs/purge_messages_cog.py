@@ -98,6 +98,7 @@ class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": "Pur
 
     def __init__(self, bot):
         self.bot = bot
+        self.support = self.bot.support
         if self.bot.is_debug:
             save_commands(self)
         glog.class_init_notification(log, self)

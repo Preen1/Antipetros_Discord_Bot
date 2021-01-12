@@ -79,6 +79,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
 
     def __init__(self, bot):
         self.bot = bot
+        self.support = self.bot.support
         self.data_storage_handler = SuggestionDataStorageSQLite()
         if self.bot.is_debug:
             save_commands(self)

@@ -94,6 +94,7 @@ class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "Abso
 
     def __init__(self, bot):
         self.bot = bot
+        self.support = self.bot.support
         self.registered_timezones_file = APPDATA['registered_timezones.json']
         self._item_id = 0
         self.country_items = self.all_country_as_items()

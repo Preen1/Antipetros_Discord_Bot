@@ -80,6 +80,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
 
     def __init__(self, bot):
         self.bot = bot
+        self.support = self.bot.support
         self.data_storage_handler = LinkDataStorageSQLite()  # composition to make data storage modular, currently set up for an sqlite Database
         self.forbidden_url_words_file = APPDATA['forbidden_url_words.json']
         if self.bot.is_debug:

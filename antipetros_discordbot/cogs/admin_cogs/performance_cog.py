@@ -99,6 +99,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
 
     def __init__(self, bot):
         self.bot = bot
+        self.support = self.bot.support
         self.start_time = datetime.utcnow()
         self.latency_thresholds = {'warning': COGS_CONFIG.getint(self.config_name, "threshold_latency_warning")}
         self.memory_thresholds = {'warning': COGS_CONFIG.getint(self.config_name, "threshold_memory_warning"), 'critical': COGS_CONFIG.getint(self.config_name, "threshold_memory_critical")}
