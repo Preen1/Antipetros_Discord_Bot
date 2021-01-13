@@ -37,8 +37,8 @@ from time import time, sleep
 from pprint import pprint, pformat
 from string import Formatter, digits, printable, whitespace, punctuation, ascii_letters, ascii_lowercase, ascii_uppercase
 from timeit import Timer
-from typing import Union, Callable, Iterable, Any
-from inspect import stack, getdoc, getmodule, getsource, getmembers, getmodulename, getsourcefile, getfullargspec, getsourcelines, iscoroutinefunction, iscoroutine
+from typing import Union, Callable, Iterable
+from inspect import stack, getdoc, getmodule, getsource, getmembers, getmodulename, getsourcefile, getfullargspec, getsourcelines
 from zipfile import ZipFile
 from datetime import tzinfo, datetime, timezone, timedelta
 from tempfile import TemporaryDirectory
@@ -99,13 +99,12 @@ from importlib.machinery import SourceFileLoader
 
 import gidlogger as glog
 
-# from antipetros_discordbot.utility.gidtools_functions import ( readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
+# from gidtools.gidfiles import (QuickFile, readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
 #                                dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
 
 
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
-from antipetros_discordbot.bot_support.sub_support import SUB_SUPPORT_CLASSES
 
 # endregion[Imports]
 
@@ -122,7 +121,7 @@ from antipetros_discordbot.bot_support.sub_support import SUB_SUPPORT_CLASSES
 # region [Logging]
 
 log = glog.aux_logger(__name__)
-
+log.info(glog.imported(__name__))
 
 # endregion[Logging]
 
@@ -133,63 +132,40 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class BotSupporter:
+class BaseSchema:
 
-    def __init__(self, bot):
-        self.bot = bot
-        self.subsupports = []
-        self.available_subsupport_classes = SUB_SUPPORT_CLASSES
-        self.recruit_subsupports()
-        log.info("subsupports loaded into command-staff: %s", ', '.join(map(str, self.subsupports)))
+    @classmethod
+    @abstractmethod
+    def provide_sql(cls):
+        ...
 
-    def find_available_subsupport_classes(self):
-        pass
+    @classmethod
+    @abstractmethod
+    def create_table_phrase(cls, exist_error=False):
+        ...
 
-    def recruit_subsupports(self):
-        for subsupport_class in self.available_subsupport_classes:
-            self.subsupports.append(subsupport_class(self.bot, self))
+    @classmethod
+    @abstractmethod
+    def full_query_phrase(cls):
+        ...
 
-    def __getattr__(self, attribute_name):
-        _out = None
-        for subsupport in self.subsupports:
-            if hasattr(subsupport, attribute_name):
-                _out = getattr(subsupport, attribute_name)
-                return _out
-        return partial(self.log_attribute_not_found, attribute_name)
+    @classmethod
+    @abstractmethod
+    def insert_phrase(cls, values: dict):
+        ...
 
-    def really_has_attribute(self, attribute_name):
-        return hasattr(self, attribute_name) and all(hasattr(subsupport, attribute_name) is False for subsupport in self.subsupports)
+    @classmethod
+    @abstractmethod
+    def drop_phrase(cls):
+        ...
 
-    async def to_all_subsupports(self, attribute_name, *args, **kwargs):
-        if self.really_has_attribute(attribute_name):
-            if iscoroutine(getattr(self, attribute_name)):
-                await getattr(self, attribute_name)(*args, **kwargs)
-            else:
-                getattr(self, attribute_name)(*args, **kwargs)
-        for subsupport in self.subsupports:
-            if hasattr(subsupport, attribute_name):
-                if iscoroutinefunction(getattr(subsupport, attribute_name)):
-                    await getattr(subsupport, attribute_name)(*args, **kwargs)
-                else:
-                    getattr(subsupport, attribute_name)(*args, **kwargs)
+    @classmethod
+    @abstractmethod
+    def query(cls, columns: list):
+        ...
 
-    def retire_subsupport(self):
-        for subsupport in self.subsupports:
-            subsupport.retire()
-
-    @ staticmethod
-    def log_attribute_not_found(*args, **kwargs):
-        return log.critical("'%s' was not found in any subsupport, args used: '%s', kwargs used: '%s'", str(args[0]), str(args), str(kwargs))
-
-    def __str__(self) -> str:
-        return self.__class__.__name__
-
-    def __repr__(self) -> str:
-        return f"{str(self)}({', '.join([str(subsupport) for subsupport in self.subsupports])})"
 
 # region[Main_Exec]
-
-
 if __name__ == '__main__':
     pass
 

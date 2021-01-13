@@ -10,7 +10,7 @@ import os
 from fuzzywuzzy import process as fuzzprocess
 
 # * Gid Imports -->
-from gidtools.gidsql.facade import GidSqliteDatabase, Fetch
+from antipetros_discordbot.utility.gidsql.facade import GidSqliteDatabase, Fetch
 import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
