@@ -191,8 +191,9 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
                     await self.bot.split_to_messages(ctx, _output, in_codeblock=True)
                     new_file_name = _file.filename.replace(os.path.splitext(_file.filename)[-1], '_CORRECTED' + os.path.splitext(_file.filename)[-1])
                     new_file_path = pathmaker(tempdir, new_file_name)
-                    _new_file = discord.File(new_file_path, new_file_name)
-                    await ctx.send('the corrected file', file=_new_file)
+                    if os.path.isfile(new_file_path):
+                        _new_file = discord.File(new_file_path, new_file_name)
+                        await ctx.send('The Corrected File', file=_new_file)
 
     @commands.command(aliases=get_aliases("the_dragon") + ['the_wyvern'])
     @allowed_channel_and_allowed_role_no_dm("test_playground")

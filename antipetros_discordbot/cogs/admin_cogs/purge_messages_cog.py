@@ -114,7 +114,6 @@ class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": "Pur
             return message.author.id in [self.bot.id, self.bot.creator.id]
 
         await ctx.channel.purge(limit=number_of_messages, check=is_antipetros, bulk=True)
-        await ctx.send('done')
 
     def __repr__(self):
         return f"{self.name}({self.bot.user.name})"
