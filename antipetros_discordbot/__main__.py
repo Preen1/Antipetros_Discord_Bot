@@ -154,8 +154,6 @@ def main(token_file=None, save_token_file=False):
 
     anti_petros_bot = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
 
-    if UV_LOOP_IMPORTED is True:
-        uvloop.install()
     try:
         anti_petros_bot.run(discord_token, bot=True, reconnect=True)
     finally:
