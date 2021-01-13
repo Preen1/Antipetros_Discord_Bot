@@ -1,11 +1,11 @@
 include LICENSE
-graft antipetros_discordbot/init_userdata/data_pack
+graft antipetros_discordbot/init_userdata
+prune antipetros_discordbot/init_userdata/data_pack
 prune antipetros_discordbot/logs
 prune antipetros_discordbot/temp
 prune data_pack/json_data
 prune data_pack/archive
 prune antipetros_discordbot/init_userdatadata_pack
-global-exclude *.env
 global-exclude dev.trigger
 global-exclude .pydeps
 global-exclude .isort.cfg
