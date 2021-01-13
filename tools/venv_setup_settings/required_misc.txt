@@ -33,3 +33,4 @@ networkx
 pyowm
 colormap
 aiosqlite
+structoscope

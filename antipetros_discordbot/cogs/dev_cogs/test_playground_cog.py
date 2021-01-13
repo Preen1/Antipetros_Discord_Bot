@@ -11,6 +11,7 @@ import random
 import asyncio
 import subprocess
 import platform
+from functools import partial
 from tempfile import TemporaryDirectory
 # * Third Party Imports -->
 import discord
@@ -176,17 +177,22 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
     @ commands.has_any_role(*COGS_CONFIG.getlist("test_playground", 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     @has_attachments(1)
-    async def check_template(self, ctx):
+    async def check_template(self, ctx, case_insensitive: bool = False):
         _file = ctx.message.attachments[0]
         if _file.filename.endswith('.sqf'):
             with ctx.typing():
                 with TemporaryDirectory() as tempdir:
                     tempfile_path = pathmaker(tempdir, _file.filename)
                     await _file.save(tempfile_path)
-                    cmd = subprocess.run([APPDATA["antistasi_template_checker.exe"], 'from_file', '-np', tempfile_path], check=True, capture_output=True)
+                    case = '--case-insensitive' if case_insensitive is True else '--case-sensitive'
+                    func = partial(subprocess.run, [APPDATA["antistasi_template_checker.exe"], 'from_file', '-np', case, tempfile_path], check=True, capture_output=True)
+                    cmd = await self.bot.execute_in_thread(func)
                     _output = cmd.stdout.decode('utf-8', errors='replace')
-                    print(_output)
                     await self.bot.split_to_messages(ctx, _output, in_codeblock=True)
+                    new_file_name = _file.filename.replace(os.path.splitext(_file.filename)[-1], '_CORRECTED' + os.path.splitext(_file.filename)[-1])
+                    new_file_path = pathmaker(tempdir, new_file_name)
+                    _new_file = discord.File(new_file_path, new_file_name)
+                    await ctx.send('the corrected file', file=_new_file)
 
     @commands.command(aliases=get_aliases("the_dragon") + ['the_wyvern'])
     @allowed_channel_and_allowed_role_no_dm("test_playground")
@@ -221,7 +227,6 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
 
 
 # region [SpecialMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

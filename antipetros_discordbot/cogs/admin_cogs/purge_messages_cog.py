@@ -31,7 +31,7 @@ from io import BytesIO
 from copy import deepcopy, copy
 # * Third Party Imports -->
 
-from discord.ext import commands, tasks, flags
+from discord.ext import commands, tasks
 from discord import DiscordException
 import discord
 from fuzzywuzzy import process as fuzzprocess

@@ -191,7 +191,7 @@ class ErrorHandler(SubSupportBase):
         log.error("Error '%s' was caused by '%s' on the command '%s' with args '%s'", error.__class__.__name__, ctx.author.name, ctx.command.name, ctx.args)
 
     async def error_reply_embed(self, ctx, error, title, msg, error_traceback=None):
-        embed = Embed(title=title, description=f"{ZERO_WIDTH}\n{msg}\n{ZERO_WIDTH}", color=self.command_staff.color('red').int, timestamp=datetime.utcnow())
+        embed = Embed(title=title, description=f"{ZERO_WIDTH}\n{msg}\n{ZERO_WIDTH}", color=self.support.color('red').int, timestamp=datetime.utcnow())
         embed.set_thumbnail(url=EMBED_SYMBOLS.get('warning'))
         embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
         if error_traceback is not None:
@@ -204,7 +204,7 @@ class ErrorHandler(SubSupportBase):
         return embed
 
     async def error_message_embed(self, ctx, error, msg=ZERO_WIDTH):
-        embed = Embed(title='ERROR', color=self.command_staff.color('orange').int, timestamp=datetime.utcnow(), description=ZERO_WIDTH + '\n' + msg + '\n' + ZERO_WIDTH)
+        embed = Embed(title='ERROR', color=self.support.color('orange').int, timestamp=datetime.utcnow(), description=ZERO_WIDTH + '\n' + msg + '\n' + ZERO_WIDTH)
         embed.set_thumbnail(url=EMBED_SYMBOLS.get('warning'))
         try:
             embed.add_field(name=await async_split_camel_case_string(error.__class__.__name__), value=f"error occured with command: {ctx.command.name} and arguments: {str(ctx.args)}")

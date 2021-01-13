@@ -108,6 +108,8 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         self.plot_formatting_info = {'latency': COGS_CONFIG.get(self.config_name, 'latency_graph_formatting'), 'memory': COGS_CONFIG.get(self.config_name, 'memory_graph_formatting')}
         if self.bot.is_debug:
             save_commands(self)
+
+    async def on_ready_setup(self):
         self.latency_measure_loop.start()
         self.memory_measure_loop.start()
         self.report_data_loop.start()
