@@ -68,7 +68,7 @@ import discord
 
 # from dotenv import load_dotenv
 
-from discord import Embed, File
+from discord import Embed, File, Color
 
 from discord.ext import commands, tasks
 
@@ -142,7 +142,8 @@ class ColorKeeper(SubSupportBase):
 
     def _make_color_items(self):
         for name, values in loadjson(self.all_colors_json_file).items():
-            self.colors[name.casefold()] = ColorItem(name=name.casefold(), **values)
+            discord_color = Color.from_rgb(*values.get('rgb'))
+            self.colors[name.casefold()] = ColorItem(name=name.casefold(), discord_color=discord_color, ** values)
 
     def color(self, color_name: str):
         return self.colors.get(color_name)

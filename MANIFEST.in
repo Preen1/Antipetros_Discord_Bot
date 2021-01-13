@@ -9,6 +9,7 @@ global-exclude *.env
 global-exclude dev.trigger
 global-exclude .pydeps
 global-exclude .isort.cfg
+global-exclude token.env
 exclude token.pickle
 exclude oauth2_google_credentials.json
 exclude antipetros_discordbot/init_userdata/dev.trigger

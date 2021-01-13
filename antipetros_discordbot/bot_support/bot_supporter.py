@@ -174,7 +174,7 @@ class BotSupporter:
                     getattr(subsupport, attribute_name)(*args, **kwargs)
 
     def retire_subsupport(self):
-        for subsupport in self.subsupport:
+        for subsupport in self.subsupports:
             subsupport.retire()
 
     @ staticmethod
