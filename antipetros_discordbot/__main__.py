@@ -27,12 +27,6 @@ import discord
 from dotenv import load_dotenv
 from discord.ext import commands
 from watchgod import awatch
-if platform.system() == 'Linux':
-    try:
-        import uvloop
-        UV_LOOP_IMPORTED = True
-    except ImportError as error:
-        print(error)
 import click
 
 # * Gid Imports -->
