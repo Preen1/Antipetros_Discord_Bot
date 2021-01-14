@@ -242,7 +242,9 @@ class AntiPetrosBot(commands.Bot):
 
     @property
     def is_debug(self):
-        return BASE_CONFIG.getboolean('general_settings', 'is_debug')
+        if os.environ['IS_DEV'] is None:
+            return False
+        return os.environ['IS_DEV'].casefold() == 'true'
 
     @property
     def blacklisted_users(self):

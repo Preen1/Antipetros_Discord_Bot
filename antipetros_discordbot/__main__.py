@@ -27,12 +27,6 @@ import discord
 from dotenv import load_dotenv
 from discord.ext import commands
 from watchgod import awatch
-if platform.system() == 'Linux':
-    try:
-        import uvloop
-        UV_LOOP_IMPORTED = True
-    except ImportError as error:
-        print(error)
 import click
 
 # * Gid Imports -->
@@ -48,6 +42,14 @@ from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.token_handling import load_tokenfile, store_token_file
 from antipetros_discordbot import MAIN_DIR
 # endregion[Imports]
+
+# region [TODO]
+
+# TODO: create prompt for token, with save option
+
+
+# endregion [TODO]
+
 
 # region [Constants]
 
@@ -69,7 +71,7 @@ if os.getenv('IS_DEV') == 'yes':
 # endregion[Logging]
 
 
-# region [Helper_Functions]
+# region [Helper]
 
 
 def get_intents():
@@ -85,7 +87,7 @@ def get_intents():
     return intents
 
 
-# endregion [Helper_Functions]
+# endregion [Helper]
 
 # region [Main_function]
 
@@ -160,8 +162,6 @@ def main(token_file=None, save_token_file=False):
 
     anti_petros_bot = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
 
-    if UV_LOOP_IMPORTED is True:
-        uvloop.install()
     try:
         anti_petros_bot.run(discord_token, bot=True, reconnect=True)
     finally:

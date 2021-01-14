@@ -108,6 +108,8 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         self.plot_formatting_info = {'latency': COGS_CONFIG.get(self.config_name, 'latency_graph_formatting'), 'memory': COGS_CONFIG.get(self.config_name, 'memory_graph_formatting')}
         if self.bot.is_debug:
             save_commands(self)
+
+    async def on_ready_setup(self):
         self.latency_measure_loop.start()
         self.memory_measure_loop.start()
         self.report_data_loop.start()
@@ -309,7 +311,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
     @ commands.has_any_role(*COGS_CONFIG.getlist('performance', 'allowed_roles'))
     @ in_allowed_channels(set(COGS_CONFIG.getlist('performance', 'allowed_channels')))
     async def get_command_stats(self, ctx):
-        data_dict = {item.name: f"{ZERO_WIDTH}\n{item.data}\n{ZERO_WIDTH}" for item in await self.bot.command_staff.get_todays_invoke_data()}
+        data_dict = {item.name: f"{ZERO_WIDTH}\n{item.data}\n{ZERO_WIDTH}" for item in await self.bot.support.get_todays_invoke_data()}
         date = date_today()
 
         embed = await make_basic_embed(title=ctx.command.name, text=f'data of the last 24hrs - {date}', symbol='data', **data_dict)

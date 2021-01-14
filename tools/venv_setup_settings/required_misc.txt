@@ -10,7 +10,6 @@ Pillow
 PyGithub
 WeasyPrint
 discord.py
-discord.py-stubs
 url-normalize
 async-property
 watchgod
@@ -19,7 +18,6 @@ pytz
 google-auth
 google_api_python_client
 google_auth_oauthlib
-disputils
 psutil
 --force-reinstall cchardet
 python-benedict
@@ -33,3 +31,5 @@ networkx
 pyowm
 colormap
 aiosqlite
+discord-flags
+paramiko[all]

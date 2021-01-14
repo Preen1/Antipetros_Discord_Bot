@@ -208,7 +208,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
     async def shutdown(self, ctx):
         try:
             log.debug('shutdown command received from "%s"', ctx.author.name)
-            started_at = self.bot.command_staff.start_time
+            started_at = self.bot.support.start_time
             started_at_string = started_at.strftime(self.bot.std_date_time_format)
             online_duration = datetime.utcnow() - started_at
 
@@ -343,7 +343,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
     async def tell_uptime(self, ctx):
 
         now_time = datetime.utcnow()
-        delta_time = now_time - await self.bot.command_staff.start_time
+        delta_time = now_time - await self.bot.support.start_time
         seconds = round(delta_time.total_seconds())
         # TODO: make as embed
         await ctx.send(f"__Uptime__ -->\n\t\t| {str(seconds_to_pretty(seconds))}")

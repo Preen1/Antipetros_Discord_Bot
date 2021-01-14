@@ -9,6 +9,7 @@ from tempfile import TemporaryDirectory
 from urllib.parse import urlparse
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 # * Third Party Imports -->
 import aiohttp
 import discord
@@ -25,9 +26,19 @@ from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, 
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed, EMBED_SYMBOLS
 from antipetros_discordbot.utility.misc import save_commands
-from antipetros_discordbot.utility.checks import in_allowed_channels
+from antipetros_discordbot.utility.checks import in_allowed_channels, allowed_channel_and_allowed_role_no_dm, log_invoker
 from antipetros_discordbot.cogs import get_aliases
 # endregion [Imports]
+
+# region [TODO]
+
+
+# TODO: refractor 'get_forbidden_list' to not use temp directory but send as filestream or so
+
+# TODO: need help figuring out how to best check bad link or how to format/normalize it
+
+
+# endregion [TODO]
 
 # region [Logging]
 
@@ -42,19 +53,25 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-
+CONFIG_NAME = 'save_link'
 
 # endregion [Constants]
 
-# region [TODO]
+# region [Helper]
 
 
-# TODO: refractor 'get_forbidden_list' to not use temp directory but send as filestream or so
+def from_cog_config(key, typus=str):
 
-# TODO: need help figuring out how to best check bad link or how to format/normalize it
+    retriev_map = {str: COGS_CONFIG.get,
+                   list: COGS_CONFIG.getlist,
+                   int: COGS_CONFIG.getint,
+                   bool: COGS_CONFIG.getboolean,
+                   set: partial(COGS_CONFIG.getlist, as_set=True)}
+
+    return retriev_map.get(typus)(section=CONFIG_NAME, option=key)
 
 
-# endregion [TODO]
+# endregion [Helper]
 
 
 class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
@@ -85,14 +102,17 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         self.forbidden_url_words_file = APPDATA['forbidden_url_words.json']
         if self.bot.is_debug:
             save_commands(self)
-        self.fresh_blacklist_loop.start()
-        self.check_link_best_by_loop.start()
 
         glog.class_init_notification(log, self)
 
 # endregion [Init]
 
 # region [Setup]
+
+    async def on_ready_setup(self):
+        self.fresh_blacklist_loop.start()
+        self.check_link_best_by_loop.start()
+        log.debug('setup for cog "%s" finished', str(self))
 
     async def _process_raw_blocklist_content(self, raw_content):
         """
@@ -142,10 +162,6 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         await self._create_forbidden_link_list()
         log.debug("Link Blacklist was refreshed")
 
-    @fresh_blacklist_loop.before_loop
-    async def before_fresh_blacklist_loop(self):
-        await self.bot.wait_until_ready()
-
     @tasks.loop(hours=1.0, reconnect=True)
     async def check_link_best_by_loop(self):
         """
@@ -155,6 +171,10 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
             msg = await self.link_channel.fetch_message(message_id)
             await msg.delete()
             self.data_storage_handler.update_removed_status(message_id)
+
+    @fresh_blacklist_loop.before_loop
+    async def before_fresh_blacklist_loop(self):
+        await self.bot.wait_until_ready()
 
     @check_link_best_by_loop.before_loop
     async def before_check_link_best_by_loop(self):
@@ -183,7 +203,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         Returns:
             discord.channel: channel object
         """
-        return self.bot.get_channel(COGS_CONFIG.getint(self.config_name, 'link_channel'))
+        return self.bot.get_channel(from_cog_config(key='link_channel', typus=int))
 
     @property
     def allowed_channels(self):
@@ -193,7 +213,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         Returns:
             set: channel name list
         """
-        return set(COGS_CONFIG.getlist(self.config_name, 'allowed_channels'))
+        return from_cog_config(key="allowed_channels", typus=set)
 
     @property
     def bad_link_image(self):
@@ -204,7 +224,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
             tuple: name of the image, path to the image
         """
 
-        name = COGS_CONFIG.get(self.config_name, 'bad_link_image_name')
+        name = from_cog_config(key='bad_link_image_name', typus=str)
         return name, APPDATA[name]
 
     @property
@@ -229,8 +249,8 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
 
 
     @commands.command(aliases=get_aliases("add_forbidden_word"))
-    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_admin_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
+    @allowed_channel_and_allowed_role_no_dm(config_name=CONFIG_NAME, in_dm_allowed=True)
+    @log_invoker(logger=log, level='info')
     async def add_forbidden_word(self, ctx, word: str):
         """
         adds a word to the forbidden url word list, case is unimportant
@@ -247,8 +267,8 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         await ctx.send(embed=await make_basic_embed(title='Added Word', text=f'The Word "{word}" was added to the forbidden url word list', symbol='update'))
 
     @commands.command(aliases=get_aliases("remove_forbidden_word"))
-    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_admin_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
+    @allowed_channel_and_allowed_role_no_dm(config_name=CONFIG_NAME, in_dm_allowed=True)
+    @log_invoker(logger=log, level='warning')
     async def remove_forbidden_word(self, ctx, word: str):
         """
         removes a word from the forbidden url word list, caseinsensitive.
@@ -266,8 +286,8 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         await ctx.send(embed=await make_basic_embed(title='Removed Word', text=f'The Word "{word}" was removed from the forbidden url word list', symbol='update'))
 
     @commands.command(aliases=get_aliases("clear_all_links"))
-    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'delete_all_allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
+    @allowed_channel_and_allowed_role_no_dm(config_name=CONFIG_NAME, in_dm_allowed=True, allowed_roles_key="delete_all_allowed_roles")
+    @log_invoker(logger=log, level='critical')
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def clear_all_links(self, ctx, sure: bool = False):
         """
@@ -293,8 +313,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
             await self._clear_links(ctx, 'yes')
 
     @commands.command(hidden=False, aliases=get_aliases("get_link"))
-    @commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
+    @allowed_channel_and_allowed_role_no_dm(config_name=CONFIG_NAME, in_dm_allowed=False)
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def get_link(self, ctx, name: str):
         """
@@ -312,8 +331,8 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         await ctx.send(embed=await make_basic_embed(title='Retrieved link!', text='Link was successfully retrieved from storage', symbol='link', **{'available for the next': '1 Hour', _name: _link}), delete_after=60 * 60)
 
     @ commands.command(hidden=False, aliases=get_aliases("get_all_links"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
+    @allowed_channel_and_allowed_role_no_dm(config_name=CONFIG_NAME, in_dm_allowed=True)
+    @log_invoker(logger=log, level='info')
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def get_all_links(self, ctx, in_format: str = 'txt'):
         """
@@ -350,8 +369,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
             await ctx.send(file=_file)
 
     @ commands.command(hidden=False, aliases=get_aliases("save_link"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
+    @allowed_channel_and_allowed_role_no_dm(config_name=CONFIG_NAME, in_dm_allowed=True)
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def save_link(self, ctx, link: str, link_name: str = None, days_to_hold: int = None):
         """
@@ -380,7 +398,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
                 return None
 
             # calculate or retrieve all other needed values
-            days = COGS_CONFIG.getint(self.config_name, 'default_storage_days') if days_to_hold is None else days_to_hold
+            days = from_cog_config(key='default_storage_days', typus=int) if days_to_hold is None else days_to_hold
             delete_date_and_time = date_and_time + timedelta(days=days)
             author = ctx.author
 
@@ -433,8 +451,8 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
             log.debug("notified '%s' about the offending link", user.name)
 
     @ commands.command(hidden=False, aliases=get_aliases("get_forbidden_list"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
-    @ in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
+    @allowed_channel_and_allowed_role_no_dm(config_name=CONFIG_NAME, in_dm_allowed=True, allowed_roles_key="delete_all_allowed_roles")
+    @log_invoker(logger=log, level='warning')
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def get_forbidden_list(self, ctx, file_format: str = 'json'):
         """
@@ -453,8 +471,8 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
                 await ctx.send(file=_file, delete_after=60)
 
     @ commands.command(aliases=get_aliases("delete_link"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist('save_link', 'allowed_roles'))
-    @ in_allowed_channels(set(COGS_CONFIG.getlist('save_link', 'allowed_channels')))
+    @allowed_channel_and_allowed_role_no_dm(config_name=CONFIG_NAME, in_dm_allowed=True, allowed_roles_key="delete_all_allowed_roles")
+    @log_invoker(logger=log, level='critical')
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def delete_link(self, ctx, name: str, scope: str = 'channel'):
         """
@@ -579,7 +597,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         embed.add_field(name="Channel", value=f"**{channel}**", inline=False)
         embed.add_field(name="Date", value=date_time.date().isoformat(), inline=True)
         embed.add_field(name="Time", value=f"{date_time.time().isoformat(timespec='seconds')} UTC", inline=True)
-        if COGS_CONFIG.getboolean(self.config_name, 'notify_with_link') is True:
+        if from_cog_config(typus=bool, key='notify_with_link') is True:
             embed.add_field(name="Offending Link", value=f"***{link}***", inline=False)
             if matches_link != []:
                 embed.add_field(name="forbidden link matches", value='\n'.join(matches_link), inline=False)
@@ -603,11 +621,6 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
             discord.File: discord File containing the image
         """
 
-        # image_path = COGS_CONFIG.get(self.config_name, 'bad_link_answer_image')
-        # if image_path.casefold() == 'none':
-        #     return None
-        # image_name = os.path.basename(image_path)
-        # return discord.File(image_path, image_name)
         name, path = self.bad_link_image
         if path == '' or path is None:
             return None

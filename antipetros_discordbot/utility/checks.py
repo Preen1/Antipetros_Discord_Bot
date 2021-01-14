@@ -76,14 +76,12 @@ def in_allowed_channels(allowed_channels: Iterable):
     return commands.check(predicate)
 
 
-def log_invoker(logger):
+def log_invoker(logger, level: str = 'info'):
     def predicate(ctx):
-        if BASE_CONFIG.getboolean('general_settings', 'is_debug'):
-            logger.info("command '%s' as '%s' -- invoked by: name: '%s', id: %s -- in channel: '%s' -- raw invoking message: '%s'",
-                        ctx.command.name, ctx.invoked_with, ctx.author.name, ctx.author.id, ctx.channel.name, ctx.message.content)
-        else:
-            logger.info("command '%s' as '%s' -- invoked by: name: '%s' -- in channel: '%s' -- args used: %s",
-                        ctx.command.name, ctx.invoked_with, ctx.author.name, ctx.channel.name, ctx.args)
+        channel_name = ctx.channel.name if ctx.channel.type is discord.ChannelType.text else 'DM'
+        getattr(logger, level)("command '%s' as '%s' -- invoked by: name: '%s', id: %s -- in channel: '%s' -- raw invoking message: '%s'",
+                               ctx.command.name, ctx.invoked_with, ctx.author.name, ctx.author.id, channel_name, ctx.message.content)
+
         return True
     return commands.check(predicate)
 
@@ -146,20 +144,22 @@ def is_not_giddi(ctx):
     return True
 
 
-def allowed_channel_and_allowed_role_no_dm(config_name: str):
+def allowed_channel_and_allowed_role_no_dm(config_name: str, in_dm_allowed: bool = False, allowed_channel_key: str = "allowed_channels", allowed_roles_key: str = "allowed_roles"):
     def predicate(ctx):
-        allowed_channels = COGS_CONFIG.getlist(config_name, "allowed_channels", as_set=True, casefold_items=True)
-        allowed_roles = COGS_CONFIG.getlist(config_name, "allowed_roles", as_set=True, casefold_items=True)
+        if ctx.bot.is_owner(ctx.bot.creator.member_object):
+            log.debug("skipping checks as user is creator/owner: %s", ctx.bot.creator.name)
+            return True
+        allowed_channels = COGS_CONFIG.getlist(config_name, allowed_channel_key, as_set=True, casefold_items=True)
+        allowed_roles = COGS_CONFIG.getlist(config_name, allowed_roles_key, as_set=True, casefold_items=True)
         channel = ctx.channel.name
         channel_type = ctx.channel.type
-        author = ctx.author.name
         roles = ctx.author.roles
         if channel.casefold() not in allowed_channels:
-            raise NotAllowedChannelError(ctx, COGS_CONFIG.getlist(config_name, "allowed_channels"))
-        if channel_type is not discord.ChannelType.text:
+            raise NotAllowedChannelError(ctx, COGS_CONFIG.getlist(config_name, allowed_channel_key))
+        if in_dm_allowed is False and channel_type is not discord.ChannelType.text:
             raise IsNotTextChannelError(ctx, channel_type)
         if all(role.name.casefold() not in allowed_roles for role in roles):
-            raise NotNecessaryRole(ctx, COGS_CONFIG.getlist(config_name, "allowed_roles"))
+            raise NotNecessaryRole(ctx, COGS_CONFIG.getlist(config_name, allowed_roles_key))
         return True
     return commands.check(predicate)
 

@@ -71,6 +71,8 @@ ECHO ################# Removing old venv folder
 RD /S /Q %WORKSPACE_FOLDER%\.venv
 ECHO.
 
+timeout /T 5 /nobreak
+
 ECHO ################# creating new venv folder
 mkdir %WORKSPACE_FOLDER%\.venv
 ECHO.

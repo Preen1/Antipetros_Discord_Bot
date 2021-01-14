@@ -99,7 +99,7 @@ from importlib.machinery import SourceFileLoader
 
 import gidlogger as glog
 
-# from gidtools.gidfiles import (QuickFile, readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
+# from antipetros_discordbot.utility.gidtools_functions import ( readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
 #                                dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
 
 
@@ -174,7 +174,7 @@ class BotSupporter:
                     getattr(subsupport, attribute_name)(*args, **kwargs)
 
     def retire_subsupport(self):
-        for subsupport in self.subsupport:
+        for subsupport in self.subsupports:
             subsupport.retire()
 
     @ staticmethod
