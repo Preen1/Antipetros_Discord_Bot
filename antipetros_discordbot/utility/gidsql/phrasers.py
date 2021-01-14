@@ -27,7 +27,7 @@ import logging
 # * Gid Imports -->
 import gidlogger as glog
 
-from gidtools.gidsql.exceptions import GidSqliteColumnAlreadySetError, GidSqliteSemiColonError, GidSqliteNoTableNameError
+from antipetros_discordbot.utility.gidsql.exceptions import GidSqliteColumnAlreadySetError, GidSqliteSemiColonError, GidSqliteNoTableNameError
 
 # endregion[Imports]
 

@@ -1,20 +1,5 @@
 include LICENSE
-graft antipetros_discordbot/init_userdata
-prune antipetros_discordbot/init_userdata/data_pack
-prune antipetros_discordbot/logs
-prune antipetros_discordbot/temp
-prune data_pack/json_data
-prune data_pack/archive
-prune antipetros_discordbot/init_userdatadata_pack
-global-exclude dev.trigger
-exclude dev.trigger
-global-exclude .pydeps
-global-exclude .isort.cfg
+include construction_info.env
+
+
 global-exclude token.env
-exclude token.pickle
-exclude oauth2_google_credentials.json
-exclude antipetros_discordbot/init_userdata/dev.trigger
-prune tools
-prune docs
-prune misc
-prune temp

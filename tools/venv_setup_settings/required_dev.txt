@@ -13,3 +13,4 @@ pyvis
 pinspect
 icecream
 inspect_mate
+check-manifest

@@ -30,7 +30,7 @@ import logging
 import gidlogger as glog
 
 
-from gidtools.gidsql.db_action_base import GidSqliteActionBase
+from antipetros_discordbot.utility.gidsql.db_action_base import GidSqliteActionBase
 # endregion[Imports]
 
 __updated__ = '2020-11-28 02:04:13'

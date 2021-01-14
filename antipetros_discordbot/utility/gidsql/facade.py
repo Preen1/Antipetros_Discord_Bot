@@ -27,10 +27,10 @@ import logging
 # * Gid Imports -->
 import gidlogger as glog
 
-from gidtools.gidsql.db_writer import GidSQLiteWriter
-from gidtools.gidsql.db_reader import GidSqliteReader, Fetch
-from gidtools.gidsql.script_handling import GidSqliteScriptProvider
-from gidtools.gidsql.phrasers import GidSqliteInserter
+from antipetros_discordbot.utility.gidsql.db_writer import GidSQLiteWriter
+from antipetros_discordbot.utility.gidsql.db_reader import GidSqliteReader, Fetch
+from antipetros_discordbot.utility.gidsql.script_handling import GidSqliteScriptProvider
+from antipetros_discordbot.utility.gidsql.phrasers import GidSqliteInserter
 # endregion[Imports]
 
 __updated__ = '2020-11-28 03:29:05'

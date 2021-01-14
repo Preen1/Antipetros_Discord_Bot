@@ -13,7 +13,7 @@ import logging
 import gidlogger as glog
 
 import textwrap
-from gidtools.gidsql.db_action_base import GidSqliteActionBase
+from antipetros_discordbot.utility.gidsql.db_action_base import GidSqliteActionBase
 
 # endregion [Imports]
 

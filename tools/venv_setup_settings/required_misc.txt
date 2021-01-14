@@ -31,3 +31,5 @@ networkx
 pyowm
 colormap
 aiosqlite
+discord-flags
+paramiko[all]

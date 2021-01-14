@@ -285,7 +285,10 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
             return
         result = await self._translate(text, out_lang)
         await self.bot.split_to_messages(ctx, result)
+
+
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

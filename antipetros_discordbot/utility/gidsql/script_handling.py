@@ -10,7 +10,7 @@ from pprint import pformat
 import logging
 # * Gid Imports -->
 import gidlogger as glog
-from gidtools.gidfiles import readit, writeit, splitoff, pathmaker, ext_splitter, cascade_rename
+from antipetros_discordbot.utility.gidtools_functions import readit, writeit, splitoff, pathmaker, ext_splitter, cascade_rename
 
 # endregion [Imports]
 
