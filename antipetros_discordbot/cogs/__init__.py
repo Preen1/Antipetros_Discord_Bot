@@ -1,7 +1,7 @@
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.gidtools_functions import loadjson
 
-APPDATA = SupportKeeper.get_appdata()
+APPDATA = ParaStorageKeeper.get_appdata()
 
 
 def get_aliases(command_name):

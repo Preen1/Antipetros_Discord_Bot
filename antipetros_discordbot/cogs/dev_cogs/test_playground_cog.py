@@ -11,6 +11,7 @@ import random
 import asyncio
 import subprocess
 import platform
+from functools import partial
 from tempfile import TemporaryDirectory
 # * Third Party Imports -->
 import discord
@@ -29,9 +30,11 @@ from googletrans import Translator, LANGUAGES
 from fuzzywuzzy import process as fuzzprocess
 from fuzzywuzzy import fuzz
 from pyfiglet import Figlet
+from pytz import timezone
+from googletrans import Translator, LANGUAGES
 # * Local Imports -->
 
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import Bold, Cursive, CodeBlock, LineCode, UnderScore, BlockQuote
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, writeit
@@ -52,9 +55,9 @@ glog.import_notification(log, __name__)
 # endregion[Logging]
 
 
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
-COGS_CONFIG = SupportKeeper.get_config('cogs_config')
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -79,7 +82,9 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
 
     def __init__(self, bot):
         self.bot = bot
+        self.support = self.bot.support
         self.allowed_channels = set(COGS_CONFIG.getlist('test_playground', 'allowed_channels'))
+        self.translator = Translator()
 
     @commands.command(aliases=get_aliases("make_figlet"))
     @ commands.has_any_role(*COGS_CONFIG.getlist("test_playground", 'allowed_roles'))
@@ -175,17 +180,23 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
     @ commands.has_any_role(*COGS_CONFIG.getlist("test_playground", 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     @has_attachments(1)
-    async def check_template(self, ctx):
+    async def check_template(self, ctx, case_insensitive: bool = False):
         _file = ctx.message.attachments[0]
         if _file.filename.endswith('.sqf'):
             with ctx.typing():
                 with TemporaryDirectory() as tempdir:
                     tempfile_path = pathmaker(tempdir, _file.filename)
                     await _file.save(tempfile_path)
-                    cmd = subprocess.run([APPDATA["antistasi_template_checker.exe"], 'from_file', '-np', tempfile_path], check=True, capture_output=True)
+                    case = '--case-insensitive' if case_insensitive is True else '--case-sensitive'
+                    func = partial(subprocess.run, [APPDATA["antistasi_template_checker.exe"], 'from_file', '-np', case, tempfile_path], check=True, capture_output=True)
+                    cmd = await self.bot.execute_in_thread(func)
                     _output = cmd.stdout.decode('utf-8', errors='replace')
-                    print(_output)
                     await self.bot.split_to_messages(ctx, _output, in_codeblock=True)
+                    new_file_name = _file.filename.replace(os.path.splitext(_file.filename)[-1], '_CORRECTED' + os.path.splitext(_file.filename)[-1])
+                    new_file_path = pathmaker(tempdir, new_file_name)
+                    if os.path.isfile(new_file_path):
+                        _new_file = discord.File(new_file_path, new_file_name)
+                        await ctx.send('The Corrected File', file=_new_file)
 
     @commands.command(aliases=get_aliases("the_dragon") + ['the_wyvern'])
     @allowed_channel_and_allowed_role_no_dm("test_playground")
@@ -195,14 +206,14 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
     @commands.command(aliases=get_aliases("random_embed_color"))
     @allowed_channel_and_allowed_role_no_dm("test_playground")
     async def random_embed_color(self, ctx):
-        color = self.bot.command_staff.random_color
+        color = self.bot.support.random_color
         embed = discord.Embed(title='test', description=color.name, color=color.int)
         await ctx.send(embed=embed)
 
     @commands.command(aliases=get_aliases("send_all_colors_file"))
     @allowed_channel_and_allowed_role_no_dm("test_playground")
     async def send_all_colors_file(self, ctx):
-        _file = discord.File(str(self.bot.command_staff.all_colors_json_file), os.path.basename(str(self.bot.command_staff.all_colors_json_file)))
+        _file = discord.File(str(self.bot.support.all_colors_json_file), os.path.basename(str(self.bot.support.all_colors_json_file)))
         await ctx.send('here', file=_file)
 
     @commands.command(aliases=get_aliases("send_all_colors_file"))
@@ -212,11 +223,68 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
         if 'make_embed' in flags:
             color = discord.Embed.Empty
             if 'random_color' in flags:
-                color = self.bot.command_staff.random_color.int
+                color = self.bot.support.random_color.int
             embed = discord.Embed(title='check flags', description=ending, color=color)
             await ctx.send(embed=embed)
         else:
             await ctx.send(ending)
+
+    @commands.command(aliases=get_aliases("test_dyn_time"))
+    @allowed_channel_and_allowed_role_no_dm("test_playground")
+    async def test_dyn_time(self, ctx):
+        embed = discord.Embed(title='testing dynamic timestamp', description='Could you please post under this message the time you see as timestamp of this Embed? (just copy paste)', timestamp=datetime.now(tz=timezone('Europe/Vienna')))
+        await ctx.send(embed=embed)
+
+    async def find_all_template_files(self, channel):
+        async for message in channel.history(limit=None):
+            if len(message.attachments) >= 1:
+                attachment = message.attachments[0]
+                if attachment.filename.endswith('.sqf'):
+                    yield message
+
+    @commands.command(aliases=get_aliases("get_all_template_messages"))
+    @allowed_channel_and_allowed_role_no_dm("test_playground")
+    async def get_all_template_messages(self, ctx):
+
+        channel = await self.bot.fetch_channel(785935400467824651)
+        async for message in self.find_all_template_files(channel):
+            await self.check_template_iter_file(ctx, message.attachments[0])
+            await asyncio.sleep(5)
+
+    async def check_template_iter_file(self, ctx, file, case_insensitive: bool = False):
+        _file = file
+        with ctx.typing():
+            with TemporaryDirectory() as tempdir:
+                tempfile_path = pathmaker(tempdir, _file.filename)
+                await _file.save(tempfile_path)
+                case = '--case-insensitive' if case_insensitive is True else '--case-sensitive'
+                func = partial(subprocess.run, [APPDATA["antistasi_template_checker.exe"], 'from_file', '-np', case, tempfile_path], check=True, capture_output=True)
+                cmd = await self.bot.execute_in_thread(func)
+                _output = cmd.stdout.decode('utf-8', errors='replace')
+                # await self.bot.split_to_messages(ctx, _output, in_codeblock=True)
+                new_file_name = _file.filename.replace(os.path.splitext(_file.filename)[-1], '_CORRECTED' + os.path.splitext(_file.filename)[-1])
+                new_file_path = pathmaker(tempdir, new_file_name)
+                if os.path.isfile(new_file_path):
+                    _new_file = discord.File(new_file_path, new_file_name)
+                    await ctx.send('The Corrected File', file=_new_file)
+
+    async def _translate(self, text, out_language, in_language=None):
+        in_lang_code = self.language_dict.get(in_language.casefold()) if in_language is not None else 'auto'
+        out_lang_code = self.language_dict.get(out_language.casefold())
+
+        x = self.translator.translate(text=text, dest=out_lang_code, src=in_lang_code)
+        return x.text
+
+    @commands.command(hidden=False, aliases=get_aliases("translate"))
+    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
+    async def translate(self, ctx, out_lang, *, text):
+        log.info("command was initiated by '%s'", ctx.author.name)
+        if out_lang.casefold() not in self.language_dict:
+            await ctx.send('unknown language')
+            return
+        result = await self._translate(text, out_lang)
+        await self.bot.split_to_messages(ctx, result)
 
 
 # region [SpecialMethods]

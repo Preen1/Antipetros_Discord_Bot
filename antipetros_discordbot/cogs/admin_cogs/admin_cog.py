@@ -41,7 +41,7 @@ import gidlogger as glog
 
 
 # * Local Imports -->
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
 from antipetros_discordbot.utility.misc import seconds_to_pretty, handle_arguments_string
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
@@ -77,9 +77,9 @@ glog.import_notification(log, __name__)
 # endregion[Logging]
 
 # region [Constants]
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
-COGS_CONFIG = SupportKeeper.get_config('cogs_config')
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[Constants]
@@ -96,6 +96,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
 
     def __init__(self, bot):
         self.bot = bot
+        self.support = self.bot.support
         self.all_configs = [BASE_CONFIG, COGS_CONFIG]
         self.config_dir = APPDATA['config']
         self.do_not_reload_cogs = ['admin_cog', 'performance_cog']
@@ -207,7 +208,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
     async def shutdown(self, ctx):
         try:
             log.debug('shutdown command received from "%s"', ctx.author.name)
-            started_at = self.bot.command_staff.start_time
+            started_at = self.bot.support.start_time
             started_at_string = started_at.strftime(self.bot.std_date_time_format)
             online_duration = datetime.utcnow() - started_at
 
@@ -342,7 +343,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
     async def tell_uptime(self, ctx):
 
         now_time = datetime.utcnow()
-        delta_time = now_time - await self.bot.command_staff.start_time
+        delta_time = now_time - await self.bot.support.start_time
         seconds = round(delta_time.total_seconds())
         # TODO: make as embed
         await ctx.send(f"__Uptime__ -->\n\t\t| {str(seconds_to_pretty(seconds))}")

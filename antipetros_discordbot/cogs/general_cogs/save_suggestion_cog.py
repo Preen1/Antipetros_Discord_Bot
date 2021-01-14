@@ -26,7 +26,7 @@ from pprint import pprint, pformat
 from antipetros_discordbot.utility.named_tuples import SUGGESTION_DATA_ITEM
 from antipetros_discordbot.utility.sqldata_storager import SuggestionDataStorageSQLite
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, writeit
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed, EMBED_SYMBOLS, DEFAULT_FOOTER
 from antipetros_discordbot.utility.misc import save_commands
@@ -42,9 +42,9 @@ glog.import_notification(log, __name__)
 # endregion[Logging]
 
 # region [Constants]
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
-COGS_CONFIG = SupportKeeper.get_config('cogs_config')
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -79,6 +79,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
 
     def __init__(self, bot):
         self.bot = bot
+        self.support = self.bot.support
         self.data_storage_handler = SuggestionDataStorageSQLite()
         if self.bot.is_debug:
             save_commands(self)

@@ -1,27 +1,13 @@
 """
 A Discord Bot for the Antistasi (ArmA 3) Community Discord Server
 """
-__version__ = "0.1.0"
+__version__ = "0.1.7"
 
 
 from dotenv import load_dotenv
 import os
 from importlib.metadata import metadata
 import platform
-
-
-def install_uvloop_if_needed():
-    try:
-        import uvloop
-    except ImportError:
-        print("uvloop package not installed, installing now.\nYou may need to restart the application afterwards")
-        import sys
-        import subprocess
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "package"])
-
-
-if platform.system() == 'Linux':
-    install_uvloop_if_needed()
 
 
 MAIN_DIR = os.path.abspath(os.path.dirname(__file__))

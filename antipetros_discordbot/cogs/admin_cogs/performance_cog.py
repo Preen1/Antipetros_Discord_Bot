@@ -46,7 +46,7 @@ import gidlogger as glog
 
 
 # * Local Imports -->
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
 from antipetros_discordbot.utility.misc import seconds_to_pretty
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, bytes2human
@@ -82,9 +82,9 @@ glog.import_notification(log, __name__)
 # endregion[Logging]
 
 # region [Constants]
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
-COGS_CONFIG = SupportKeeper.get_config('cogs_config')
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 DATA_COLLECT_INTERVALL = 300 if os.getenv('IS_DEV').casefold() in ['yes', 'true', '1'] else 600  # seconds
@@ -99,6 +99,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
 
     def __init__(self, bot):
         self.bot = bot
+        self.support = self.bot.support
         self.start_time = datetime.utcnow()
         self.latency_thresholds = {'warning': COGS_CONFIG.getint(self.config_name, "threshold_latency_warning")}
         self.memory_thresholds = {'warning': COGS_CONFIG.getint(self.config_name, "threshold_memory_warning"), 'critical': COGS_CONFIG.getint(self.config_name, "threshold_memory_critical")}
@@ -107,6 +108,8 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         self.plot_formatting_info = {'latency': COGS_CONFIG.get(self.config_name, 'latency_graph_formatting'), 'memory': COGS_CONFIG.get(self.config_name, 'memory_graph_formatting')}
         if self.bot.is_debug:
             save_commands(self)
+
+    async def on_ready_setup(self):
         self.latency_measure_loop.start()
         self.memory_measure_loop.start()
         self.report_data_loop.start()
@@ -308,7 +311,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
     @ commands.has_any_role(*COGS_CONFIG.getlist('performance', 'allowed_roles'))
     @ in_allowed_channels(set(COGS_CONFIG.getlist('performance', 'allowed_channels')))
     async def get_command_stats(self, ctx):
-        data_dict = {item.name: f"{ZERO_WIDTH}\n{item.data}\n{ZERO_WIDTH}" for item in await self.bot.command_staff.get_todays_invoke_data()}
+        data_dict = {item.name: f"{ZERO_WIDTH}\n{item.data}\n{ZERO_WIDTH}" for item in await self.bot.support.get_todays_invoke_data()}
         date = date_today()
 
         embed = await make_basic_embed(title=ctx.command.name, text=f'data of the last 24hrs - {date}', symbol='data', **data_dict)
