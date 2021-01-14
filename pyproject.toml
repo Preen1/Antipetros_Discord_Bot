@@ -41,3 +41,21 @@ requires = [
 [tool.flit.scripts]
 antipetrosbot = "antipetros_discordbot.__main__:cli"
 mksubsupport = "antipetros_discordbot.dev_tools.cli.gen_sub_supporter:new_sub_supporter_class"
+
+[tool.flit.sdist]
+exclude = [
+    "antipetros_discordbot/init_userdata/data_pack",
+    "antipetros_discordbot/init_userdata/*.trigger",
+    'dev_tools',
+    'misc',
+    'temp',
+    'docs',
+    'tools',
+    '.pydeps',
+    '.isort.cfg',
+    'tests',
+    '.gitattributes',
+    '.gitignore',
+    '.editorconfig',
+    'antipetros_discordbot/utility/gidsql/_utils.archive'
+]

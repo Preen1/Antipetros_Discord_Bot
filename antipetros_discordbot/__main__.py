@@ -43,6 +43,14 @@ from antipetros_discordbot.utility.token_handling import load_tokenfile, store_t
 from antipetros_discordbot import MAIN_DIR
 # endregion[Imports]
 
+# region [TODO]
+
+# TODO: create prompt for token, with save option
+
+
+# endregion [TODO]
+
+
 # region [Constants]
 
 APPDATA = ParaStorageKeeper.get_appdata()
@@ -63,7 +71,7 @@ if os.getenv('IS_DEV') == 'yes':
 # endregion[Logging]
 
 
-# region [Helper_Functions]
+# region [Helper]
 
 
 def get_intents():
@@ -79,7 +87,7 @@ def get_intents():
     return intents
 
 
-# endregion [Helper_Functions]
+# endregion [Helper]
 
 # region [Main_function]
 
