@@ -1,4 +1,3 @@
-https://github.com/pyinstaller/pyinstaller/tarball/develop
 pep517
 memory-profiler
 matplotlib
@@ -14,3 +13,4 @@ pinspect
 icecream
 inspect_mate
 check-manifest
+autopep8

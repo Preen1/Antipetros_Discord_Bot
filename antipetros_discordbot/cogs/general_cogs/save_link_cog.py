@@ -4,14 +4,12 @@
 
 # * Standard Library Imports -->
 import os
+import asyncio
 from datetime import datetime, timedelta
 from tempfile import TemporaryDirectory
 from urllib.parse import urlparse
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
-from functools import partial
+
 # * Third Party Imports -->
-import aiohttp
 import discord
 from discord.ext import tasks, commands
 
@@ -19,15 +17,16 @@ from discord.ext import tasks, commands
 import gidlogger as glog
 
 # * Local Imports -->
+from antipetros_discordbot.cogs import get_aliases
+from antipetros_discordbot.utility.misc import CogConfigReadOnly, save_commands
 from antipetros_discordbot.utility.enums import RequestStatus
+from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role
 from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
+from antipetros_discordbot.utility.embed_helpers import EMBED_SYMBOLS, make_basic_embed
 from antipetros_discordbot.utility.sqldata_storager import LinkDataStorageSQLite
 from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.embed_helpers import make_basic_embed, EMBED_SYMBOLS
-from antipetros_discordbot.utility.misc import save_commands
-from antipetros_discordbot.utility.checks import in_allowed_channels, allowed_channel_and_allowed_role_no_dm, log_invoker
-from antipetros_discordbot.cogs import get_aliases
+
 # endregion [Imports]
 
 # region [TODO]
@@ -59,16 +58,7 @@ CONFIG_NAME = 'save_link'
 
 # region [Helper]
 
-
-def from_cog_config(key, typus=str):
-
-    retriev_map = {str: COGS_CONFIG.get,
-                   list: COGS_CONFIG.getlist,
-                   int: COGS_CONFIG.getint,
-                   bool: COGS_CONFIG.getboolean,
-                   set: partial(COGS_CONFIG.getlist, as_set=True)}
-
-    return retriev_map.get(typus)(section=CONFIG_NAME, option=key)
+_from_cog_config = CogConfigReadOnly(CONFIG_NAME)
 
 
 # endregion [Helper]
@@ -100,9 +90,8 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         self.support = self.bot.support
         self.data_storage_handler = LinkDataStorageSQLite()  # composition to make data storage modular, currently set up for an sqlite Database
         self.forbidden_url_words_file = APPDATA['forbidden_url_words.json']
-        if self.bot.is_debug:
+        if os.environ['INFO_RUN'] == "1":
             save_commands(self)
-
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -203,7 +192,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         Returns:
             discord.channel: channel object
         """
-        return self.bot.get_channel(from_cog_config(key='link_channel', typus=int))
+        return self.bot.get_channel(_from_cog_config(key='link_channel', typus=int))
 
     @property
     def allowed_channels(self):
@@ -213,7 +202,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         Returns:
             set: channel name list
         """
-        return from_cog_config(key="allowed_channels", typus=set)
+        return _from_cog_config(key="allowed_channels", typus=set)
 
     @property
     def bad_link_image(self):
@@ -224,7 +213,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
             tuple: name of the image, path to the image
         """
 
-        name = from_cog_config(key='bad_link_image_name', typus=str)
+        name = _from_cog_config(key='bad_link_image_name', typus=str)
         return name, APPDATA[name]
 
     @property
@@ -249,7 +238,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
 
 
     @commands.command(aliases=get_aliases("add_forbidden_word"))
-    @allowed_channel_and_allowed_role_no_dm(config_name=CONFIG_NAME, in_dm_allowed=True)
+    @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=True)
     @log_invoker(logger=log, level='info')
     async def add_forbidden_word(self, ctx, word: str):
         """
@@ -267,7 +256,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         await ctx.send(embed=await make_basic_embed(title='Added Word', text=f'The Word "{word}" was added to the forbidden url word list', symbol='update'))
 
     @commands.command(aliases=get_aliases("remove_forbidden_word"))
-    @allowed_channel_and_allowed_role_no_dm(config_name=CONFIG_NAME, in_dm_allowed=True)
+    @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=True)
     @log_invoker(logger=log, level='warning')
     async def remove_forbidden_word(self, ctx, word: str):
         """
@@ -286,7 +275,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         await ctx.send(embed=await make_basic_embed(title='Removed Word', text=f'The Word "{word}" was removed from the forbidden url word list', symbol='update'))
 
     @commands.command(aliases=get_aliases("clear_all_links"))
-    @allowed_channel_and_allowed_role_no_dm(config_name=CONFIG_NAME, in_dm_allowed=True, allowed_roles_key="delete_all_allowed_roles")
+    @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=True, allowed_roles_key="delete_all_allowed_roles")
     @log_invoker(logger=log, level='critical')
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def clear_all_links(self, ctx, sure: bool = False):
@@ -313,7 +302,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
             await self._clear_links(ctx, 'yes')
 
     @commands.command(hidden=False, aliases=get_aliases("get_link"))
-    @allowed_channel_and_allowed_role_no_dm(config_name=CONFIG_NAME, in_dm_allowed=False)
+    @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=False)
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def get_link(self, ctx, name: str):
         """
@@ -331,7 +320,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         await ctx.send(embed=await make_basic_embed(title='Retrieved link!', text='Link was successfully retrieved from storage', symbol='link', **{'available for the next': '1 Hour', _name: _link}), delete_after=60 * 60)
 
     @ commands.command(hidden=False, aliases=get_aliases("get_all_links"))
-    @allowed_channel_and_allowed_role_no_dm(config_name=CONFIG_NAME, in_dm_allowed=True)
+    @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=True)
     @log_invoker(logger=log, level='info')
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def get_all_links(self, ctx, in_format: str = 'txt'):
@@ -369,7 +358,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
             await ctx.send(file=_file)
 
     @ commands.command(hidden=False, aliases=get_aliases("save_link"))
-    @allowed_channel_and_allowed_role_no_dm(config_name=CONFIG_NAME, in_dm_allowed=True)
+    @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=True)
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def save_link(self, ctx, link: str, link_name: str = None, days_to_hold: int = None):
         """
@@ -398,7 +387,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
                 return None
 
             # calculate or retrieve all other needed values
-            days = from_cog_config(key='default_storage_days', typus=int) if days_to_hold is None else days_to_hold
+            days = _from_cog_config(key='default_storage_days', typus=int) if days_to_hold is None else days_to_hold
             delete_date_and_time = date_and_time + timedelta(days=days)
             author = ctx.author
 
@@ -451,7 +440,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
             log.debug("notified '%s' about the offending link", user.name)
 
     @ commands.command(hidden=False, aliases=get_aliases("get_forbidden_list"))
-    @allowed_channel_and_allowed_role_no_dm(config_name=CONFIG_NAME, in_dm_allowed=True, allowed_roles_key="delete_all_allowed_roles")
+    @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=True, allowed_roles_key="delete_all_allowed_roles")
     @log_invoker(logger=log, level='warning')
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def get_forbidden_list(self, ctx, file_format: str = 'json'):
@@ -471,7 +460,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
                 await ctx.send(file=_file, delete_after=60)
 
     @ commands.command(aliases=get_aliases("delete_link"))
-    @allowed_channel_and_allowed_role_no_dm(config_name=CONFIG_NAME, in_dm_allowed=True, allowed_roles_key="delete_all_allowed_roles")
+    @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=True, allowed_roles_key="delete_all_allowed_roles")
     @log_invoker(logger=log, level='critical')
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def delete_link(self, ctx, name: str, scope: str = 'channel'):
@@ -597,7 +586,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         embed.add_field(name="Channel", value=f"**{channel}**", inline=False)
         embed.add_field(name="Date", value=date_time.date().isoformat(), inline=True)
         embed.add_field(name="Time", value=f"{date_time.time().isoformat(timespec='seconds')} UTC", inline=True)
-        if from_cog_config(typus=bool, key='notify_with_link') is True:
+        if _from_cog_config(typus=bool, key='notify_with_link') is True:
             embed.add_field(name="Offending Link", value=f"***{link}***", inline=False)
             if matches_link != []:
                 embed.add_field(name="forbidden link matches", value='\n'.join(matches_link), inline=False)

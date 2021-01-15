@@ -1,0 +1,9 @@
+
+    @ commands.Cog.listener(name="{{ listener_item.event_name }}")
+    async def {{ listener_item.name }}(self, {% for arg in listener_item.args %}{{ arg }} {{', ' if not loop.last}}{% endfor %}):
+        log.debug("listener was triggered")
+        channel = self.bot.get_channel(payload.channel_id)
+        if channel.name not in self.allowed_channels:
+            log.debug("listener aborted, because: wrong channel")
+            return
+        pass

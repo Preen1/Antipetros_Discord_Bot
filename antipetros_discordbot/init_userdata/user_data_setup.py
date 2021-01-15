@@ -1,9 +1,13 @@
+# * Standard Library Imports -->
+import os
+
+# * Third Party Imports -->
+import dotenv
 from gidappdata import ParaStorageKeeper
 from gidappdata.utility.extended_dotenv import find_dotenv_everywhere
-import os
-import dotenv
+
 from .bin_data import bin_archive_data
-import antipetros_discordbot
+
 dotenv.load_dotenv(find_dotenv_everywhere('project_meta_data.env'))
 
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))

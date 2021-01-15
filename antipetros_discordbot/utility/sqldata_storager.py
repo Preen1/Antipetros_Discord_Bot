@@ -1,23 +1,20 @@
 
 # * Standard Library Imports -->
-from datetime import datetime
-import base64
-import lzma
-import shutil
 import os
+import shutil
+from datetime import datetime
 
 # * Third Party Imports -->
 from fuzzywuzzy import process as fuzzprocess
 
 # * Gid Imports -->
-from antipetros_discordbot.utility.gidsql.facade import GidSqliteDatabase, Fetch
 import gidlogger as glog
+
 # * Local Imports -->
 from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
+from antipetros_discordbot.utility.gidsql.facade import Fetch, GidSqliteDatabase
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, timenamemaker, limit_amount_files_absolute
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.gidtools_functions import timenamemaker, limit_amount_files_absolute, pathmaker
-from antipetros_discordbot.utility.misc import sync_to_async
-
 
 APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')

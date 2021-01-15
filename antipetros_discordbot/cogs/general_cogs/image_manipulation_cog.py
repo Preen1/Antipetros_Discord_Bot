@@ -5,29 +5,26 @@
 # * Standard Library Imports -->
 import os
 from io import BytesIO
-from tempfile import TemporaryDirectory
 from pathlib import Path
-from asyncio import get_running_loop
-from concurrent.futures import ThreadPoolExecutor
+from tempfile import TemporaryDirectory
+
 # * Third Party Imports -->
 import discord
 from PIL import Image, ImageEnhance
 from discord.ext import commands
 
-
 # * Gid Imports -->
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.utility.enums import WATERMARK_COMBINATIONS, WatermarkPosition
+from antipetros_discordbot.cogs import get_aliases
+from antipetros_discordbot.utility.misc import save_commands
+from antipetros_discordbot.utility.enums import WatermarkPosition
+from antipetros_discordbot.utility.checks import in_allowed_channels
+from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
-from antipetros_discordbot.utility.embed_helpers import make_basic_embed
-from antipetros_discordbot.utility.misc import save_commands
-from antipetros_discordbot.utility.checks import in_allowed_channels
 
-from antipetros_discordbot.cogs import get_aliases
 # endregion[Imports]
 
 # region [TODO]
@@ -83,7 +80,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
                                     WatermarkPosition.Center | WatermarkPosition.Top: self._to_top_center}
 
         self._get_stamps()
-        if self.bot.is_debug:
+        if os.environ['INFO_RUN'] == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
 
@@ -91,6 +88,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
 # endregion[Init]
 
 # region [Properties]
+
 
     @property
     def allowed_channels(self):
@@ -321,6 +319,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
 
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

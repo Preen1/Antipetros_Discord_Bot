@@ -2,34 +2,12 @@
 # region [Imports]
 
 # * Standard Library Imports -->
-import gc
 import os
-import re
-import sys
-import json
-import lzma
-import time
-import queue
-import logging
-import platform
-import subprocess
-from enum import Enum, Flag, auto
-from time import sleep
-from pprint import pprint, pformat
-from typing import Union
-from datetime import tzinfo, datetime, timedelta
-from functools import wraps, lru_cache, singledispatch, total_ordering, partial
-from contextlib import contextmanager
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from multiprocessing import Pool
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from tempfile import TemporaryDirectory
-from urllib.parse import urlparse
-import asyncio
-import unicodedata
-from io import BytesIO
+from datetime import datetime
 
 # * Third Party Imports -->
+from pytz import timezone, country_timezones
+
 # import requests
 # import pyperclip
 # import matplotlib.pyplot as plt
@@ -40,21 +18,19 @@ from io import BytesIO
 # from natsort import natsorted
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process as fuzzprocess
-import aiohttp
-import discord
-from discord.ext import tasks, commands
-from discord import DiscordException
+from discord.ext import commands
 
-from async_property import async_property
-from pytz import country_timezones, timezone, all_timezones
 # * Gid Imports -->
 import gidlogger as glog
-from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, readbin, linereadit, writeit, writebin, appendwriteit, loadjson, writejson, pickleit, get_pickled, clearit
-from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.misc import save_commands, STANDARD_DATETIME_FORMAT
-from antipetros_discordbot.utility.checks import in_allowed_channels
-from antipetros_discordbot.utility.named_tuples import COUNTRY_ITEM, CITY_ITEM
+
+# * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases
+from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, save_commands
+from antipetros_discordbot.utility.checks import in_allowed_channels
+from antipetros_discordbot.utility.named_tuples import CITY_ITEM, COUNTRY_ITEM
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+
 # endregion[Imports]
 
 # region [TODO]
@@ -99,7 +75,7 @@ class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "Abso
         self._item_id = 0
         self.country_items = self.all_country_as_items()
         self.city_items = self.all_cities_as_item()
-        if self.bot.is_debug:
+        if os.environ['INFO_RUN'] == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
 

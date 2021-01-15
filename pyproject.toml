@@ -40,13 +40,13 @@ requires = [
 
 [tool.flit.scripts]
 antipetrosbot = "antipetros_discordbot.__main__:cli"
-mksubsupport = "antipetros_discordbot.dev_tools.cli.gen_sub_supporter:new_sub_supporter_class"
+mksubsupport = "antipetros_discordbot.dev_tools_and_scripts.cli.gen_sub_supporter:new_sub_supporter_class"
 
 [tool.flit.sdist]
 exclude = [
     "antipetros_discordbot/init_userdata/data_pack",
     "antipetros_discordbot/init_userdata/*.trigger",
-    'dev_tools',
+    'antipetros_discordbot/dev_tools_and_scripts',
     'misc',
     'temp',
     'docs',
@@ -59,3 +59,7 @@ exclude = [
     '.editorconfig',
     'antipetros_discordbot/utility/gidsql/_utils.archive'
 ]
+
+[tool.autopep8]
+max-line-length = 250
+ignore = ['E402', 'E501']

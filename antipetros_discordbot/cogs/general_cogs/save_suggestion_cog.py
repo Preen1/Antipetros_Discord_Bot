@@ -5,33 +5,33 @@
 # * Standard Library Imports -->
 import os
 import re
+import shutil
+import asyncio
 import sqlite3 as sqlite
 import unicodedata
-from datetime import datetime, timedelta
-import asyncio
-import shutil
-from concurrent.futures import ThreadPoolExecutor
-from tempfile import TemporaryDirectory, TemporaryFile
+from datetime import datetime
+from tempfile import TemporaryDirectory
+
 # * Third Party Imports -->
 import discord
-from discord.ext import commands
-from async_property import async_property
 from jinja2 import Environment, FileSystemLoader
-import pdfkit
-from weasyprint import HTML, CSS
+from weasyprint import HTML
+from discord.ext import commands
+
 # * Gid Imports -->
 import gidlogger as glog
-from pprint import pprint, pformat
+
 # * Local Imports -->
-from antipetros_discordbot.utility.named_tuples import SUGGESTION_DATA_ITEM
-from antipetros_discordbot.utility.sqldata_storager import SuggestionDataStorageSQLite
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, writeit
-from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
-from antipetros_discordbot.utility.embed_helpers import make_basic_embed, EMBED_SYMBOLS, DEFAULT_FOOTER
+from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.misc import save_commands
 from antipetros_discordbot.utility.checks import in_allowed_channels
-from antipetros_discordbot.cogs import get_aliases
+from antipetros_discordbot.utility.named_tuples import SUGGESTION_DATA_ITEM
+from antipetros_discordbot.utility.embed_helpers import EMBED_SYMBOLS, DEFAULT_FOOTER, make_basic_embed
+from antipetros_discordbot.utility.sqldata_storager import SuggestionDataStorageSQLite
+from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
+
 # endregion[Imports]
 
 # region [Logging]
@@ -66,7 +66,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
 
     suggestion_name_regex = re.compile(r"(?P<name>(?<=#).*)")
     config_name = 'save_suggestions'
-    jinja_env = Environment(loader=FileSystemLoader(APPDATA["reports"]))
+    jinja_env = Environment(loader=FileSystemLoader(APPDATA["report_templates"]))
     css_files = {"basic_report_style.css": (APPDATA["basic_report_style.css"], "basic_report_style.css"),
                  'style.css': (APPDATA["style.css"], "style.css"),
                  'experiment_css_1.css': (APPDATA['experiment_css_1.css'], 'experiment_css_1.css'),
@@ -81,7 +81,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
         self.bot = bot
         self.support = self.bot.support
         self.data_storage_handler = SuggestionDataStorageSQLite()
-        if self.bot.is_debug:
+        if os.environ['INFO_RUN'] == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
 

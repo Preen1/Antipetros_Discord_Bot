@@ -1,5 +1,6 @@
-from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+# * Local Imports -->
 from antipetros_discordbot.utility.gidtools_functions import loadjson
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 
 APPDATA = ParaStorageKeeper.get_appdata()
 

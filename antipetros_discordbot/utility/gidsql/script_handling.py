@@ -2,15 +2,14 @@
 
 # * Standard Library Imports -->
 import os
-import shutil
-import sqlite3 as sqlite
-import configparser
-from sqlite3.dbapi2 import Error
-from pprint import pformat
 import logging
+from pprint import pformat
+
 # * Gid Imports -->
 import gidlogger as glog
-from antipetros_discordbot.utility.gidtools_functions import readit, writeit, splitoff, pathmaker, ext_splitter, cascade_rename
+
+# * Local Imports -->
+from antipetros_discordbot.utility.gidtools_functions import readit, writeit, pathmaker
 
 # endregion [Imports]
 

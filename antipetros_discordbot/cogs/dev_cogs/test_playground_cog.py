@@ -1,51 +1,36 @@
 # * Standard Library Imports -->
 import os
-import random
-import statistics
-from io import BytesIO
-from time import time
-import pickle
-from datetime import datetime, timedelta
-from concurrent.futures import ThreadPoolExecutor
-import random
 import asyncio
-import subprocess
 import platform
-from functools import partial
+import subprocess
+from io import BytesIO, StringIO
+from datetime import datetime
 from tempfile import TemporaryDirectory
+from functools import partial
+
 # * Third Party Imports -->
 import discord
-from discord.ext.commands import Greedy
-from discord.utils import escape_markdown
 from PIL import Image, ImageDraw, ImageFont
-from textwrap import wrap
-from discord.ext import commands
-from typing import Optional
-from fuzzywuzzy import process as fuzzprocess
-import gidlogger as glog
-from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
-from googletrans import Translator, LANGUAGES
-from fuzzywuzzy import process as fuzzprocess
-from fuzzywuzzy import fuzz
-from pyfiglet import Figlet
 from pytz import timezone
-from googletrans import Translator, LANGUAGES
-# * Local Imports -->
+from pyfiglet import Figlet
+from fuzzywuzzy import process as fuzzprocess
+from discord.ext import commands
+from googletrans import LANGUAGES, Translator
+from discord.ext.commands import Greedy
+from antistasi_template_checker.engine.antistasi_template_parser import run as template_checker_run
 
-from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import Bold, Cursive, CodeBlock, LineCode, UnderScore, BlockQuote
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, writeit
-from antipetros_discordbot.utility.embed_helpers import make_basic_embed
-from antipetros_discordbot.utility.misc import save_commands, async_load_json, image_to_url, color_hex_embed
-from antipetros_discordbot.utility.checks import in_allowed_channels, has_attachments, allowed_channel_and_allowed_role_no_dm, is_not_giddi
-from antipetros_discordbot.utility.regexes import DATE_REGEX, TIME_REGEX
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+# * Gid Imports -->
+import gidlogger as glog
+
+# * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.converters import DateTimeFullConverter, DateOnlyConverter, FlagArg
+from antipetros_discordbot.utility.misc import save_commands
+from antipetros_discordbot.utility.checks import has_attachments, in_allowed_channels, allowed_channel_and_allowed_role
+from antipetros_discordbot.utility.converters import FlagArg, DateOnlyConverter
+from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.the_dragon import THE_DRAGON
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 
 # region [Logging]
 
@@ -85,6 +70,9 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
         self.support = self.bot.support
         self.allowed_channels = set(COGS_CONFIG.getlist('test_playground', 'allowed_channels'))
         self.translator = Translator()
+        if os.environ['INFO_RUN'] == "1":
+            save_commands(self)
+        glog.class_init_notification(log, self)
 
     @commands.command(aliases=get_aliases("make_figlet"))
     @ commands.has_any_role(*COGS_CONFIG.getlist("test_playground", 'allowed_roles'))
@@ -176,48 +164,110 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
 
         await ctx.send(f"__year:__ {year} | __month:__ {month} | __day:__ {day} || __hour:__ {hour} | __minute:__ {minute} | __second:__ {second}")
 
+    async def correct_template(self, template_content, item_data):
+        new_content = template_content
+        for item in item_data:
+            if item.has_error is True and item.is_case_error is True:
+                new_content = new_content.replace(f'"{item.item}"', f'"{item.correction}"')
+        return new_content
+
     @commands.command(aliases=get_aliases("check_template"))
     @ commands.has_any_role(*COGS_CONFIG.getlist("test_playground", 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     @has_attachments(1)
-    async def check_template(self, ctx, case_insensitive: bool = False):
-        _file = ctx.message.attachments[0]
-        if _file.filename.endswith('.sqf'):
-            with ctx.typing():
-                with TemporaryDirectory() as tempdir:
-                    tempfile_path = pathmaker(tempdir, _file.filename)
-                    await _file.save(tempfile_path)
-                    case = '--case-insensitive' if case_insensitive is True else '--case-sensitive'
-                    func = partial(subprocess.run, [APPDATA["antistasi_template_checker.exe"], 'from_file', '-np', case, tempfile_path], check=True, capture_output=True)
-                    cmd = await self.bot.execute_in_thread(func)
-                    _output = cmd.stdout.decode('utf-8', errors='replace')
-                    await self.bot.split_to_messages(ctx, _output, in_codeblock=True)
-                    new_file_name = _file.filename.replace(os.path.splitext(_file.filename)[-1], '_CORRECTED' + os.path.splitext(_file.filename)[-1])
-                    new_file_path = pathmaker(tempdir, new_file_name)
-                    if os.path.isfile(new_file_path):
-                        _new_file = discord.File(new_file_path, new_file_name)
-                        await ctx.send('The Corrected File', file=_new_file)
+    async def check_template(self, ctx, all_items_file=True, case_insensitive: bool = False):
+        attachment = ctx.message.attachments[0]
+        if attachment.filename.endswith('.sqf'):
 
-    @commands.command(aliases=get_aliases("the_dragon") + ['the_wyvern'])
-    @allowed_channel_and_allowed_role_no_dm("test_playground")
+            await ctx.send(await self.bot.get_antistasi_emoji("Salute"))
+
+            async with ctx.typing():
+                await asyncio.sleep(2)
+                attachment_data = await attachment.read()
+                attachment_data = attachment_data.decode('utf-8', errors='ignore')
+                found_data = await self.bot.execute_in_thread(template_checker_run, attachment_data, case_insensitive)
+                found_data_amount_errors = found_data.get('found_errors')
+                found_data = found_data.get('items')
+                description = "**__NO__** errors in this Template File"
+                if found_data_amount_errors > 0:
+                    if found_data_amount_errors > 1:
+                        description = f"{found_data_amount_errors} errors in this file"
+                    else:
+                        description = f"{found_data_amount_errors} error in this file"
+
+                embed = discord.Embed(title=f"Template Check: {attachment.filename}", description=description,
+                                      color=self.support.color('OLIVE_DRAB_0x7'.casefold()).discord_color, timestamp=datetime.now(tz=timezone("Europe/Berlin")))
+                embed.set_thumbnail(url="https://s3.amazonaws.com/files.enjin.com/1218665/site_logo/NEW%20LOGO%20BANNER.png")
+
+                if found_data_amount_errors != 0:
+                    embed.add_field(name="Corrected file", value="I have attached the corrected file", inline=False)
+                    embed.add_field(name="Case Errors", value=f"\n{ZERO_WIDTH}I only corrected case errors", inline=False)
+                    embed.add_field(name="Not corrected was:\n" + ZERO_WIDTH,
+                                    value='\n'.join([error_item.item for error_item in found_data if error_item.has_error is True and (error_item.is_case_error is False or error_item.correction == "FILEPATH")]) + '\n' + ZERO_WIDTH, inline=False)
+                    code_message = [f"{'#'*34}\n{'#'*10} FOUND ERRORS {'#'*10}\n{'#'*34}\n"]
+
+                    sep_one = max(map(len, [item.item for item in found_data if item.has_error is True])) + 3
+                    for index, error_item in enumerate(found_data):
+                        if error_item.has_error:
+                            case_error = 'Yes' if error_item.is_case_error is True else 'No'
+                            possible_correction = '' if error_item.correction is None else f'| possible correction =      "{error_item.correction}"'
+                            has_error = f' | error =    Yes   | is case error = {case_error}{" "*(6-len(case_error))} {possible_correction}'
+                            start_sign = '++ '
+                            code_message.append(start_sign + f'item =        "{error_item.item}"{" " * (sep_one - len(error_item.item))} | line number =    {str(error_item.line_number)} {" " * (6 - len(str(error_item.line_number)))} {has_error}\n')
+
+                    await self.bot.split_to_messages(ctx, message='\n'.join(code_message + ['\n' + ZERO_WIDTH]), in_codeblock=True, syntax_highlighting='ml')
+
+                    await asyncio.sleep(1)
+                    new_content = await self.correct_template(attachment_data, found_data)
+                    new_file_name = attachment.filename.replace('.sqf', '_CORRECTED.sqf')
+                    with StringIO() as io_fp:
+                        io_fp.write(new_content)
+                        io_fp.seek(0)
+                        _file = discord.File(io_fp, new_file_name)
+
+                        await ctx.send(file=_file)
+                else:
+                    await ctx.reply(file=discord.File(APPDATA["Congratulations.mp3"], spoiler=True))
+                await ctx.send(embed=embed)
+                await asyncio.sleep(1)
+                if all_items_file is True:
+                    with StringIO() as io_fp:
+                        io_fp.write(f"ALL ITEMS FROM FILE '{attachment.filename}'")
+                        sorted_found_data = sorted(found_data, key=lambda x: (1 if x.has_error else 99, x.line_number))
+                        for item in found_data:
+
+                            case_error = 'yes' if item.is_case_error is True else 'no'
+                            possible_correction = '' if item.correction is None else f'| possible correction: "{item.correction}"'
+                            has_error = f' | error: yes | is case error: {case_error}{" "*(5-len(case_error))} {possible_correction}'
+
+                            io_fp.write(
+                                f'item: "{item.item}"{" "*(50-len(item.item))} | line number: {str(item.line_number)}{" "*(5-len(str(item.line_number)))} {has_error}\n')
+                        io_fp.seek(0)
+                        _all_item_file = discord.File(io_fp, attachment.filename.replace('.sqf', '_ALL_ITEMS.sqf'))
+
+                        await ctx.send(file=_all_item_file)
+                        await asyncio.sleep(5)
+
+    @ commands.command(aliases=get_aliases("the_dragon") + ['the_wyvern'])
+    @ allowed_channel_and_allowed_role("test_playground")
     async def the_dragon(self, ctx):
         await ctx.send(THE_DRAGON)
 
-    @commands.command(aliases=get_aliases("random_embed_color"))
-    @allowed_channel_and_allowed_role_no_dm("test_playground")
+    @ commands.command(aliases=get_aliases("random_embed_color"))
+    @ allowed_channel_and_allowed_role("test_playground")
     async def random_embed_color(self, ctx):
         color = self.bot.support.random_color
         embed = discord.Embed(title='test', description=color.name, color=color.int)
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=get_aliases("send_all_colors_file"))
-    @allowed_channel_and_allowed_role_no_dm("test_playground")
+    @ commands.command(aliases=get_aliases("send_all_colors_file"))
+    @ allowed_channel_and_allowed_role("test_playground")
     async def send_all_colors_file(self, ctx):
         _file = discord.File(str(self.bot.support.all_colors_json_file), os.path.basename(str(self.bot.support.all_colors_json_file)))
         await ctx.send('here', file=_file)
 
-    @commands.command(aliases=get_aliases("send_all_colors_file"))
-    @allowed_channel_and_allowed_role_no_dm("test_playground")
+    @ commands.command(aliases=get_aliases("send_all_colors_file"))
+    @ allowed_channel_and_allowed_role("test_playground")
     async def check_flags(self, ctx, flags: Greedy[FlagArg(['make_embed', 'random_color'])], ending: str):
         print(flags)
         if 'make_embed' in flags:
@@ -229,8 +279,8 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
         else:
             await ctx.send(ending)
 
-    @commands.command(aliases=get_aliases("test_dyn_time"))
-    @allowed_channel_and_allowed_role_no_dm("test_playground")
+    @ commands.command(aliases=get_aliases("test_dyn_time"))
+    @ allowed_channel_and_allowed_role("test_playground")
     async def test_dyn_time(self, ctx):
         embed = discord.Embed(title='testing dynamic timestamp', description='Could you please post under this message the time you see as timestamp of this Embed? (just copy paste)', timestamp=datetime.now(tz=timezone('Europe/Vienna')))
         await ctx.send(embed=embed)
@@ -242,8 +292,8 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
                 if attachment.filename.endswith('.sqf'):
                     yield message
 
-    @commands.command(aliases=get_aliases("get_all_template_messages"))
-    @allowed_channel_and_allowed_role_no_dm("test_playground")
+    @ commands.command(aliases=get_aliases("get_all_template_messages"))
+    @ allowed_channel_and_allowed_role("test_playground")
     async def get_all_template_messages(self, ctx):
 
         channel = await self.bot.fetch_channel(785935400467824651)
@@ -275,9 +325,9 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
         x = self.translator.translate(text=text, dest=out_lang_code, src=in_lang_code)
         return x.text
 
-    @commands.command(hidden=False, aliases=get_aliases("translate"))
-    @commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
+    @ commands.command(hidden=False, aliases=get_aliases("translate"))
+    @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    @ in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     async def translate(self, ctx, out_lang, *, text):
         log.info("command was initiated by '%s'", ctx.author.name)
         if out_lang.casefold() not in self.language_dict:
@@ -288,7 +338,6 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
 
 
 # region [SpecialMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

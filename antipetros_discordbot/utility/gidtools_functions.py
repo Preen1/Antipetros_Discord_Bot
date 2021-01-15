@@ -2,6 +2,7 @@
 
 # * Standard Library Imports -->
 import os
+import sys
 import json
 import pickle
 import shutil
@@ -10,7 +11,6 @@ import datetime
 import configparser
 from pprint import pformat
 from contextlib import contextmanager
-import sys
 
 # * Gid Imports -->
 import gidlogger as glog
@@ -675,11 +675,11 @@ def bytes2human(n, annotate=False):
         if n >= prefix[s]:
             _out = float(n) / prefix[s]
             if annotate is True:
-                _out = '%.1f%s' % (_out, s)
+                _out = '%.1f %s' % (_out, s)
             return _out
     _out = n
     if annotate is True:
-        _out = "%sb" % _out
+        _out = "%s b" % _out
     return _out
 
 

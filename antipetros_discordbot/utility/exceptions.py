@@ -1,5 +1,5 @@
+# * Third Party Imports -->
 from discord.ext.commands.errors import CommandError
-
 
 class AntiPetrosBaseError(Exception):
     pass

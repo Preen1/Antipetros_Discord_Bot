@@ -1,1 +1,2 @@
 pskill64,Dropbox
+clean_workspace.py,%WORKSPACE_FOLDER%

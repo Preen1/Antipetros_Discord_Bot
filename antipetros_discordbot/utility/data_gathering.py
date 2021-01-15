@@ -4,32 +4,9 @@
 
 # * Standard Library Imports -->
 
-import asyncio
-import gc
-import logging
-import os
-import re
-import sys
-import json
-import lzma
-import time
-import queue
-import logging
-import platform
-import subprocess
-from enum import Enum, Flag, auto
-from time import sleep
-from pprint import pprint, pformat
-from typing import Union
-from datetime import tzinfo, datetime, timezone, timedelta
-from functools import wraps, lru_cache, singledispatch, total_ordering, partial
-from contextlib import contextmanager
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-
+# * Standard Library Imports -->
 
 # * Third Party Imports -->
-
 # import requests
 # import pyperclip
 # import matplotlib.pyplot as plt
@@ -39,20 +16,12 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 # from jinja2 import BaseLoader, Environment
 # from natsort import natsorted
 # from fuzzywuzzy import fuzz, process
-import discord
-from discord.ext import commands, tasks
-
-# * PyQt5 Imports -->
-
 
 # * Gid Imports -->
-
 import gidlogger as glog
-from antipetros_discordbot.utility.gidtools_functions import (readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
-                                                              dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
-
 
 # * Local Imports -->
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 
 # endregion[Imports]
