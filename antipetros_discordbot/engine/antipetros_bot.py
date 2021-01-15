@@ -20,7 +20,7 @@ from discord.ext import tasks, commands
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.bot_support import BotSupporter
+from antipetros_discordbot.bot_support.bot_supporter import BotSupporter
 from antipetros_discordbot.utility.misc import save_bin_file, sync_to_async
 from antipetros_discordbot.engine.global_checks import user_not_blacklisted
 from antipetros_discordbot.utility.named_tuples import CreatorMember

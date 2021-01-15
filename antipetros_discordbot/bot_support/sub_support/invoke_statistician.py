@@ -20,7 +20,7 @@ from antipetros_discordbot.utility.named_tuples import InvokedCommandsDataItem
 from antipetros_discordbot.utility.gidtools_functions import pathmaker
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.bot_support.sub_support.sub_support_helper import CommandStatDict
+from antipetros_discordbot.bot_support.sub_support.sub_support_helper.command_stats_dict import CommandStatDict
 
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
 
@@ -64,8 +64,6 @@ from antipetros_discordbot.bot_support.sub_support.sub_support_helper import Com
 
 
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
-
-
 
 
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
