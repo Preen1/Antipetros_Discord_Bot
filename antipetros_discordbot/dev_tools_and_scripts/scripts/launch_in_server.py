@@ -2,10 +2,17 @@ from paramiko import SSHClient, AutoAddPolicy
 import os
 from contextlib import contextmanager
 
+THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+
+def get_version():
+    from antipetros_discordbot import __version__
+    return __version__
+
 
 ANTIPETROS_START_CMD = "nohup antipetrosbot run -t token.env -save &"
 ANTIPETROS_UPDATE_CMD = "python3.9 -m pip install --no-cache-dir --force-reinstall antipetros_discordbot"
-
+ANTIPETROS_UPDATE_CMD_VERSION = ANTIPETROS_UPDATE_CMD + '==' + get_version()
 
 USERNAME = 'root'
 PWD = os.getenv('DEVANTISTASI_AUXILIARY_KEY')
