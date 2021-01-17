@@ -11,7 +11,7 @@
 # * Standard Library Imports -->
 import os
 from datetime import datetime
-
+import traceback
 # * Third Party Imports -->
 from discord import Embed
 from fuzzywuzzy import fuzz
@@ -45,13 +45,11 @@ from antipetros_discordbot.utility.discord_markdown_helper.special_characters im
 # from dotenv import load_dotenv
 
 
-
 # from github import Github, GithubException
 
 # from jinja2 import BaseLoader, Environment
 
 # from natsort import natsorted
-
 
 
 # * PyQt5 Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
@@ -69,8 +67,6 @@ from antipetros_discordbot.utility.discord_markdown_helper.special_characters im
 
 
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
-
-
 
 
 # endregion[Imports]
@@ -118,7 +114,8 @@ class ErrorHandler(SubSupportBase):
         self.default_delete_after_seconds = 120
         glog.class_init_notification(log, self)
 
-    async def handle_errors(self, ctx, error, error_traceback):
+    async def handle_errors(self, ctx, error):
+        error_traceback = '\n'.join(traceback.format_exception(error, value=error, tb=None))
         await self.error_handle_table.get(type(error), self._default_handle_error)(ctx, error, error_traceback)
 
     async def _default_handle_error(self, ctx, error, error_traceback):

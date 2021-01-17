@@ -78,14 +78,13 @@ class AntiPetrosBot(commands.Bot):
         self.all_bot_roles = None
         self.current_day = datetime.utcnow().day
         self.clients_to_close = []
+        self.on_command_error = None
 
         user_not_blacklisted(self, log)
 
         self._setup()
 
         glog.class_init_notification(log, self)
-        if self.is_debug:
-            log.warning('!!!!!!!!!!!!!!!!! DEBUG MODE !!!!!!!!!!!!!!!!!')
 
     def _setup(self):
         self._get_initial_cogs()
@@ -96,6 +95,7 @@ class AntiPetrosBot(commands.Bot):
         await self._get_bot_info()
         await self._start_sessions()
         await self.wait_until_ready()
+        await self.set_delayed_bot_attributes()
         await asyncio.sleep(2)
         await self.support.to_all_subsupports(attribute_name='if_ready')
         await self.to_all_cogs('on_ready_setup')
@@ -104,6 +104,9 @@ class AntiPetrosBot(commands.Bot):
         if BASE_CONFIG.getboolean('startup_message', 'use_startup_message') is True:
             await self.send_startup_message()
         await self._watch_for_shutdown_trigger()
+
+    async def set_delayed_bot_attributes(self):
+        self.on_command_error = self.support.handle_errors
 
     async def _watch_for_shutdown_trigger(self):
         async for changes in awatch(APPDATA['shutdown_trigger'], loop=self.loop):
@@ -200,9 +203,6 @@ class AntiPetrosBot(commands.Bot):
         activity_type = activity_dict.get(activity_type)
 
         return discord.Activity(name=text, type=activity_type)
-
-    async def on_command_error(self, ctx, error):
-        await self.support.handle_errors(ctx, error, '\n'.join(traceback.format_exception(error, value=error, tb=None)))
 
     @tasks.loop(minutes=5, reconnect=True)
     async def update_check_loop(self):
