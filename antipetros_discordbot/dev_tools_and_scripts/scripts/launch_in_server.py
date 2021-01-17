@@ -1,7 +1,7 @@
 from paramiko import SSHClient, AutoAddPolicy
 import os
 from contextlib import contextmanager
-
+from time import sleep
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -39,4 +39,6 @@ def run_command(command: str):
 
 
 if __name__ == '__main__':
+    # run_command(ANTIPETROS_UPDATE_CMD_VERSION)
+    # sleep(60)
     run_command(ANTIPETROS_START_CMD)

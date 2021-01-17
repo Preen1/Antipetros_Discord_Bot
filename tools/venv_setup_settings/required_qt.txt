@@ -1,6 +1,4 @@
 PyQt5
-pyopengl
-PyQt3D
 PyQtChart
 PyQtDataVisualization
 PyQtWebEngine
