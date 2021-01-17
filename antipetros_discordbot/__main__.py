@@ -51,6 +51,8 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 
 _log_file = glog.log_folderer(__name__, APPDATA)
 log_stdout = 'both' if BASE_CONFIG.getboolean('logging', 'log_also_to_stdout') is True else 'file'
+if os.getenv('IS_DEV') == 'true':
+    log_stdout = 'both'
 log = glog.main_logger(_log_file, BASE_CONFIG.get('logging', 'logging_level'), other_logger_names=['asyncio', 'gidsql', 'gidfiles', "gidappdata"], log_to=log_stdout, in_back_up=BASE_CONFIG.getint('logging', 'amount_keep_old_logs'))
 log.info(glog.NEWRUN())
 if BASE_CONFIG.getboolean('logging', 'use_logging') is False:

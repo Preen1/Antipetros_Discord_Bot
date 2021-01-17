@@ -172,8 +172,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
         return new_content
 
     @commands.command(aliases=get_aliases("check_template"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist("test_playground", 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
+    @ allowed_channel_and_allowed_role(CONFIG_NAME, True, allowed_in_dm_key='check_template_allowed_in_dm')
     @has_attachments(1)
     async def check_template(self, ctx, all_items_file=True, case_insensitive: bool = False):
         attachment = ctx.message.attachments[0]

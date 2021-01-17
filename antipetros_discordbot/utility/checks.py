@@ -129,6 +129,7 @@ def allowed_channel_and_allowed_role(config_name: str, in_dm_allowed: bool = Fal
         allowed_channels = COGS_CONFIG.getlist(config_name, allowed_channel_key, as_set=True, casefold_items=True)
         allowed_roles = COGS_CONFIG.getlist(config_name, allowed_roles_key, as_set=True, casefold_items=True)
         allowed_in_dm = COGS_CONFIG.getlist(config_name, allowed_in_dm_key)
+        allowed_in_dm = set(map(int, allowed_in_dm)) if allowed_in_dm != ['all'] else allowed_in_dm
         if allowed_in_dm != ['all']:
             allowed_in_dm = set(list(map(int, allowed_in_dm)))
         channel = ctx.channel.name
