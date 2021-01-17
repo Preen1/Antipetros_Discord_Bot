@@ -7,13 +7,13 @@ from io import BytesIO, StringIO
 from datetime import datetime
 from tempfile import TemporaryDirectory
 from functools import partial
-
+from pprint import pformat
 # * Third Party Imports -->
 import discord
 from PIL import Image, ImageDraw, ImageFont
 from pytz import timezone
 from pyfiglet import Figlet
-from fuzzywuzzy import process as fuzzprocess
+from fuzzywuzzy import fuzz, process as fuzzprocess
 from discord.ext import commands
 from googletrans import LANGUAGES, Translator
 from discord.ext.commands import Greedy
@@ -25,7 +25,7 @@ import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.misc import save_commands
-from antipetros_discordbot.utility.checks import has_attachments, in_allowed_channels, allowed_channel_and_allowed_role
+from antipetros_discordbot.utility.checks import has_attachments, in_allowed_channels, allowed_channel_and_allowed_role, log_invoker
 from antipetros_discordbot.utility.converters import FlagArg, DateOnlyConverter
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -47,7 +47,7 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 HELP_TEST_DATA = loadjson(APPDATA["command_help.json"])
-
+CONFIG_NAME = "test_playground"
 
 FAQ_THING = """**FAQ No 17**
 _How to become a server member?_
@@ -336,7 +336,36 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
         result = await self._translate(text, out_lang)
         await self.bot.split_to_messages(ctx, result)
 
-
+    @commands.command(aliases=get_aliases('search_usernames'))
+    @allowed_channel_and_allowed_role(CONFIG_NAME, in_dm_allowed=True, allowed_roles_key='roles_restricted_command', allowed_in_dm_key="search_usernames_dm_allowed")
+    @log_invoker(log, 'critical')
+    async def search_usernames(self, ctx, *, names: str):
+        full_match = {}
+        partial_match = {}
+        similar_match = {}
+        to_match_names = names.split(',')
+        to_match_names = set(map(lambda x: x.strip().casefold(), to_match_names))
+        user_list = self.bot.users
+        for user in user_list:
+            for name in to_match_names:
+                if name not in full_match:
+                    full_match[name] = []
+                if name not in partial_match:
+                    partial_match[name] = []
+                if name == user.name.casefold():
+                    full_match[name].append(user.name)
+                elif name in user.name.casefold():
+                    partial_match[name].append(user.name)
+        # for match_name in to_match_names:
+        #     fuzz_result = fuzzprocess.extract(match_name, [user.name for user in user_list])
+        #     if fuzz_result:
+        #         similar_match[match_name] = fuzz_result
+        await ctx.reply("__**Full Matches**__")
+        await self.bot.split_to_messages(ctx, pformat(full_match).replace('{', '').replace('}', ''))
+        await ctx.reply("__**Partial Matches**__")
+        await self.bot.split_to_messages(ctx, pformat(partial_match).replace('{', '').replace('}', ''))
+        await ctx.reply("__**all user I can see**__")
+        await self.bot.split_to_messages(ctx, '\n'.join([user.name for user in user_list]), in_codeblock=True)
 # region [SpecialMethods]
 
     def __repr__(self):

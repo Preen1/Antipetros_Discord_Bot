@@ -51,7 +51,8 @@ exclude = [
     '.gitattributes',
     '.gitignore',
     '.editorconfig',
-    'antipetros_discordbot/utility/gidsql/_utils.archive'
+    'antipetros_discordbot/utility/gidsql/_utils.archive',
+    'designer_files'
 ]
 
 [tool.autopep8]

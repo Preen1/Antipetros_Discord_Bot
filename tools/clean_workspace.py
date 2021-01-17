@@ -336,13 +336,13 @@ def filesystem_walker_folders(start_folder, exclude_folder: Union[str, Iterable]
 
 def get_to_delete_folder():
     for folder in filesystem_walker_folders(os.getcwd(), exclude_folder='standard', exclude_files='standard'):
-        if folder.name in TO_DELETE_FOLDER:
-            print(folder)
+        if folder.name in TO_DELETE_FOLDER and all(excl_folder.casefold() not in folder.path.casefold() for excl_folder in EXCLUDE_FOLDER):
             yield folder
 
 
 def recursively_delete_folder():
     for folder in get_to_delete_folder():
+        print(f'deleting folder "{folder.path}"')
         folder.delete(True)
 
 
@@ -356,5 +356,7 @@ if __name__ == '__main__':
     if os.path.isdir(input_data) is True:
         print(f"changing dir to {input_data}")
         os.chdir(input_data)
+    else:
+        os.chdir(pathmaker(THIS_FILE_DIR, '../'))
 
     recursively_delete_folder()

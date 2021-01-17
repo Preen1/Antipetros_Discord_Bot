@@ -29,7 +29,7 @@ from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from antipetros_discordbot.utility.token_handling import load_tokenfile, store_token_file
 from antipetros_discordbot.utility.gidtools_functions import writeit, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from antipetros_discordbot.utility.crypt import encrypt_db, decrypt_db
 # endregion[Imports]
 
 # region [TODO]
@@ -51,7 +51,7 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 
 _log_file = glog.log_folderer(__name__, APPDATA)
 log_stdout = 'both' if BASE_CONFIG.getboolean('logging', 'log_also_to_stdout') is True else 'file'
-log = glog.main_logger(_log_file, BASE_CONFIG.get('logging', 'logging_level'), other_logger_names=['asyncio', 'gidsql', 'gidfiles', "gidappdata"], log_to=log_stdout)
+log = glog.main_logger(_log_file, BASE_CONFIG.get('logging', 'logging_level'), other_logger_names=['asyncio', 'gidsql', 'gidfiles', "gidappdata"], log_to=log_stdout, in_back_up=BASE_CONFIG.getint('logging', 'amount_keep_old_logs'))
 log.info(glog.NEWRUN())
 if BASE_CONFIG.getboolean('logging', 'use_logging') is False:
     logging.disable(logging.CRITICAL)
@@ -159,6 +159,7 @@ def main(token_file=None, save_token_file=False):
     token_file = pathmaker(APPDATA["user_env_files"], 'token.env') if token_file is None else pathmaker(token_file)
     with load_tokenfile(token_file):
         discord_token = os.getenv('DISCORD_TOKEN')
+        decrypt_db()
 
     anti_petros_bot = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
 
@@ -166,6 +167,7 @@ def main(token_file=None, save_token_file=False):
         anti_petros_bot.run(discord_token, bot=True, reconnect=True)
     finally:
         discord_token = 'xxxxxxxxxxxxxxxx'
+        encrypt_db()
 
 
 # endregion [Main_function]

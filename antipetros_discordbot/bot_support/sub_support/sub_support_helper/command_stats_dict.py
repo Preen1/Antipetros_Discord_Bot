@@ -65,8 +65,6 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
 
 
-
-
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
 # endregion[Imports]
@@ -142,7 +140,7 @@ class CommandStatDict(UserDict):
     def add_tick(self, key, unsuccessful=False):
         if key is None or key == 'None':
             return
-        if self.last_initialized + timedelta(days=1) <= datetime.utcnow():
+        if self.last_initialized.day != datetime.utcnow().day:
             self.save_data()
             self.initialize_data()
 

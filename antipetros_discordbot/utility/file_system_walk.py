@@ -173,6 +173,10 @@ class FileSystemWalkerItem(namedtuple('WalkerItem', ['name', 'path'])):
         return round(self._size() / self.size_conv.get(target_unit).get('factor'), ndigits=3)
 
     @property
+    def raw_name(self):
+        return os.path.splitext(self.name)[0]
+
+    @property
     def size_b(self):
         return self._converted_size('byte')
 
@@ -229,7 +233,7 @@ def _input_handle_excludes(value, typus="folder"):
     return list(set(map(lambda x: x.casefold(), to_exclude)))
 
 
-def filesystem_walker(start_folder, exclude_folder: Union[str, Iterable] = None, exclude_files: Union[str, Iterable] = None):
+def filesystem_walker(start_folder, exclude_folder: Union[str, Iterable] = 'standard', exclude_files: Union[str, Iterable] = 'standard'):
     folders_to_exclude = _input_handle_excludes(exclude_folder, typus='folder')
     files_to_exclude = _input_handle_excludes(exclude_files, typus='files')
 
@@ -245,13 +249,13 @@ def filesystem_walker(start_folder, exclude_folder: Union[str, Iterable] = None,
                     yield FileSystemWalkerItem(folder, folder_path)
 
 
-def filesystem_walker_files(start_folder, exclude_folder: Union[str, Iterable] = None, exclude_files: Union[str, Iterable] = None):
+def filesystem_walker_files(start_folder, exclude_folder: Union[str, Iterable] = 'standard', exclude_files: Union[str, Iterable] = 'standard'):
     for item in filesystem_walker(start_folder, exclude_folder, exclude_files):
         if item.is_file() is True:
             yield item
 
 
-def filesystem_walker_folders(start_folder, exclude_folder: Union[str, Iterable] = None, exclude_files: Union[str, Iterable] = None):
+def filesystem_walker_folders(start_folder, exclude_folder: Union[str, Iterable] = 'standard', exclude_files: Union[str, Iterable] = 'standard'):
     for item in filesystem_walker(start_folder, exclude_folder, exclude_files):
         if item.is_dir() is True:
             yield item

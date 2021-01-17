@@ -123,7 +123,8 @@ class AntiPetrosBot(commands.Bot):
     async def send_startup_message(self):
         channel = self.get_channel(BASE_CONFIG.getint('startup_message', 'channel'))
         msg = BASE_CONFIG.get('startup_message', 'message')
-        delete_time = 240 if self.is_debug is True else 600
+        delete_time = 240 if self.is_debug is True else BASE_CONFIG.getint('startup_message', 'delete_after')
+        delete_time = None if delete_time == 0 else delete_time
         await channel.send(msg, delete_after=delete_time)
 
     async def to_all_cogs(self, command, *args, **kwargs):
@@ -320,7 +321,14 @@ class AntiPetrosBot(commands.Bot):
         log.debug("debug function triggered")
         path = pathmaker(APPDATA['debug'], 'general_debug')
         extension = 'json'
-        _out = []
+        app_info = await self.application_info()
+        _out = {'id': app_info.id,
+                "name": app_info.name,
+                "owner_name": app_info.owner.name,
+                'description': app_info.description,
+                'bot_public': app_info.bot_public,
+                "bot_require_code_grant": app_info.bot_require_code_grant,
+                "summary": app_info.summary}
 
         writejson(_out, path + '.' + extension)
 

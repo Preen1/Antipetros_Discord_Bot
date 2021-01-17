@@ -38,22 +38,21 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 # from dotenv import load_dotenv
 
 
-
 # from github import Github, GithubException
 
 # from jinja2 import BaseLoader, Environment
 
 # from natsort import natsorted
 
-# from fuzzywuzzy import fuzz, process
+from fuzzywuzzy import fuzz, process as fuzzprocess
 
 
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
 
 
-
-
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
+from antipetros_discordbot.utility.exceptions import FuzzyMatchError
+
 
 # endregion[Imports]
 
@@ -83,9 +82,12 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[Constants]
 
+# ColorItem = namedtuple('ColorItem', ['name', 'hex', 'hex_alt', 'hsv', 'hsv_norm', 'int', 'rgb', 'rgb_norm', 'discord_color'])
+
 
 class ColorKeeper(SubSupportBase):
     all_colors_json_file = APPDATA['all_color_list.json']
+    base_colors_json_file = APPDATA['basic_color_list.json']
 
     def __init__(self, bot, support):
         self.bot = bot
@@ -93,6 +95,9 @@ class ColorKeeper(SubSupportBase):
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
         self.colors = {}
+        # MAYBE: create config file for subsupporter
+        # MAYBE: specify if auto basic color attribute or not
+        self._basic_colors_to_attribute()
 
         glog.class_init_notification(log, self)
 
@@ -100,13 +105,33 @@ class ColorKeeper(SubSupportBase):
     def color_item_list(self):
         return [item for name, item in self.colors.items()]
 
+    def _basic_colors_to_attribute(self):
+        basic_color_data = loadjson(self.base_colors_json_file)
+        for color_name, color_data in basic_color_data.items():
+            setattr(self, color_name.casefold(), self.dict_to_color_item(color_name, color_data))
+
     async def _make_color_items(self):
         for name, values in loadjson(self.all_colors_json_file).items():
             discord_color = Color.from_rgb(*values.get('rgb'))
             self.colors[name.casefold()] = ColorItem(name=name.casefold(), discord_color=discord_color, ** values)
 
+    @staticmethod
+    def dict_to_color_item(color_name, color_data):
+        discord_color = Color.from_rgb(*color_data.get('rgb'))
+        return ColorItem(name=color_name.casefold(), discord_color=discord_color, ** color_data)
+
     def color(self, color_name: str):
         return self.colors.get(color_name)
+
+    async def discord_color(self, color_name: str):
+        color_name = color_name.casefold()
+        if color_name in self.colors:
+            return self.colors[color_name].discord_color
+        scorer = fuzz.token_set_ratio
+        fuzz_match = fuzzprocess.extractOne(color_name, [color.name for color in self.colors], scorer=scorer)
+        if fuzz_match is None:
+            raise FuzzyMatchError(color_name, scorer, data=[color.name for color in self.colors])
+        return self.colors[fuzz_match[0]].discord_color
 
     @property
     def random_color(self):

@@ -53,7 +53,12 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": "GeneralDebugCog"}):
+    """
+    [summary]
 
+    [extended_summary]
+
+    """
     config_name = 'general_debug'
 
     def __init__(self, bot):

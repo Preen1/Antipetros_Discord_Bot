@@ -33,5 +33,6 @@ colormap
 aiosqlite
 discord-flags
 paramiko[all]
-invoke
 antistasi_template_checker
+cryptography
+humanize

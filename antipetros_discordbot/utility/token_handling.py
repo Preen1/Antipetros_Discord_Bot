@@ -68,9 +68,6 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
 
 
-
-
-
 # endregion[Imports]
 
 # region [TODO]
@@ -104,6 +101,8 @@ TOKEN_TO_CLEAR = ['GITHUB_TOKEN', 'DISCORD_TOKEN']
 
 def store_token_file(token_file):
     _new_path = pathmaker(APPDATA['user_env_files'], 'token.env')
+    if os.path.isfile(_new_path) is True:
+        os.remove(_new_path)
     shutil.copy(pathmaker(os.path.abspath(token_file)), _new_path)
 
 
@@ -112,7 +111,8 @@ def load_tokenfile(file):
     load_dotenv(file)
     yield
     for token_name in TOKEN_TO_CLEAR:
-        os.environ[token_name] = "xxxxxxxxxxxxx"
+        if token_name in os.environ:
+            os.environ[token_name] = "xxxxxxxxxxxxx"
 
 
 # region[Main_Exec]

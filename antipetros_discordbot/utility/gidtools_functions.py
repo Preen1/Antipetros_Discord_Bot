@@ -654,6 +654,13 @@ def limit_amount_of_files(in_basename, in_directory, in_amount_max):
                 log.debug(f"renaming file [{files}] to [{_existing_file_list[_rename_index]}]")
 
 
+def create_file(in_path, overwrite=False):
+    if os.path.isfile(in_path) is True and overwrite is False:
+        return
+    with open(in_path, 'w') as f:
+        f.write('')
+
+
 def create_folder(in_path):
     if os.path.isdir(in_path) is False:
         log.error(f"Folder '{in_path}' does **NOT** exist!")

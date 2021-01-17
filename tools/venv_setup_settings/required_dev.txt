@@ -14,3 +14,5 @@ icecream
 inspect_mate
 check-manifest
 autopep8
+invoke
+pypandoc
