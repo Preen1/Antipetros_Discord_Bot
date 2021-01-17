@@ -10,43 +10,37 @@ classifiers = ["License :: OSI Approved :: MIT License"]
 description-file = "README.md"
 license = "MIT"
 requires = [
-    "graphviz==0.16",
-    "aiohttp==3.7.3",
-    "networkx==2.5",
-    "pdfkit==0.6.1",
-    "pyfiglet==0.8.post1",
-    "pyowm==3.1.1",
+    "fuzzywuzzy==0.18.0",
+    "watchgod==0.6",
     "WeasyPrint==52.2",
-    "google_auth_oauthlib==0.4.2",
+    "dpytest==0.0.22",
+    "aiohttp==3.7.3",
     "matplotlib==3.3.3",
+    "googletrans==4.0.0rc1",
     "psutil==5.8.0",
     "click==7.1.2",
-    "fuzzywuzzy==0.18.0",
-    "dpytest==0.0.22",
+    "pyfiglet==0.8.post1",
     "Jinja2==2.11.2",
     "pytz==2020.5",
-    "watchgod==0.6",
-    "async_property==0.2.1",
-    "googletrans==4.0.0rc1",
+    "autopep8==1.5.4",
+    "antistasi_template_checker==0.1.1",
     "discord==1.0.1",
-    "gidappdata>=0.1.5",
-    "gidlogger>=0.1.7",
-    "google_api_python_client==1.12.8",
+    "gidappdata==0.1.5",
+    "gidlogger==0.1.7",
     "Pillow==8.1.0",
-    "protobuf==3.14.0",
     "python-dotenv==0.15.0",
     "udpy==2.0.0",
 ]
 
 [tool.flit.scripts]
 antipetrosbot = "antipetros_discordbot.__main__:cli"
-mksubsupport = "antipetros_discordbot.dev_tools.cli.gen_sub_supporter:new_sub_supporter_class"
+mksubsupport = "antipetros_discordbot.dev_tools_and_scripts.cli.gen_sub_supporter:new_sub_supporter_class"
 
 [tool.flit.sdist]
 exclude = [
     "antipetros_discordbot/init_userdata/data_pack",
     "antipetros_discordbot/init_userdata/*.trigger",
-    'dev_tools',
+    'antipetros_discordbot/dev_tools_and_scripts',
     'misc',
     'temp',
     'docs',
@@ -57,5 +51,35 @@ exclude = [
     '.gitattributes',
     '.gitignore',
     '.editorconfig',
-    'antipetros_discordbot/utility/gidsql/_utils.archive'
+    'antipetros_discordbot/utility/gidsql/_utils.archive',
+    'designer_files',
+    'art'
 ]
+
+[tool.autopep8]
+max-line-length = 250
+ignore = ['E402', 'E501']
+
+[tool.isort]
+line_length = 200
+sections = [
+    "FUTURE",
+    "STDLIB",
+    "THIRDPARTY",
+    "PYQT",
+    "GID",
+    "FIRSTPARTY",
+    "LOCALFOLDER"
+]
+known_pyqt = ["PyQt5"]
+known_gid = ["gidtools", "gidlogger", "gidqtutils", "gidviewmodels"]
+import_heading_stdlib = "* Standard Library Imports ---------------------------------------------------------------------------->"
+import_heading_thirdparty = "* Third Party Imports --------------------------------------------------------------------------------->"
+import_heading_firstparty = "* Local Imports --------------------------------------------------------------------------------------->"
+import_heading_pyqt = "* PyQt5 Imports --------------------------------------------------------------------------------------->"
+import_heading_gid = "* Gid Imports ----------------------------------------------------------------------------------------->"
+ensure_newline_before_comments = true
+balanced_wrapping = true
+lines_after_imports = 1
+length_sort = true
+group_by_package = true

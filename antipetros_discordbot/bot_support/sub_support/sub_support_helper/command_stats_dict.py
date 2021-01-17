@@ -8,51 +8,18 @@
 
 # * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
 
-import gc
+# * Standard Library Imports -->
 import os
-import re
-import sys
-import json
-import lzma
-import time
-import queue
-import base64
-import pickle
-import random
-import shelve
-import shutil
-import asyncio
-import logging
-import sqlite3
-import platform
-import importlib
-import subprocess
-import unicodedata
+from typing import Callable
+from datetime import datetime, timedelta
+from collections import UserDict
 
-from io import BytesIO
-from abc import ABC, abstractmethod
-from copy import copy, deepcopy
-from enum import Enum, Flag, auto
-from time import time, sleep
-from pprint import pprint, pformat
-from string import Formatter, digits, printable, whitespace, punctuation, ascii_letters, ascii_lowercase, ascii_uppercase
-from timeit import Timer
-from typing import Union, Callable, Iterable
-from inspect import stack, getdoc, getmodule, getsource, getmembers, getmodulename, getsourcefile, getfullargspec, getsourcelines
-from zipfile import ZipFile
-from datetime import tzinfo, datetime, timezone, timedelta
-from tempfile import TemporaryDirectory
-from textwrap import TextWrapper, fill, wrap, dedent, indent, shorten
-from functools import wraps, partial, lru_cache, singledispatch, total_ordering
-from importlib import import_module, invalidate_caches
-from contextlib import contextmanager
-from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict, UserDict
-from urllib.parse import urlparse
-from importlib.util import find_spec, module_from_spec, spec_from_file_location
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from importlib.machinery import SourceFileLoader
+# * Gid Imports -->
+import gidlogger as glog
 
+# * Local Imports -->
+from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
 
@@ -97,15 +64,9 @@ from importlib.machinery import SourceFileLoader
 
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
 
-import gidlogger as glog
-
-from antipetros_discordbot.utility.gidtools_functions import (readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
-                                                              dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
-
 
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
-from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 # endregion[Imports]
 
 # region [TODO]
@@ -131,7 +92,9 @@ log = glog.aux_logger(__name__)
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
-from antipetros_discordbot.utility.misc import date_today, async_date_today
+# * Local Imports -->
+from antipetros_discordbot.utility.misc import date_today
+
 # endregion[Constants]
 
 
@@ -177,7 +140,7 @@ class CommandStatDict(UserDict):
     def add_tick(self, key, unsuccessful=False):
         if key is None or key == 'None':
             return
-        if self.last_initialized + timedelta(days=1) <= datetime.utcnow():
+        if self.last_initialized.day != datetime.utcnow().day:
             self.save_data()
             self.initialize_data()
 

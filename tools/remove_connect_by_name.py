@@ -1,9 +1,14 @@
 # * Standard Library Imports -->
 import os
 import sys
+
+# * Third Party Imports -->
 from dotenv import load_dotenv
+
 load_dotenv()
+# * Standard Library Imports -->
 from multiprocessing import Pool, cpu_count
+
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 STARTFOLDER = os.path.dirname(THIS_FILE_DIR)
 RESSOURCE_NAME = os.getenv('RESNAME')

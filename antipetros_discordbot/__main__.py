@@ -11,36 +11,25 @@ Main module, starts the Antistasi Discord Bot.
 UV_LOOP_IMPORTED = False
 # * Standard Library Imports -->
 import os
-import sys
-import platform
 import logging
-import configparser
-import shutil
-from pprint import pprint, pformat
-import inspect
-import asyncio
+from time import sleep
 from datetime import datetime
-from contextlib import contextmanager
-from time import time, sleep
+
 # * Third Party Imports -->
-import discord
-from dotenv import load_dotenv
-from discord.ext import commands
-from watchgod import awatch
 import click
+import discord
 
 # * Gid Imports -->
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.exceptions import TokenError
-from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-from antipetros_discordbot.utility.misc import check_if_int
-from antipetros_discordbot.utility.gidtools_functions import writejson, writeit, pathmaker, loadjson, readit
-from antipetros_discordbot.utility.embed_helpers import make_basic_embed
-from antipetros_discordbot.utility.token_handling import load_tokenfile, store_token_file
 from antipetros_discordbot import MAIN_DIR
+from antipetros_discordbot.utility.misc import check_if_int
+from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
+from antipetros_discordbot.utility.token_handling import load_tokenfile, store_token_file
+from antipetros_discordbot.utility.gidtools_functions import writeit, pathmaker, writejson
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+from antipetros_discordbot.utility.crypt import encrypt_db, decrypt_db
 # endregion[Imports]
 
 # region [TODO]
@@ -62,7 +51,9 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 
 _log_file = glog.log_folderer(__name__, APPDATA)
 log_stdout = 'both' if BASE_CONFIG.getboolean('logging', 'log_also_to_stdout') is True else 'file'
-log = glog.main_logger(_log_file, BASE_CONFIG.get('logging', 'logging_level'), other_logger_names=['asyncio', 'gidsql', 'gidfiles', "gidappdata"], log_to=log_stdout)
+if os.getenv('IS_DEV') == 'true':
+    log_stdout = 'both'
+log = glog.main_logger(_log_file, BASE_CONFIG.get('logging', 'logging_level'), other_logger_names=['asyncio', 'gidsql', 'gidfiles', "gidappdata"], log_to=log_stdout, in_back_up=BASE_CONFIG.getint('logging', 'amount_keep_old_logs'))
 log.info(glog.NEWRUN())
 if BASE_CONFIG.getboolean('logging', 'use_logging') is False:
     logging.disable(logging.CRITICAL)
@@ -96,6 +87,15 @@ def cli():
     pass
 
 
+@cli.command(name='create_alias_data')
+def command_alias_run():
+    _out = {}
+    anti_petros_bot = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
+    for command in anti_petros_bot.walk_commands():
+        _out[command.name] = command.aliases
+    writejson(_out, APPDATA['command_aliases.json'])
+
+
 @cli.command(name='only_command_info')
 def command_info_run():
     anti_petros_bot = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
@@ -126,6 +126,7 @@ def command_info_run():
 
 @cli.command(name='only_info')
 def info_run():
+    os.environ['INFO_RUN'] = "1"
     anti_petros_bot = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
 
 
@@ -143,6 +144,7 @@ def stop():
 @click.option('--token_file', '-t', default=None)
 @click.option('--save-token-file/--dont-save-token-file', '-save/-nosave', default=False)
 def run(token_file, save_token_file):
+    os.environ['INFO_RUN'] = "0"
     main(token_file, save_token_file)
 
 
@@ -152,13 +154,14 @@ def main(token_file=None, save_token_file=False):
 
     creates the bot, loads the extensions and starts the bot with the Token.
     """
-
+    os.environ['INFO_RUN'] = "0"
     if token_file is not None and save_token_file is True:
         store_token_file(token_file)
 
     token_file = pathmaker(APPDATA["user_env_files"], 'token.env') if token_file is None else pathmaker(token_file)
     with load_tokenfile(token_file):
         discord_token = os.getenv('DISCORD_TOKEN')
+        decrypt_db()
 
     anti_petros_bot = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
 
@@ -166,6 +169,7 @@ def main(token_file=None, save_token_file=False):
         anti_petros_bot.run(discord_token, bot=True, reconnect=True)
     finally:
         discord_token = 'xxxxxxxxxxxxxxxx'
+        encrypt_db()
 
 
 # endregion [Main_function]

@@ -4,33 +4,26 @@
 
 # * Standard Library Imports -->
 import os
-from datetime import datetime, timedelta
-from tempfile import TemporaryDirectory
-from urllib.parse import urlparse
-import asyncio
-from time import time, sleep
 import random
-from pprint import pprint, pformat
-from statistics import mean, median, stdev, variance, mode, harmonic_mean, median_grouped, pvariance
+from time import time
+from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
+
 # * Third Party Imports -->
-import aiohttp
 import discord
-from discord.ext import tasks, commands
-import discord
+from discord.ext import commands
 
 # * Gid Imports -->
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.utility.enums import RequestStatus
-from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM, MovieQuoteItem
-from antipetros_discordbot.utility.sqldata_storager import LinkDataStorageSQLite
-from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
-from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.embed_helpers import make_basic_embed
-from antipetros_discordbot.utility.misc import save_commands, async_seconds_to_pretty_normal, color_hex_embed
 from antipetros_discordbot.cogs import get_aliases
+from antipetros_discordbot.utility.misc import save_commands, color_hex_embed, async_seconds_to_pretty_normal
 from antipetros_discordbot.utility.checks import in_allowed_channels
+from antipetros_discordbot.utility.named_tuples import MovieQuoteItem
+from antipetros_discordbot.utility.embed_helpers import make_basic_embed
+from antipetros_discordbot.utility.gidtools_functions import loadjson
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+
 # endregion [Imports]
 
 # region [Logging]
@@ -60,7 +53,12 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": "GeneralDebugCog"}):
+    """
+    [summary]
 
+    [extended_summary]
+
+    """
     config_name = 'general_debug'
 
     def __init__(self, bot):
@@ -68,7 +66,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": "Gene
         self.support = self.bot.support
         self.movie_quotes = None
         self._make_movie_quote_items()
-        if self.bot.is_debug:
+        if os.environ['INFO_RUN'] == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
 

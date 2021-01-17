@@ -1,0 +1,110 @@
+"""
+[summary]
+
+[extended_summary]
+"""
+
+# region [Imports]
+
+# * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
+
+# * Standard Library Imports -->
+import os
+
+# * Gid Imports -->
+import gidlogger as glog
+
+# * Local Imports -->
+from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+
+# * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
+
+
+# import requests
+
+# import pyperclip
+
+# import matplotlib.pyplot as plt
+
+# from bs4 import BeautifulSoup
+
+# from dotenv import load_dotenv
+
+
+
+# from github import Github, GithubException
+
+# from jinja2 import BaseLoader, Environment
+
+# from natsort import natsorted
+
+# from fuzzywuzzy import fuzz, process
+
+
+# * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
+
+
+
+
+# * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
+
+
+# endregion[Imports]
+
+# region [TODO]
+
+
+# endregion [TODO]
+
+# region [AppUserData]
+
+
+# endregion [AppUserData]
+
+# region [Logging]
+
+log = glog.aux_logger(__name__)
+
+
+# endregion[Logging]
+
+# region [Constants]
+
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+
+THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+# endregion[Constants]
+
+
+class EmbedBuilder(SubSupportBase):
+
+    def __init__(self, bot, support):
+        self.bot = bot
+        self.support = support
+        self.loop = self.bot.loop
+        self.is_debug = self.bot.is_debug
+
+        glog.class_init_notification(log, self)
+
+    async def if_ready(self):
+        log.debug("'%s' sub_support is READY", str(self))
+
+    async def update(self):
+        log.debug("'%s' sub_support was UPDATED", str(self))
+
+    def retire(self):
+        log.debug("'%s' sub_support was RETIRED", str(self))
+
+
+def get_class():
+    return EmbedBuilder
+# region[Main_Exec]
+
+
+if __name__ == '__main__':
+    pass
+
+# endregion[Main_Exec]

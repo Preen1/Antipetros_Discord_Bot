@@ -1,16 +1,22 @@
-from functools import wraps, partial
-from asyncio import get_event_loop
-from concurrent.futures import ThreadPoolExecutor
+# * Standard Library Imports -->
 import os
-from textwrap import dedent
-import inspect
-import discord
-from pprint import pprint, pformat
-from antipetros_discordbot.utility.gidtools_functions import pathmaker, loadjson, writejson, readit, readbin, writeit, work_in, writebin
-import gidlogger as glog
-from datetime import datetime
 import sys
+import inspect
+from asyncio import get_event_loop
+from datetime import datetime
+from textwrap import dedent
+from functools import wraps, partial
+from concurrent.futures import ThreadPoolExecutor
 
+# * Third Party Imports -->
+import discord
+
+# * Gid Imports -->
+import gidlogger as glog
+
+# * Local Imports -->
+from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 
 log = glog.aux_logger(__name__)
 glog.import_notification(log, __name__)
@@ -248,3 +254,21 @@ def casefold_list(in_list: list):
 
 def casefold_contains(query, data):
     return query.casefold() in casefold_list(data)
+
+
+class CogConfigReadOnly():
+    cogs_config = ParaStorageKeeper.get_config('cogs_config')
+    retriev_map = {str: cogs_config.get,
+                   list: cogs_config.getlist,
+                   int: cogs_config.getint,
+                   bool: cogs_config.getboolean,
+                   set: partial(cogs_config.getlist, as_set=True)}
+
+    def __init__(self, config_name):
+        self.config_name = config_name
+
+    def __call__(self, key, typus: type):
+        return self.retriev_map.get(typus)(section=self.config_name, option=key)
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(config_name={self.config_name})"

@@ -33,3 +33,9 @@ colormap
 aiosqlite
 discord-flags
 paramiko[all]
+antistasi_template_checker
+cryptography
+humanize
+marshmallow
+parse
+invoke

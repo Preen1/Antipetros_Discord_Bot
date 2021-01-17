@@ -8,51 +8,12 @@
 
 # * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
 
-import gc
+# * Standard Library Imports -->
 import os
-import re
 import sys
-import json
-import lzma
-import time
-import queue
-import base64
-import pickle
-import random
-import shelve
 import shutil
-import asyncio
-import logging
-import sqlite3
-import platform
-import importlib
-import subprocess
-import unicodedata
-
-from io import BytesIO
-from abc import ABC, abstractmethod
-from copy import copy, deepcopy
-from enum import Enum, Flag, auto
-from time import time, sleep
-from pprint import pprint, pformat
-from string import Formatter, digits, printable, whitespace, punctuation, ascii_letters, ascii_lowercase, ascii_uppercase
-from timeit import Timer
-from typing import Union, Callable, Iterable
-from inspect import stack, getdoc, getmodule, getsource, getmembers, getmodulename, getsourcefile, getfullargspec, getsourcelines
-from zipfile import ZipFile
-from datetime import tzinfo, datetime, timezone, timedelta
-from tempfile import TemporaryDirectory
-from textwrap import TextWrapper, fill, wrap, dedent, indent, shorten
-from functools import wraps, partial, lru_cache, singledispatch, total_ordering
-from importlib import import_module, invalidate_caches
-from contextlib import contextmanager
-from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from urllib.parse import urlparse
-from importlib.util import find_spec, module_from_spec, spec_from_file_location
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from importlib.machinery import SourceFileLoader
-
+from typing import Union, Iterable
+from collections import namedtuple
 
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
 
@@ -97,7 +58,6 @@ from importlib.machinery import SourceFileLoader
 
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
 
-import gidlogger as glog
 
 # from antipetros_discordbot.utility.gidtools_functions import ( readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
 #                                dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
@@ -120,8 +80,6 @@ import gidlogger as glog
 
 # region [Logging]
 
-log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
 
 # endregion[Logging]
 
@@ -215,6 +173,10 @@ class FileSystemWalkerItem(namedtuple('WalkerItem', ['name', 'path'])):
         return round(self._size() / self.size_conv.get(target_unit).get('factor'), ndigits=3)
 
     @property
+    def raw_name(self):
+        return os.path.splitext(self.name)[0]
+
+    @property
     def size_b(self):
         return self._converted_size('byte')
 
@@ -249,30 +211,52 @@ class FileSystemWalkerItem(namedtuple('WalkerItem', ['name', 'path'])):
     def delete(self, are_you_sure: bool = False):
         if are_you_sure is False:
             raise AssertionError
-        os.remove(self.path)
+        if self.is_file() is True or os.scandir(self.path) == []:
+            os.remove(self.path)
+        elif self.is_dir() is True and os.scandir(self.path) != []:
+            shutil.rmtree(self.path)
 
     def __str__(self):
         return pathmaker(self.path)
 
 
-def filesystem_walker(start_folder):
+def _input_handle_excludes(value, typus="folder"):
+    _standard_exclude_folders = ['.git', '.venv', '__pychache__', '.vscode']
+    _standard_exclude_files = []
+    _standard_exludes = _standard_exclude_folders if typus == 'folder' else _standard_exclude_files
+    to_exclude = [] if value is None else value
+    if to_exclude == 'standard':
+        to_exclude = _standard_exludes
+    if 'standard' in to_exclude:
+        to_exclude.remove('standard')
+        to_exclude += _standard_exludes
+    return list(set(map(lambda x: x.casefold(), to_exclude)))
+
+
+def filesystem_walker(start_folder, exclude_folder: Union[str, Iterable] = 'standard', exclude_files: Union[str, Iterable] = 'standard'):
+    folders_to_exclude = _input_handle_excludes(exclude_folder, typus='folder')
+    files_to_exclude = _input_handle_excludes(exclude_files, typus='files')
+
     for dirname, folderlist, filelist in os.walk(start_folder):
-        for file in filelist:
-            file_path = pathmaker(dirname, file)
-            yield FileSystemWalkerItem(file, file_path)
-        for folder in folderlist:
-            folder_path = pathmaker(dirname, folder)
-            yield FileSystemWalkerItem(folder, folder_path)
+        if all(exc_folder not in dirname.casefold() for exc_folder in folders_to_exclude):
+            for file in filelist:
+                if file not in files_to_exclude:
+                    file_path = pathmaker(dirname, file)
+                    yield FileSystemWalkerItem(file, file_path)
+            for folder in folderlist:
+                if folder not in folders_to_exclude:
+                    folder_path = pathmaker(dirname, folder)
+                    yield FileSystemWalkerItem(folder, folder_path)
 
 
-def filesystem_walker_files(start_folder):
-    for item in filesystem_walker(start_folder):
+def filesystem_walker_files(start_folder, exclude_folder: Union[str, Iterable] = 'standard', exclude_files: Union[str, Iterable] = 'standard'):
+    for item in filesystem_walker(start_folder, exclude_folder, exclude_files):
         if item.is_file() is True:
             yield item
 
 
-def filesystem_walker_folders(start_folder):
-    for item in filesystem_walker(start_folder):
+def filesystem_walker_folders(start_folder, exclude_folder: Union[str, Iterable] = 'standard', exclude_files: Union[str, Iterable] = 'standard'):
+    for item in filesystem_walker(start_folder, exclude_folder, exclude_files):
         if item.is_dir() is True:
             yield item
 

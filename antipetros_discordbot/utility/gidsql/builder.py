@@ -1,15 +1,10 @@
 # region [Imports]
 
 # * Standard Library Imports -->
-import os
-import shutil
-import sqlite3 as sqlite
-import configparser
-from sqlite3.dbapi2 import Error
 import logging
+
 # * Gid Imports -->
 import gidlogger as glog
-
 
 # endregion [Imports]
 

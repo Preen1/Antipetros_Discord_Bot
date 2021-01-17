@@ -1,36 +1,20 @@
 # region [Imports]
 
 # * Standard Library Imports -->
-import gc
 import os
-import re
-import sys
-import json
-import lzma
-import time
-import queue
 import logging
-import platform
-import subprocess
-from enum import Enum, Flag, auto
-from time import sleep
-from pprint import pprint, pformat
+from enum import Enum, auto
 from typing import Union
-from datetime import tzinfo, datetime, timezone, timedelta
-from functools import wraps, lru_cache, singledispatch, total_ordering, partial
-from contextlib import contextmanager
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from multiprocessing import Pool
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-import logging
 
 # * Gid Imports -->
 import gidlogger as glog
 
-from antipetros_discordbot.utility.gidsql.db_writer import GidSQLiteWriter
-from antipetros_discordbot.utility.gidsql.db_reader import GidSqliteReader, Fetch
-from antipetros_discordbot.utility.gidsql.script_handling import GidSqliteScriptProvider
+# * Local Imports -->
 from antipetros_discordbot.utility.gidsql.phrasers import GidSqliteInserter
+from antipetros_discordbot.utility.gidsql.db_reader import Fetch, GidSqliteReader
+from antipetros_discordbot.utility.gidsql.db_writer import GidSQLiteWriter
+from antipetros_discordbot.utility.gidsql.script_handling import GidSqliteScriptProvider
+
 # endregion[Imports]
 
 __updated__ = '2020-11-28 03:29:05'

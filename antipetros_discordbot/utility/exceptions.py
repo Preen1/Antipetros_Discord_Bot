@@ -1,8 +1,27 @@
+# * Third Party Imports -->
 from discord.ext.commands.errors import CommandError
+from fuzzywuzzy import fuzz
 
 
 class AntiPetrosBaseError(Exception):
     pass
+
+
+class CogNameNotCamelCaseError(AntiPetrosBaseError):
+    pass
+
+
+class FuzzyMatchError(AntiPetrosBaseError):
+    def __init__(self, query, scorer, limit=None, data=None):
+        self.query = query
+        self.data = data
+        self.scorer = scorer
+        self.scorer_name = str(self.scorer).replace("<function ", "").split(' ')[0] if str(self.scorer).startswith('<') else str(self.scorer)
+        self.limit = limit
+        self.msg = f"Unable to fuzzy find a match for '{self.query}' with scorer '{self.scorer_name}'"
+        if self.limit is not None:
+            self.msg += f" and a limit of '{self.limit}'"
+        super().__init__(self.msg)
 
 
 class TokenError(AntiPetrosBaseError):

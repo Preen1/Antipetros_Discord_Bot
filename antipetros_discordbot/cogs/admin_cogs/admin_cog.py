@@ -4,54 +4,30 @@
 
 # * Standard Library Imports -->
 
-import asyncio
-import gc
-import logging
+# * Standard Library Imports -->
 import os
-import re
-import sys
-import json
-import lzma
-import time
-import queue
-import platform
-import subprocess
-from enum import Enum, Flag, auto
-from time import sleep
-from pprint import pprint, pformat
-from typing import Union
-from datetime import tzinfo, datetime, timezone, timedelta
-from functools import wraps, lru_cache, singledispatch, total_ordering, partial
-from contextlib import contextmanager
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from statistics import mean, median, stdev, mode, variance, pvariance
-import random
-from io import BytesIO
+from datetime import datetime
+
 # * Third Party Imports -->
-
-from discord.ext import commands, tasks
-from discord import DiscordException
 import discord
+from discord import DiscordException
 from fuzzywuzzy import process as fuzzprocess
-import matplotlib.pyplot as plt
-# * Gid Imports -->
+from discord.ext import commands
 
+# * Gid Imports -->
 import gidlogger as glog
 
-
 # * Local Imports -->
-from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
-from antipetros_discordbot.utility.misc import seconds_to_pretty, handle_arguments_string
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
-from antipetros_discordbot.utility.data_gathering import gather_data
-from antipetros_discordbot.utility.embed_helpers import make_basic_embed
-from antipetros_discordbot.utility.misc import save_commands, seconds_to_pretty, async_seconds_to_pretty_normal
-from antipetros_discordbot.utility.checks import in_allowed_channels, PURGE_CHECK_TABLE, purge_check_always_false, purge_check_always_true
-from antipetros_discordbot.utility.named_tuples import FeatureSuggestionItem
 from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from antipetros_discordbot.utility.misc import save_commands, seconds_to_pretty, async_seconds_to_pretty_normal
+from antipetros_discordbot.utility.checks import in_allowed_channels
+from antipetros_discordbot.utility.named_tuples import FeatureSuggestionItem
+from antipetros_discordbot.utility.embed_helpers import make_basic_embed
+from antipetros_discordbot.utility.data_gathering import gather_data
+from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
+from antipetros_discordbot.utility.gidtools_functions import pickleit, pathmaker, get_pickled
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+
 # endregion[Imports]
 
 # region [TODO]
@@ -100,7 +76,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
         self.all_configs = [BASE_CONFIG, COGS_CONFIG]
         self.config_dir = APPDATA['config']
         self.do_not_reload_cogs = ['admin_cog', 'performance_cog']
-        if self.bot.is_debug:
+        if os.environ['INFO_RUN'] == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
 
@@ -108,6 +84,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
 # endregion[Init]
 
 # region [Properties]
+
 
     @ property
     def allowed_dm_invoker_ids(self):

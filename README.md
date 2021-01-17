@@ -382,7 +382,7 @@ Checks against a blacklist of urls and a blacklist of words, to not store malici
 
 - <ins>**ADD_FORBIDDEN_WORD**</ins>
 
-    - **checks:** *log_invoker*, *allowed_channel_and_allowed_role_no_dm*
+    - **checks:** *log_invoker*, *allowed_channel_and_allowed_role*
     - **signature:**
         ```diff
         <word>
@@ -391,7 +391,7 @@ Checks against a blacklist of urls and a blacklist of words, to not store malici
 
 - <ins>**CLEAR_ALL_LINKS**</ins>
 
-    - **checks:** *log_invoker*, *allowed_channel_and_allowed_role_no_dm*
+    - **checks:** *log_invoker*, *allowed_channel_and_allowed_role*
     - **signature:**
         ```diff
         [sure=False]
@@ -400,7 +400,7 @@ Checks against a blacklist of urls and a blacklist of words, to not store malici
 
 - <ins>**DELETE_LINK**</ins>
 
-    - **checks:** *log_invoker*, *allowed_channel_and_allowed_role_no_dm*
+    - **checks:** *log_invoker*, *allowed_channel_and_allowed_role*
     - **signature:**
         ```diff
         <name> [scope=channel]
@@ -409,7 +409,7 @@ Checks against a blacklist of urls and a blacklist of words, to not store malici
 
 - <ins>**GET_ALL_LINKS**</ins>
 
-    - **checks:** *log_invoker*, *allowed_channel_and_allowed_role_no_dm*
+    - **checks:** *log_invoker*, *allowed_channel_and_allowed_role*
     - **signature:**
         ```diff
         [in_format=txt]
@@ -418,7 +418,7 @@ Checks against a blacklist of urls and a blacklist of words, to not store malici
 
 - <ins>**GET_FORBIDDEN_LIST**</ins>
 
-    - **checks:** *log_invoker*, *allowed_channel_and_allowed_role_no_dm*
+    - **checks:** *log_invoker*, *allowed_channel_and_allowed_role*
     - **signature:**
         ```diff
         [file_format=json]
@@ -427,7 +427,7 @@ Checks against a blacklist of urls and a blacklist of words, to not store malici
 
 - <ins>**GET_LINK**</ins>
 
-    - **checks:** *allowed_channel_and_allowed_role_no_dm*
+    - **checks:** *allowed_channel_and_allowed_role*
     - **signature:**
         ```diff
         <name>
@@ -436,7 +436,7 @@ Checks against a blacklist of urls and a blacklist of words, to not store malici
 
 - <ins>**REMOVE_FORBIDDEN_WORD**</ins>
 
-    - **checks:** *log_invoker*, *allowed_channel_and_allowed_role_no_dm*
+    - **checks:** *log_invoker*, *allowed_channel_and_allowed_role*
     - **signature:**
         ```diff
         <word>
@@ -445,7 +445,7 @@ Checks against a blacklist of urls and a blacklist of words, to not store malici
 
 - <ins>**SAVE_LINK**</ins>
 
-    - **checks:** *allowed_channel_and_allowed_role_no_dm*
+    - **checks:** *allowed_channel_and_allowed_role*
     - **signature:**
         ```diff
         <link> [link_name] [days_to_hold]

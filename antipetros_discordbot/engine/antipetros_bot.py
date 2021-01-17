@@ -2,40 +2,32 @@
 
 # * Standard Library Imports -->
 import os
-from datetime import datetime
-from collections import namedtuple
-import traceback
-import asyncio
-from asyncio import Future, wait_for
-from contextlib import suppress
 import sys
-from pprint import pprint, pformat
-from inspect import iscoroutinefunction, iscoroutine, getmro, getsource, getmembers
 import time
-# * Third Party Imports -->
-from discord.ext import commands, tasks
-import discord
-
-from async_property import async_property
-from discord import Embed, File
-from watchgod import awatch, DefaultDirWatcher, Change
+import asyncio
+import traceback
+from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
+
+# * Third Party Imports -->
 import aiohttp
+import discord
 from udpy import AsyncUrbanClient
-import pyowm
+from watchgod import Change, awatch
+from discord.ext import tasks, commands
+
 # * Gid Imports -->
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, readit, writeit
-from antipetros_discordbot.utility.misc import sync_to_async, save_bin_file
-from antipetros_discordbot.utility.embed_helpers import make_basic_embed
-from antipetros_discordbot.utility.named_tuples import CreatorMember
-
+from antipetros_discordbot.bot_support.bot_supporter import BotSupporter
+from antipetros_discordbot.utility.misc import save_bin_file, sync_to_async
 from antipetros_discordbot.engine.global_checks import user_not_blacklisted
-from antipetros_discordbot.bot_support import BotSupporter
+from antipetros_discordbot.utility.named_tuples import CreatorMember
+from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
+from antipetros_discordbot.utility.gidtools_functions import readit, loadjson, pathmaker, writejson
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+
 # endregion[Imports]
 
 
@@ -131,7 +123,8 @@ class AntiPetrosBot(commands.Bot):
     async def send_startup_message(self):
         channel = self.get_channel(BASE_CONFIG.getint('startup_message', 'channel'))
         msg = BASE_CONFIG.get('startup_message', 'message')
-        delete_time = 240 if self.is_debug is True else 600
+        delete_time = 240 if self.is_debug is True else BASE_CONFIG.getint('startup_message', 'delete_after')
+        delete_time = None if delete_time == 0 else delete_time
         await channel.send(msg, delete_after=delete_time)
 
     async def to_all_cogs(self, command, *args, **kwargs):
@@ -209,7 +202,7 @@ class AntiPetrosBot(commands.Bot):
         return discord.Activity(name=text, type=activity_type)
 
     async def on_command_error(self, ctx, error):
-        await self.support.handle_errors(ctx, error, traceback.format_exc())
+        await self.support.handle_errors(ctx, error, '\n'.join(traceback.format_exception(error, value=error, tb=None)))
 
     @tasks.loop(minutes=5, reconnect=True)
     async def update_check_loop(self):
@@ -227,6 +220,11 @@ class AntiPetrosBot(commands.Bot):
         for cog_name, cog_object in self.cogs.items():
             for command in cog_object.get_commands():
                 yield command
+
+    async def get_antistasi_emoji(self, name):
+        for _emoji in self.antistasi_guild.emojis:
+            if _emoji.name == name:
+                return _emoji
 
     @property
     def antistasi_guild(self):
@@ -278,7 +276,7 @@ class AntiPetrosBot(commands.Bot):
         guild = self.get_guild(guild_id)
         return await guild.fetch_member(user_id)
 
-    async def split_to_messages(self, ctx, message, split_on='\n', in_codeblock=False):
+    async def split_to_messages(self, ctx, message, split_on='\n', in_codeblock=False, syntax_highlighting='json'):
         _out = ''
         chunks = message.split(split_on)
         for chunk in chunks:
@@ -286,12 +284,12 @@ class AntiPetrosBot(commands.Bot):
                 _out += chunk + split_on
             else:
                 if in_codeblock is True:
-                    _out = f"```json\n{_out}\n```"
+                    _out = f"```{syntax_highlighting}\n{_out}\n```"
                 await ctx.send(_out)
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(1)
                 _out = ''
         if in_codeblock is True:
-            _out = f"```json\n{_out}\n```"
+            _out = f"```{syntax_highlighting}\n{_out}\n```"
         await ctx.send(_out)
 
     @sync_to_async
@@ -323,7 +321,14 @@ class AntiPetrosBot(commands.Bot):
         log.debug("debug function triggered")
         path = pathmaker(APPDATA['debug'], 'general_debug')
         extension = 'json'
-        _out = []
+        app_info = await self.application_info()
+        _out = {'id': app_info.id,
+                "name": app_info.name,
+                "owner_name": app_info.owner.name,
+                'description': app_info.description,
+                'bot_public': app_info.bot_public,
+                "bot_require_code_grant": app_info.bot_require_code_grant,
+                "summary": app_info.summary}
 
         writejson(_out, path + '.' + extension)
 

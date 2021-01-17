@@ -1,18 +1,15 @@
 # region [Imports]
 
 # * Standard Library Imports -->
-import os
-import shutil
-import sqlite3 as sqlite
-import configparser
-from sqlite3.dbapi2 import Error
-from typing import Union
-import enum
 import logging
+import sqlite3 as sqlite
+import textwrap
+from typing import Union
+
 # * Gid Imports -->
 import gidlogger as glog
 
-import textwrap
+# * Local Imports -->
 from antipetros_discordbot.utility.gidsql.db_action_base import GidSqliteActionBase
 
 # endregion [Imports]
