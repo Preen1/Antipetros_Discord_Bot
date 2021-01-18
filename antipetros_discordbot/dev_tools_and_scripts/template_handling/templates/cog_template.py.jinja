@@ -44,8 +44,7 @@ from io import BytesIO
 import aiohttp
 import discord
 from discord.ext import tasks, commands
-from discord import DiscordException
-import discord
+from discord import DiscordException, Embed, File
 from async_property import async_property
 
 # * Gid Imports -->
@@ -102,12 +101,12 @@ _from_cog_config = CogConfigReadOnly(CONFIG_NAME)
 # endregion [Helper]
 
 class {{ cog_item.name }}(commands.Cog, command_attrs={{ "{" }}'name':"{{ cog_item.name }}", "description":""{% if cog_item.all_com_attr %}, {% endif %}{% for com_attr_name, com_attr_value in cog_item.all_com_attr.items() %}'{{ com_attr_name }}': {{ com_attr_value }}{{ ", " if not loop.last }}{% endfor %}{{ "}" }}):
-"""
-[summary]
+    """
+    [summary]
 
-[extended_summary]
+    [extended_summary]
 
-"""
+    """
 # region [ClassAttributes]
 
 # endregion [ClassAttributes]

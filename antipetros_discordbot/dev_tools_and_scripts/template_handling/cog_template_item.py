@@ -367,9 +367,8 @@ class CogTemplateItem:
 
 # region[Main_Exec]
 if __name__ == '__main__':
-    x = CogTemplateItem('TemplatingTestCog', 'tempalte_check', False)
-    x.add_command('simple_command', log_invocation=True, **{"allowed_roles_key": 'testing_a_new_config_option'})
-    x.add_listener('stupid_listener', 'on_message')
-    x.add_loop('idiot_loop', seconds=15.0)
+    x = CogTemplateItem('FaqCog', 'special_channels', False)
+    x.add_command('post_faq_by_number', log_invocation=True)
+    x.add_command('create_faqs_as_embed', log_invocation=True, allowed_channel_key="faq_channel", allowed_roles_key="special_commands_roles")
     x.generate()
 # endregion[Main_Exec]

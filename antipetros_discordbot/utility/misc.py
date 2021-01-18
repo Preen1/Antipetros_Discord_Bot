@@ -272,3 +272,15 @@ class CogConfigReadOnly():
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(config_name={self.config_name})"
+
+
+def minute_to_second(minutes: int):
+    return minutes * 60
+
+
+def hour_to_second(hours: int):
+    return hours * 60 * 60
+
+
+def day_to_second(days: int):
+    return days * 24 * 60 * 60

@@ -7,12 +7,12 @@ import os
 from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
-
+from datetime import datetime
 # * Third Party Imports -->
 import discord
 from PIL import Image, ImageEnhance
 from discord.ext import commands
-
+from pytz import timezone
 # * Gid Imports -->
 import gidlogger as glog
 
@@ -24,7 +24,7 @@ from antipetros_discordbot.utility.checks import in_allowed_channels
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from antipetros_discordbot.utility.checks import in_allowed_channels, allowed_channel_and_allowed_role, log_invoker
 # endregion[Imports]
 
 # region [TODO]
@@ -45,7 +45,7 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-IMAGE_MANIPULATION_CONFIG_NAME = 'image_manipulation'
+CONFIG_NAME = 'image_manipulation'
 
 # endregion [Constants]
 
@@ -78,7 +78,11 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
                                     WatermarkPosition.Center | WatermarkPosition.Center: self._to_center_center,
                                     WatermarkPosition.Center | WatermarkPosition.Bottom: self._to_bottom_center,
                                     WatermarkPosition.Center | WatermarkPosition.Top: self._to_top_center}
-
+        self.base_map_image = Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v3_2000_w_outposts.png")
+        self.outpost_overlay = {'city': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_city_marker.png"),
+                                'volcano': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_volcano_marker.png"),
+                                'airport': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_airport_marker.png")}
+        self.old_map_message = None
         self._get_stamps()
         if os.environ['INFO_RUN'] == "1":
             save_commands(self)
@@ -228,8 +232,8 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
             await ctx.send(embed=embed, file=out_file, delete_after=delete_after)
 
     @commands.command(aliases=get_aliases("stamp_image"))
-    @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels')))
+    @commands.has_any_role(*COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels')))
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def stamp_image(self, ctx, stamp: str = 'ASLOGO1', first_pos: str = 'bottom', second_pos: str = 'right', factor: float = None):
         async with ctx.channel.typing():
@@ -271,8 +275,8 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
                     await self._send_image(ctx, in_image, name, f"__**{name}**__")
 
     @commands.command(aliases=get_aliases("available_stamps"))
-    @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels')))
+    @commands.has_any_role(*COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels')))
     @commands.cooldown(1, 120, commands.BucketType.channel)
     async def available_stamps(self, ctx):
 
@@ -291,8 +295,8 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
                 await ctx.send(embed=embed, file=_file, delete_after=120)
 
     @commands.command(aliases=get_aliases("member_avatar"))
-    @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_avatar_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels')))
+    @commands.has_any_role(*COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_avatar_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels')))
     @commands.cooldown(1, 30, commands.BucketType.member)
     async def other_members_avatar(self, ctx, members: commands.Greedy[discord.Member]):
 
@@ -317,9 +321,36 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
         temp_dir.cleanup()
         return avatar_image
 
+    def map_image_handling(self, base_image, marker_name, color, bytes_out):
+        log.debug("creating changed map, changed_location: '%s', changed_color: '%s'", marker_name, color)
+        marker_image = self.outpost_overlay.get(marker_name)
+        marker_alpha = marker_image.getchannel('A')
+        marker_image = Image.new('RGBA', marker_image.size, color=color)
+        marker_image.putalpha(marker_alpha)
+        base_image.paste(marker_image, mask=marker_alpha)
+        base_image.save(bytes_out, 'PNG', optimize=True)
+        bytes_out.seek(0)
+        return base_image, bytes_out
 
+    @commands.command(aliases=get_aliases("map_changed"))
+    @allowed_channel_and_allowed_role(config_name=CONFIG_NAME)
+    @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
+    async def map_changed(self, ctx, marker, color):
+        log.info("command was initiated by '%s'", ctx.author.name)
+        with BytesIO() as image_binary:
+
+            self.base_map_image, image_binary = await self.bot.execute_in_thread(self.map_image_handling, self.base_map_image, marker, color, image_binary)
+
+            if self.old_map_message is not None:
+                await self.old_map_message.delete()
+            delete_time = None
+            embed = discord.Embed(title='Current Server Map State', color=self.support.green.discord_color, timestamp=datetime.now(tz=timezone("Europe/Berlin")), type="image")
+            embed.set_author(name='Antistasi Community Server 1', icon_url="https://s3.amazonaws.com/files.enjin.com/1218665/site_logo/NEW%20LOGO%20BANNER.png", url="https://a3antistasi.enjin.com/")
+            embed.set_image(url="attachment://map.png")
+            self.old_map_message = await ctx.send(embed=embed, file=discord.File(fp=image_binary, filename="map.png"), delete_after=delete_time)
+
+        log.debug("finished 'map_changed' command")
 # region [SpecialMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"
