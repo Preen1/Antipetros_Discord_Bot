@@ -118,7 +118,7 @@ class BotSupporter:
             if hasattr(subsupport, attribute_name):
                 _out = getattr(subsupport, attribute_name)
                 return _out
-        return partial(self.log_attribute_not_found, attribute_name)
+        raise AttributeError
 
     def really_has_attribute(self, attribute_name):
         return hasattr(self, attribute_name) and all(hasattr(subsupport, attribute_name) is False for subsupport in self.subsupports)

@@ -84,7 +84,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
                                 'airport': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_airport_marker.png")}
         self.old_map_message = None
         self._get_stamps()
-        if os.environ['INFO_RUN'] == "1":
+        if os.environ.get('INFO_RUN', '') == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
 
@@ -97,29 +97,29 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
     @property
     def allowed_channels(self):
 
-        return set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels'))
+        return set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels'))
 
     @property
     def target_stamp_fraction(self):
 
-        return COGS_CONFIG.getfloat(IMAGE_MANIPULATION_CONFIG_NAME, 'stamp_fraction')
+        return COGS_CONFIG.getfloat(CONFIG_NAME, 'stamp_fraction')
 
     @property
     def stamp_margin(self):
 
-        return COGS_CONFIG.getint(IMAGE_MANIPULATION_CONFIG_NAME, 'stamps_margin')
+        return COGS_CONFIG.getint(CONFIG_NAME, 'stamps_margin')
 
     @property
     def stamp_opacity(self):
-        return COGS_CONFIG.getfloat(IMAGE_MANIPULATION_CONFIG_NAME, 'stamp_opacity')
+        return COGS_CONFIG.getfloat(CONFIG_NAME, 'stamp_opacity')
 
     @property
     def avatar_stamp_fraction(self):
-        return COGS_CONFIG.getfloat(IMAGE_MANIPULATION_CONFIG_NAME, 'avatar_stamp_fraction')
+        return COGS_CONFIG.getfloat(CONFIG_NAME, 'avatar_stamp_fraction')
 
     @property
     def avatar_stamp(self):
-        return self._get_stamp_image(COGS_CONFIG.get(IMAGE_MANIPULATION_CONFIG_NAME, 'avatar_stamp').upper())
+        return self._get_stamp_image(COGS_CONFIG.get(CONFIG_NAME, 'avatar_stamp').upper())
 
 # endregion[Properties]
 
@@ -225,11 +225,10 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
         with BytesIO() as image_binary:
             image.save(image_binary, image_format.upper(), optimize=True)
             image_binary.seek(0)
-            out_file = discord.File(image_binary, filename=name + '.' + image_format)
-            embed = discord.Embed(title=message_title, description=message_text)
-            embed.set_thumbnail(url="https://userscontent2.emaze.com/images/20605779-4667-427c-a954-343bbc02a65f/c8b5d9a464d4288e9a951d3728772236.png")
+            embed = discord.Embed(title=message_title, description=message_text, color=self.support.cyan.discord_color, timestamp=datetime.now(tz=timezone("Europe/Berlin")), type='image')
+            embed.set_author(name='AntiPetros', icon_url="https://www.der-buntspecht-shop.de/wp-content/uploads/Baumwollstoff-Camouflage-olivegruen-2.jpg")
             embed.set_image(url=f"attachment://{name.replace('_','')}.{image_format}")
-            await ctx.send(embed=embed, file=out_file, delete_after=delete_after)
+            await ctx.send(embed=embed, file=discord.File(fp=image_binary, filename=name.replace('_', '') + '.' + image_format), delete_after=delete_after)
 
     @commands.command(aliases=get_aliases("stamp_image"))
     @commands.has_any_role(*COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_roles'))
@@ -298,16 +297,13 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
     @commands.has_any_role(*COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_avatar_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels')))
     @commands.cooldown(1, 30, commands.BucketType.member)
-    async def other_members_avatar(self, ctx, members: commands.Greedy[discord.Member]):
+    async def member_avatar(self, ctx):
+        avatar_image = await self.get_avatar_from_user(ctx.author)
+        stamp = self.avatar_stamp
+        modified_avatar = await self.bot.execute_in_thread(self._to_bottom_right, avatar_image, stamp, self.avatar_stamp_fraction)
 
-        for member in members:
-            avatar_image = await self.get_avatar_from_user(member)
-            stamp = self.avatar_stamp
-            modified_avatar = await self.bot.execute_in_thread(self._to_bottom_right, avatar_image, stamp, self.avatar_stamp_fraction)
-
-            name = f"{member.name}_Member_avatar"
-            await ctx.send(f"{member.name} hey!")
-            await self._send_image(ctx, modified_avatar, name, "**Your New Avatar**", f"__**{member.name}**__")
+        name = f"{ctx.author.name}_Member_avatar"
+        await self._send_image(ctx, modified_avatar, name, "**Your New Avatar**")
 
     async def get_avatar_from_user(self, user):
         avatar = user.avatar_url

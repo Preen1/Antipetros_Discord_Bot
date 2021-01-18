@@ -90,7 +90,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         self.support = self.bot.support
         self.data_storage_handler = LinkDataStorageSQLite()  # composition to make data storage modular, currently set up for an sqlite Database
         self.forbidden_url_words_file = APPDATA['forbidden_url_words.json']
-        if os.environ['INFO_RUN'] == "1":
+        if os.environ.get('INFO_RUN', '') == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
 
@@ -174,6 +174,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
 
 # region [Properties]
 
+
     @property
     def forbidden_url_words(self):
         """
@@ -235,7 +236,6 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
 # endregion [Listener]
 
 # region [Commands]
-
 
     @commands.command(aliases=get_aliases("add_forbidden_word"))
     @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=True)
@@ -498,7 +498,6 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
 
 # region [DataStorage]
 
-
     async def link_name_list(self):
         """
         Retrieves all saved link names from the DataStorage.
@@ -527,6 +526,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
 # endregion [DataStorage]
 
 # region [Embeds]
+
 
     async def _answer_embed(self, link_item):
         """
@@ -600,6 +600,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
 
 
 # region [HelperMethods]
+
 
     async def _get_bad_link_image(self):
         """
@@ -707,7 +708,6 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

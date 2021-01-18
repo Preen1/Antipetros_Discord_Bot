@@ -120,7 +120,7 @@ class ErrorHandler(SubSupportBase):
 
     async def _default_handle_error(self, ctx, error, error_traceback):
         log.error('Ignoring exception in command {}:'.format(ctx.command))
-        log.exception(error, exc_info=True, stack_info=True)
+        log.exception(error, exc_info=True, stack_info=False)
         await self.bot.message_creator(embed=await self.error_reply_embed(ctx, error, 'Error With No Special Handling Occured', msg=str(error), error_traceback=error_traceback))
 
     async def _handle_missing_attachment(self, ctx, error, error_traceback):

@@ -21,9 +21,9 @@ from antipetros_discordbot.utility.misc import save_commands, color_hex_embed, a
 from antipetros_discordbot.utility.checks import in_allowed_channels
 from antipetros_discordbot.utility.named_tuples import MovieQuoteItem
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
-from antipetros_discordbot.utility.gidtools_functions import loadjson
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from antipetros_discordbot.utility.checks import in_allowed_channels, allowed_channel_and_allowed_role, log_invoker
 # endregion [Imports]
 
 # region [Logging]
@@ -39,7 +39,7 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-
+CONFIG_NAME = 'general_debug'
 
 # endregion [Constants]
 
@@ -59,14 +59,14 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": "Gene
     [extended_summary]
 
     """
-    config_name = 'general_debug'
+    config_name = CONFIG_NAME
 
     def __init__(self, bot):
         self.bot = bot
         self.support = self.bot.support
         self.movie_quotes = None
         self._make_movie_quote_items()
-        if os.environ['INFO_RUN'] == "1":
+        if os.environ.get('INFO_RUN', '') == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
 
@@ -125,6 +125,15 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": "Gene
 
     def __str__(self):
         return self.qualified_name
+
+    @commands.command(aliases=get_aliases("get_messages"))
+    @allowed_channel_and_allowed_role(CONFIG_NAME)
+    async def get_messages(self, ctx, channel: discord.TextChannel):
+        _messages = []
+        async for message in channel.history(limit=5):
+            _messages.append(message.content)
+        writejson(_messages, 'message_history')
+        await ctx.send(len(_messages))
 
 
 def setup(bot):

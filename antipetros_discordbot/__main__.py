@@ -93,7 +93,12 @@ def command_alias_run():
     _out = {}
     anti_petros_bot = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
     for command in anti_petros_bot.walk_commands():
-        _out[command.name] = command.aliases
+        _out[command.name] = list(map(lambda x: x.replace('_', '-'), command.aliases))
+        _out[command.name] += [alias.replace('-', '').replace('_', '') for alias in command.aliases if alias != command.name and alias.replace('-', '').replace('_', '') not in _out[command.name]]
+        _out[command.name] += [alias.replace('-', '.').replace('_', '.') for alias in command.aliases if alias != command.name and alias.replace('-', '.').replace('_', '.') not in _out[command.name]]
+        if '_' in command.name and command.name.replace('_', '-') not in _out[command.name]:
+            _out[command.name].append(command.name.replace('_', '-'))
+        _out[command.name] = list(set(_out[command.name]))
     writejson(_out, APPDATA['command_aliases.json'])
 
 

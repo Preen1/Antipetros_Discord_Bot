@@ -111,7 +111,8 @@ from antipetros_discordbot.utility.gidtools_functions import (readit, clearit, r
                                                               number_rename, timenamemaker, cascade_rename, file_name_time, absolute_listdir, hash_to_solidcfg, path_part_remove,
                                                               from_dict_to_file, get_absolute_path, file_name_modifier, limit_amount_of_files, limit_amount_files_absolute)
 
-
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+from antipetros_discordbot.utility.misc import datetime_isoformat_to_discord_format
 # endregion[Imports]
 
 # region [TODO]
@@ -133,6 +134,9 @@ log.info(glog.imported(__name__))
 
 # region [Constants]
 
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[Constants]
@@ -140,8 +144,9 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class EmbedFactory:
 
-    def __inti__(self, schemas):
-        self.schemas = schemas
+    def __inti__(self):
+        pass
+
 
 # region[Main_Exec]
 

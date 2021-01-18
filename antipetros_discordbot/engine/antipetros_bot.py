@@ -209,7 +209,7 @@ class AntiPetrosBot(commands.Bot):
         if self.current_day == datetime.utcnow().day:
             return
         self.current_day = datetime.utcnow().day
-        await self.support.to_all_subsupports('update')
+        await self.to_all_subsupports('update')
         await self.to_all_cogs('updated')
 
     @update_check_loop.before_loop
@@ -337,3 +337,8 @@ class AntiPetrosBot(commands.Bot):
 
     def __str__(self):
         return self.__class__.__name__
+
+    def __getattr__(self, attr_name):
+        if hasattr(self.support, attr_name) is True:
+            return getattr(self.support, attr_name)
+        return super().__getattr__(attr_name)

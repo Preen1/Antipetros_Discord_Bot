@@ -50,3 +50,8 @@ ColorItem = namedtuple('ColorItem', ['name', 'hex', 'hex_alt', 'hsv', 'hsv_norm'
 
 
 FlagItem = namedtuple('FlagItem', ['name', 'value'])
+
+MemberRoleItem = namedtuple("MemberRoleItem", ['name', 'id'])
+
+
+GiveAwayEventItem = namedtuple("GiveAwayEventItem", ['name', 'channel_name', 'message_id', 'enter_emoji', 'end_date_time', 'end_message', 'amount_winners'])

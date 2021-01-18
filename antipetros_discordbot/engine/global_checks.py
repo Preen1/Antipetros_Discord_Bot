@@ -66,7 +66,6 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
 
-
 # endregion[Imports]
 
 # region [TODO]
@@ -98,21 +97,13 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 def user_not_blacklisted(bot, logger):
     async def predicate(ctx):
-        if ctx.author.id in bot.blacklisted_user_ids():
-            log.warning('Tried invocation by blacklisted user: "%s", id: "%s"', ctx.author.name, str(ctx.author.id))
-            # TODO: maybe log reason for blacklist or tell reason
-            # TODO: mark user as warned, then do not answer anymore, just delete the command
-            # TODO: check if user is temporal blacklisted and tell him until when.
-            # TODO: make as embed
-            await ctx.send('''You are blacklisted, you can not use this bot and his commands anymore!
+        if bot.is_blacklisted(ctx.author):
+            logger.warning('Tried invocation by blacklisted user: "%s", id: "%s"', ctx.author.name, str(ctx.author.id))
+            await bot.command_call_blocked(ctx)
 
-                           If you think this is not correct please contact `@Giddi`!
+            return False
 
-                           -This is the last time I am answering to and command from you, afterwards I will just delete your message!-
-
-                           This message will be removed in 2 minutes''', delete_after=120)
-            await ctx.message.delete()
-        return ctx.author.id not in bot.blacklisted_user_ids()
+        return True
     return bot.add_check(predicate)
 
 

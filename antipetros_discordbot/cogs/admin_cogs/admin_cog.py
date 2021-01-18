@@ -76,7 +76,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
         self.all_configs = [BASE_CONFIG, COGS_CONFIG]
         self.config_dir = APPDATA['config']
         self.do_not_reload_cogs = ['admin_cog', 'performance_cog']
-        if os.environ['INFO_RUN'] == "1":
+        if os.environ.get('INFO_RUN', '') == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
 
@@ -126,7 +126,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
             return pathmaker(self.config_dir, available_configs[_result[0]])
 
     @ commands.command(aliases=get_aliases("make_feature_suggestion"))
-    async def make_feature_suggestion(self, ctx, *, message):
+    async def make_feature_suggestion(self, ctx, *, suggestion_content):
 
         author = ctx.author
         extra_data = (ctx.message.attachments[0].filename, await ctx.message.attachments[0].read()) if len(ctx.message.attachments) != 0 else None
@@ -140,13 +140,13 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
 
             extra_data_path = await self.bot.save_feature_suggestion_extra_data(*extra_data)
         fmt = self.bot.std_date_time_format
-        mod_message = message if len(message) < 1024 else 'see next message'
+        mod_message = suggestion_content if len(suggestion_content) < 1024 else 'see next message'
         feature_suggestion_item = FeatureSuggestionItem(author.name, author.nick, author.id, author_roles, author.top_role.name, author.joined_at.strftime(fmt), now.strftime(fmt), mod_message, extra_data_path)
         embed = await make_basic_embed(title='New Feature Suggestion', text=f'send from channel `{ctx.channel.name}`', symbol='save', **feature_suggestion_item._asdict())
         await self.bot.message_creator(embed=embed)
         if mod_message == 'see next message':
-            await self.bot.message_creator(message=message)
-        feature_suggestion_item = feature_suggestion_item._replace(message=message)
+            await self.bot.message_creator(message=suggestion_content)
+        feature_suggestion_item = feature_suggestion_item._replace(message=suggestion_content)
         await self.bot.add_to_feature_suggestions(feature_suggestion_item)
         await ctx.send(content=f"your suggestion has been sent to the bot creator --> **{self.bot.creator.name}** <--")
 
@@ -174,7 +174,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
                     reloaded_extensions[_category] += f"*{_extension}:*\n:white_check_mark:\n\n"
                 except DiscordException as error:
                     log.error(error)
-
+        await self.bot.to_all_cogs('on_ready_setup')
         _delete_time = 15 if self.bot.is_debug is True else 60
         await ctx.send(embed=await make_basic_embed(title="**successfully reloaded the following extensions**", symbol="update", **reloaded_extensions), delete_after=_delete_time)
         await ctx.message.delete(delay=float(_delete_time))

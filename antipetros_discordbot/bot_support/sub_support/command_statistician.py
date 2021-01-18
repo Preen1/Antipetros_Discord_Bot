@@ -150,7 +150,9 @@ class CommandStatistician(SubSupportBase):
         return overall_item, cogs_item, commands_item
 
     async def update(self):
+        self.command_invoked_stats.save_data()
         self.command_invoked_stats.save_overall()
+        self.command_invoked_stats.initialize_data()
         log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self):

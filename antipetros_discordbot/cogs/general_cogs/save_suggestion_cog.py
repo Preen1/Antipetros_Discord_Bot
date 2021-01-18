@@ -81,7 +81,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
         self.bot = bot
         self.support = self.bot.support
         self.data_storage_handler = SuggestionDataStorageSQLite()
-        if os.environ['INFO_RUN'] == "1":
+        if os.environ.get('INFO_RUN', '') == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
 
@@ -124,7 +124,10 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
 
     @property
     def saved_messages(self):
-        return self.data_storage_handler.get_all_message_ids()
+        log.debug('querying saved messages')
+        saved_messages = self.data_storage_handler.get_all_message_ids()
+        log.debug(f"{saved_messages=}")
+        return saved_messages
 
     @property
     def std_datetime_format(self):
@@ -150,23 +153,19 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
             return
         message = await channel.fetch_message(payload.message_id)
         emoji_name = unicodedata.name(payload.emoji.name)
-
+        log.debug(f"{emoji_name=}")
+        log.debug(f"{message.id=}")
         if emoji_name == self.command_emojis['save']:
             await self._new_suggestion(channel, message, payload.guild_id, reaction_user)
             if str(message.author.id) not in self.auto_accept_user_dict:
-                await message.author.send(embed=await make_basic_embed(title='Your Suggestion was saved by the Devs!',
-                                                                       text='The devs have saved your suggestion in their Database to locate it more easily',
-                                                                       footer='If you dont want to receive this message anymore íf your suggestion is saved, DM me: `@AntiPetros auto_accept_suggestions',
-                                                                       if_you_do_not_want_this=f'DM me: `@Antipetros unsave_suggestion {message.id}`',
-                                                                       if_you_want_to_see_all_data_saved_from_you='DM me: `@Antipetros request_my_data`',
-                                                                       if_you_want_to_have_all_data_saved_from_you_deleted='DM me: `@Antipetros remove_all_userdata`'),)
+                await message.author.send(embed=await self.bot.make_static_embed('suggestion', 'user_notification'))
 
         elif emoji_name in self.categories and message.id in self.saved_messages:
+            log.debug('category change triggered')
             await self._change_category(channel, message, emoji_name)
 
         elif emoji_name in [self.command_emojis['upvote'], self.command_emojis['downvote']] and message.id in self.saved_messages:
             await self._change_votes(message, emoji_name)
-        ()
 
 # endregion [Listener]
 
@@ -181,7 +180,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
             self.data_storage_handler.mark_discussed(suggestion_id)
             embed_dict['message_with_id_' + str(suggestion_id)] = 'was marked as discussed'
         await ctx.send(embed=await make_basic_embed(title='Marked Suggestions as discussed', text='The following items were marked as discussed: ', symbol='update', ** embed_dict))
-        ()
 
     @ commands.command(aliases=get_aliases("clear_all_suggestions"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
@@ -202,7 +200,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
                 await question_msg.delete()
         else:
             await self._clear_suggestions(ctx, 'yes')
-        ()
 
     @ commands.command(aliases=get_aliases("auto_accept_suggestions"))
     @commands.dm_only()
@@ -216,7 +213,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
         writejson(auto_accept_dict, self.auto_accept_user_file)
         # Todo: make as embed
         await ctx.send("I added you to the auto accept suggestion list")
-        ()
 
     @commands.command(aliases=get_aliases("user_delete_suggestion"))
     @commands.dm_only()
@@ -258,7 +254,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
             # TODO: make as embed
             await ctx.send('No answer received, aborting request, you can always try again')
             return
-        ()
 
     @ commands.command(aliases=get_aliases("get_all_suggestions"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
@@ -285,7 +280,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
             file = discord.File(pdf_path, filename='suggestion_report.pdf')
             log.debug('sending file')
             await ctx.send(file=file)
-        ()
 
     @ commands.command(aliases=get_aliases("remove_all_userdata"))
     @commands.dm_only()
@@ -323,7 +317,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
             # TODO: make as embed
             await ctx.send('No answer received, aborting request, you can always try again')
             return
-        ()
 
     @ commands.command(aliases=get_aliases("request_my_data"))
     @commands.dm_only()
@@ -338,7 +331,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
             writejson(await self._row_to_json_user_data(all_user_data), pathmaker(tmpdir, 'output.json'))
             file = discord.File(pathmaker(tmpdir, 'output.json'), filename=ctx.author.name + '_data.txt')
             await ctx.send(file=file)
-        ()
+
 # endregion [Commands]
 
 # region [DataStorage]
@@ -406,7 +399,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
         extra_data_value = ['No attachments detected'] if suggestion_item.extra_data is None else suggestion_item.extra_data[0]
         embed.add_field(name='Attachments', value=f"`{extra_data_value}`")
         embed.set_footer(text=DEFAULT_FOOTER)
-
+        writejson(embed.to_dict(), "suggestion_saved_embed.json")
         return embed
 
     async def make_changed_category_embed(self, message, category):
@@ -415,12 +408,14 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
         embed.add_field(name="New Category:", value=category, inline=False)
         embed.add_field(name="Suggestion:", value=message.jump_url, inline=False)
         embed.set_footer(text=DEFAULT_FOOTER)
+        writejson(embed.to_dict(), "suggestion_changed_category_embed.json")
         return embed
 
     async def make_already_saved_embed(self):
         embed = discord.Embed(title="**This Suggestion was already saved!**", description="I did not save the Suggestion as I have it already saved", color=0xe04d7e)
         embed.set_thumbnail(url=EMBED_SYMBOLS.get('not_possible', None))
         embed.set_footer(text=DEFAULT_FOOTER)
+        writejson(embed.to_dict(), "suggestion_already_daved_embed.json")
         return embed
 
 

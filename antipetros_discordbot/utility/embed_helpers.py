@@ -14,7 +14,7 @@ import discord
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.utility.gidtools_functions import loadjson
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 
 # endregion[Imports]
@@ -79,6 +79,7 @@ async def make_basic_embed(title, text=None, footer=None, symbol=None, **kwargs)
             basic_embed.set_footer(text=str(footer))
     else:
         basic_embed.set_footer(text=DEFAULT_FOOTER)
+    writejson(basic_embed.to_dict(), f"{title.replace(' ','_')}_embed.json")
     return basic_embed
 
 
@@ -103,6 +104,7 @@ async def make_basic_embed_inline(title, text=None, footer=None, symbol=None, **
             basic_embed.set_footer(text=str(footer))
     else:
         basic_embed.set_footer(text=DEFAULT_FOOTER)
+    writejson(basic_embed.to_dict(), f"{title.replace(' ','_')}_embed.json")
     return basic_embed
 
 

@@ -18,13 +18,13 @@ from discord.ext import commands
 from googletrans import LANGUAGES, Translator
 from discord.ext.commands import Greedy
 from antistasi_template_checker.engine.antistasi_template_parser import run as template_checker_run
-
+from discord.utils import parse_time
 # * Gid Imports -->
 import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import save_commands
+from antipetros_discordbot.utility.misc import save_commands, datetime_isoformat_to_discord_format
 from antipetros_discordbot.utility.checks import has_attachments, in_allowed_channels, allowed_channel_and_allowed_role, log_invoker
 from antipetros_discordbot.utility.converters import FlagArg, DateOnlyConverter
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
@@ -70,7 +70,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
         self.support = self.bot.support
         self.allowed_channels = set(COGS_CONFIG.getlist('test_playground', 'allowed_channels'))
         self.translator = Translator()
-        if os.environ['INFO_RUN'] == "1":
+        if os.environ.get('INFO_RUN', '') == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
 
@@ -91,8 +91,8 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
         image_width = image_width - (buffer * 2)
         image_height = image_height - (buffer * 2)
 
-        text_width = 999999999
-        text_height = 99999999
+        text_width = 99999999999
+        text_height = 9999999999
         while text_width > image_width or text_height > image_height:
             font = ImageFont.truetype(font_name, font_size)
             ascent, descent = font.getmetrics()
@@ -128,9 +128,8 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
     @ commands.has_any_role(*COGS_CONFIG.getlist("test_playground", 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
     async def text_to_image(self, ctx, *, text: str):
-        font_path = 'stencilla.ttf'
+        font_path = APPDATA['stencilla.ttf']
         image_path = APPDATA['armaimage.png']
-        print(image_path)
 
         image = Image.open(APPDATA['armaimage.png'])
         font, text_width, text_height, font_size = await self.get_text_dimensions(text, font_path, image.size)
@@ -247,7 +246,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
                         await ctx.send(file=_all_item_file)
                         await asyncio.sleep(5)
 
-    @ commands.command(aliases=get_aliases("the_dragon") + ['the_wyvern'])
+    @ commands.command(aliases=get_aliases("the_dragon"))
     @ allowed_channel_and_allowed_role("test_playground")
     async def the_dragon(self, ctx):
         await ctx.send(THE_DRAGON)
@@ -265,7 +264,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
         _file = discord.File(str(self.bot.support.all_colors_json_file), os.path.basename(str(self.bot.support.all_colors_json_file)))
         await ctx.send('here', file=_file)
 
-    @ commands.command(aliases=get_aliases("send_all_colors_file"))
+    @ commands.command(aliases=get_aliases("check_flags"))
     @ allowed_channel_and_allowed_role("test_playground")
     async def check_flags(self, ctx, flags: Greedy[FlagArg(['make_embed', 'random_color'])], ending: str):
         print(flags)
@@ -366,6 +365,14 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
         await ctx.reply("__**all user I can see**__")
         await self.bot.split_to_messages(ctx, '\n'.join([user.name for user in user_list]), in_codeblock=True)
 
+    @commands.command()
+    @allowed_channel_and_allowed_role(CONFIG_NAME)
+    @log_invoker(log, 'debug')
+    async def embed_experiment_2(self, ctx):
+
+        embed = await self.bot.make_embed(typus='faq', faq_number=10, faq_question="whatever?", faq_answer="Meta programming breaks my mind!")
+
+        await ctx.send(embed=embed)
 
 # region [SpecialMethods]
 

@@ -65,7 +65,7 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-DATA_COLLECT_INTERVALL = 30 if os.getenv('IS_DEV').casefold() in ['yes', 'true', '1'] else 600  # seconds
+DATA_COLLECT_INTERVALL = 60 if os.getenv('IS_DEV').casefold() in ['yes', 'true', '1'] else 600  # seconds
 DEQUE_SIZE = (24 * 60 * 60) // DATA_COLLECT_INTERVALL  # seconds in day divided by collect interval, full deque is data of one day
 DATA_DUMP_INTERVALL = {'hours': 1, 'minutes': 0, 'seconds': 0} if os.getenv('IS_DEV').casefold() in ['yes', 'true', '1'] else {'hours': 24, 'minutes': 1, 'seconds': 0}
 # endregion[Constants]
@@ -84,7 +84,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         self.latency_data = deque(maxlen=DEQUE_SIZE)
         self.memory_data = deque(maxlen=DEQUE_SIZE)
         self.plot_formatting_info = {'latency': COGS_CONFIG.get(self.config_name, 'latency_graph_formatting'), 'memory': COGS_CONFIG.get(self.config_name, 'memory_graph_formatting')}
-        if os.environ['INFO_RUN'] == "1":
+        if os.environ.get('INFO_RUN', '') == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
 

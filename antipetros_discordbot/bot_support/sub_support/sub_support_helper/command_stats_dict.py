@@ -140,12 +140,16 @@ class CommandStatDict(UserDict):
     def add_tick(self, key, unsuccessful=False):
         if key is None or key == 'None':
             return
-        if self.last_initialized.day != datetime.utcnow().day:
+        if self.last_initialized.day != datetime.utcnow().day or date_today() not in self.data:
             self.save_data()
             self.initialize_data()
 
         typus = 'unsuccessful' if unsuccessful is True else "successful"
+        if key not in self.data['overall']:
+            self.data['overall'][key] = {'successful': 0, 'unsuccessful': 0}
         self.data['overall'][key][typus] += 1
+        if key not in self.data[date_today()]:
+            self.data[date_today()][key] = {'successful': 0, 'unsuccessful': 0}
         self.data[date_today()][key][typus] += 1
 
     def load_data(self):

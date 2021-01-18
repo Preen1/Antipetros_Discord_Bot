@@ -359,6 +359,7 @@ class CogTemplateItem:
             f.write(self.code)
 
     def generate(self):
+        self.code = self._render()
         create_folder(self.category_folder_path)
         create_file(pathmaker(self.category_folder_path, '__init__.py'))
         self.write()
@@ -367,8 +368,9 @@ class CogTemplateItem:
 
 # region[Main_Exec]
 if __name__ == '__main__':
-    x = CogTemplateItem('FaqCog', 'special_channels', False)
-    x.add_command('post_faq_by_number', log_invocation=True)
-    x.add_command('create_faqs_as_embed', log_invocation=True, allowed_channel_key="faq_channel", allowed_roles_key="special_commands_roles")
+    x = CogTemplateItem('GiveAwayCog', 'community_events', False)
+    x.add_command('start_giveaway', log_invocation=True)
+    x.add_command('abort_give_away', log_invocation=True)
+    x.add_command('finish_give_away', log_invocation=True)
     x.generate()
 # endregion[Main_Exec]

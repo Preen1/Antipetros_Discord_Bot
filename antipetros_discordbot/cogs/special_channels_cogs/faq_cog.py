@@ -124,7 +124,7 @@ class FaqCog(commands.Cog, command_attrs={'name': "FaqCog", "description": ""}):
         self.support = self.bot.support
         self.faq_embeds = {}
 
-        if os.environ['INFO_RUN'] == "1":
+        if os.environ.get('INFO_RUN', '') == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
 
@@ -144,6 +144,7 @@ class FaqCog(commands.Cog, command_attrs={'name': "FaqCog", "description": ""}):
 
     async def _load_faq_embeds(self):
         self.faq_embeds = {}
+
         faq_data = loadjson(self.faq_data_file)
         for faq_item in faq_data:
             question = f"{self.q_emoji} {faq_item.get('question')}"
@@ -156,6 +157,7 @@ class FaqCog(commands.Cog, command_attrs={'name': "FaqCog", "description": ""}):
             # embed.set_thumbnail(url=self.faq_symbol)
             embed.set_footer(text='Antistasi Community', icon_url="https://s3.amazonaws.com/files.enjin.com/1218665/site_logo/NEW%20LOGO%20BANNER.png")
             self.faq_embeds[faq_item.get('number')] = embed
+
         log.debug(f"{self.faq_embeds=}")
 
 

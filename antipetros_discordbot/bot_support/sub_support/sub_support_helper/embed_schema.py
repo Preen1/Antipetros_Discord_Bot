@@ -82,6 +82,7 @@ from discord.ext import commands, tasks
 
 # from fuzzywuzzy import fuzz, process
 from pytz import timezone
+from PIL import Image
 
 # * PyQt5 Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
@@ -134,18 +135,36 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
+class EmbedAuthorSchema(Schema):
+    name = fields.String()
+    url = fields.String()
+    icon_url = fields.String()
+
+
+class EmbedFooterSchema(Schema):
+    text = fields.String()
+    icon_url = fields.String()
+
+
+class EmbedFieldSchema(Schema):
+    name = fields.String(required=True)
+    value = fields.String(required=True)
+    inline = fields.Boolean(default=False)
+
+
 class EmbedPrototypeSchema(Schema):
     title = fields.String(required=True)
     description = fields.String()
     color = fields.String(missing='green')
     thumbnail = fields.String()
+    image = fields.String()
     timestamp = fields.DateTime(missing=datetime.now(tz=timezone("Europe/Berlin")))
-    footer = fields.String()
-    author = fields.String()  # TODO: create schema for discord member
+    footer = fields.Nested(EmbedFooterSchema, default=None)
+    author = fields.Nested(EmbedAuthorSchema, default=None)
+    embed_fields = fields.List(fields.Nested(EmbedFieldSchema))
 
 
 # region[Main_Exec]
-
 
 if __name__ == '__main__':
     pass

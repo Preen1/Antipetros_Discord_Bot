@@ -75,7 +75,7 @@ class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "Abso
         self._item_id = 0
         self.country_items = self.all_country_as_items()
         self.city_items = self.all_cities_as_item()
-        if os.environ['INFO_RUN'] == "1":
+        if os.environ.get('INFO_RUN', '') == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
 
@@ -148,7 +148,6 @@ class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "Abso
 
 # region [Commands]
 
-
     @commands.command(aliases=get_aliases("to_absolute_times"))
     @ commands.has_any_role(*COGS_CONFIG.getlist("absolute_time", 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist("absolute_time", 'allowed_channels')))
@@ -191,6 +190,7 @@ class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "Abso
 # endregion [Embeds]
 
 # region [HelperMethods]
+
 
     @staticmethod
     def id_to_item(in_id, in_items):

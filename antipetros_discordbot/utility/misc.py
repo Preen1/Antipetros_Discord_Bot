@@ -3,14 +3,14 @@ import os
 import sys
 import inspect
 from asyncio import get_event_loop
-from datetime import datetime
+from datetime import datetime, tzinfo
 from textwrap import dedent
 from functools import wraps, partial
 from concurrent.futures import ThreadPoolExecutor
 
 # * Third Party Imports -->
 import discord
-
+from pytz import timezone
 # * Gid Imports -->
 import gidlogger as glog
 
@@ -284,3 +284,8 @@ def hour_to_second(hours: int):
 
 def day_to_second(days: int):
     return days * 24 * 60 * 60
+
+
+def datetime_isoformat_to_discord_format(in_data: datetime):
+
+    return in_data.replace(microsecond=0).isoformat()
