@@ -1,27 +1,23 @@
 # region [Imports]
 
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 from collections import namedtuple
 
-# * Third Party Imports -->
-# from natsort import natsorted
-# from fuzzywuzzy import fuzz, process
+# * Third Party Imports --------------------------------------------------------------------------------->
 import autopep8
-
-# import pyperclip
-# from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
+from antipetros_discordbot.cogs import COGS_DIR
 from antipetros_discordbot.utility.named_tuples import NEW_COG_ITEM, NEW_LOOP_ITEM, NEW_COMMAND_ITEM, NEW_LISTENER_ITEM
 from antipetros_discordbot.utility.gidtools_functions import writeit, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.dev_tools_and_scripts.templates import TEMPLATES_DIR
-from antipetros_discordbot.cogs import COGS_DIR
+
 # endregion[Imports]
 
 

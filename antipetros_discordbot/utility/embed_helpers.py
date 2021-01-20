@@ -2,9 +2,16 @@
 
 # region [Imports]
 
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
+
+# * Third Party Imports --------------------------------------------------------------------------------->
 import discord
+
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
+
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 

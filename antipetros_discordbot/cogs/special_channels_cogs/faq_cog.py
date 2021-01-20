@@ -1,68 +1,34 @@
 
 # region [Imports]
 
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import gc
 import os
-import re
-import sys
-import json
-import lzma
-import time
-import queue
-import logging
-import platform
-import subprocess
-from enum import Enum, Flag, auto
-from time import sleep
-from pprint import pprint, pformat
-from typing import Union
-from datetime import tzinfo, datetime, timezone, timedelta
-from functools import wraps, lru_cache, singledispatch, total_ordering, partial
-from contextlib import contextmanager
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from multiprocessing import Pool
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from tempfile import TemporaryDirectory
-from urllib.parse import urlparse
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 import unicodedata
-from textwrap import TextWrapper
-from io import BytesIO
+from datetime import datetime
 
-# * Third Party Imports -->
-# import requests
-# import pyperclip
-# import matplotlib.pyplot as plt
-# from bs4 import BeautifulSoup
-# from dotenv import load_dotenv
-# from github import Github, GithubException
-# from jinja2 import BaseLoader, Environment
-# from natsort import natsorted
-# from fuzzywuzzy import fuzz, process
-
+# * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
 import discord
+from discord import File, Embed, DiscordException
 from discord.ext import tasks, commands
-from discord import DiscordException, Embed, File
 from async_property import async_property
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
+from antipetros_discordbot.cogs import get_aliases
+from antipetros_discordbot.utility.misc import CogConfigReadOnly, day_to_second, save_commands, hour_to_second, minute_to_second
 from antipetros_discordbot.utility.enums import RequestStatus
+from antipetros_discordbot.utility.checks import log_invoker, in_allowed_channels, allowed_channel_and_allowed_role
 from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
+from antipetros_discordbot.utility.embed_helpers import EMBED_SYMBOLS, make_basic_embed
 from antipetros_discordbot.utility.sqldata_storager import LinkDataStorageSQLite
 from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.embed_helpers import make_basic_embed, EMBED_SYMBOLS
-from antipetros_discordbot.utility.misc import save_commands, CogConfigReadOnly, minute_to_second, hour_to_second, day_to_second
-from antipetros_discordbot.utility.checks import in_allowed_channels, allowed_channel_and_allowed_role, log_invoker
-from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-
 
 # endregion[Imports]
 

@@ -2,20 +2,18 @@
 
 # region [Imports]
 
-# * Standard Library Imports -->
-
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 from typing import Optional
 
-# * Third Party Imports -->
+# * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from discord.ext import commands
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.misc import save_commands
 from antipetros_discordbot.utility.checks import in_allowed_channels

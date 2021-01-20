@@ -1,29 +1,20 @@
 
 # region [Imports]
 
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 from datetime import datetime
 
-# * Third Party Imports -->
+# * Third Party Imports --------------------------------------------------------------------------------->
 from pytz import timezone, country_timezones
-
-# import requests
-# import pyperclip
-# import matplotlib.pyplot as plt
-# from bs4 import BeautifulSoup
-# from dotenv import load_dotenv
-# from github import Github, GithubException
-# from jinja2 import BaseLoader, Environment
-# from natsort import natsorted
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process as fuzzprocess
 from discord.ext import commands
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, save_commands
 from antipetros_discordbot.utility.checks import in_allowed_channels

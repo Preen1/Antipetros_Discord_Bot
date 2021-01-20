@@ -1,8 +1,11 @@
 # * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-from jinja2 import Environment, FileSystemLoader, Template, meta
-from functools import lru_cache
 from typing import Union
+from functools import lru_cache
+
+# * Third Party Imports --------------------------------------------------------------------------------->
+from jinja2 import Template, Environment, FileSystemLoader, meta
 
 TEMPLATES_DIR = os.path.abspath(os.path.dirname(__file__))
 if os.path.islink(TEMPLATES_DIR) is True:

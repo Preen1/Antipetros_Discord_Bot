@@ -1,7 +1,6 @@
 # * Third Party Imports -->
+# * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands.errors import CommandError
-from fuzzywuzzy import fuzz
-
 
 class AntiPetrosBaseError(Exception):
     pass

@@ -2,7 +2,7 @@
 
 # region [Imports]
 
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import re
 import shutil
@@ -12,16 +12,16 @@ import unicodedata
 from datetime import datetime
 from tempfile import TemporaryDirectory
 
-# * Third Party Imports -->
+# * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from jinja2 import Environment, FileSystemLoader
 from weasyprint import HTML
 from discord.ext import commands
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.misc import save_commands
 from antipetros_discordbot.utility.checks import in_allowed_channels

@@ -9,6 +9,7 @@
 
 # * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
 
+# * Standard Library Imports ---------------------------------------------------------------------------->
 # * Standard Library Imports -->
 import gc
 import os
@@ -69,10 +70,12 @@ from importlib.machinery import SourceFileLoader
 
 try:
     # * Third Party Imports -->
+    # * Third Party Imports --------------------------------------------------------------------------------->
     import dotenv
 except ImportError:
     os.system('pip install python-dotenv')
     # * Third Party Imports -->
+    # * Third Party Imports --------------------------------------------------------------------------------->
     import dotenv
 
 # from discord import Embed, File

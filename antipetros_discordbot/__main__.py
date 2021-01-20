@@ -9,28 +9,30 @@ On the Cli use: antipetrosbot run [-t token file] [-save]
 
 
 # region [Imports]
+
 UV_LOOP_IMPORTED = False
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import logging
 from time import sleep
 from datetime import datetime
 
-# * Third Party Imports -->
+# * Third Party Imports --------------------------------------------------------------------------------->
 import click
 import discord
-from dotenv import load_dotenv, find_dotenv
+from dotenv import find_dotenv, load_dotenv
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot import MAIN_DIR
 from antipetros_discordbot.utility.misc import check_if_int
+from antipetros_discordbot.utility.crypt import decrypt_db, encrypt_db
 from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from antipetros_discordbot.utility.gidtools_functions import writeit, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.crypt import encrypt_db, decrypt_db
+
 # endregion[Imports]
 
 # region [TODO]
@@ -96,7 +98,6 @@ def cli():
 
     [extended_summary]
     """
-    pass
 
 
 @cli.command(name='create_alias_data')

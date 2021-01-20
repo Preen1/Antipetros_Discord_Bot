@@ -2,21 +2,21 @@
 
 # region [Imports]
 
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import asyncio
 from datetime import datetime, timedelta
 from tempfile import TemporaryDirectory
 from urllib.parse import urlparse
 
-# * Third Party Imports -->
+# * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from discord.ext import tasks, commands
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.misc import CogConfigReadOnly, save_commands
 from antipetros_discordbot.utility.enums import RequestStatus

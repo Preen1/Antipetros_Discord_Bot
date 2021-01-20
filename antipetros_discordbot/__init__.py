@@ -1,13 +1,15 @@
 """
 A Discord Bot for the Antistasi (ArmA 3) Community Discord Server
 """
-__version__ = "0.1.10"
+__version__ = "0.1.11"
 
 
+# * Standard Library Imports ---------------------------------------------------------------------------->
 # * Standard Library Imports -->
 import os
 from importlib.metadata import metadata
 
+# * Third Party Imports --------------------------------------------------------------------------------->
 # * Third Party Imports -->
 from dotenv import load_dotenv
 

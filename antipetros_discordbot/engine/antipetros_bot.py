@@ -1,30 +1,29 @@
 # region [Imports]
 
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import sys
 import time
 import asyncio
-import traceback
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 
-# * Third Party Imports -->
+# * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
 import discord
 from udpy import AsyncUrbanClient
 from watchgod import Change, awatch
 from discord.ext import tasks, commands
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
-from antipetros_discordbot.bot_support.bot_supporter import BotSupporter
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import save_bin_file, sync_to_async
 from antipetros_discordbot.engine.global_checks import user_not_blacklisted
 from antipetros_discordbot.utility.named_tuples import CreatorMember
 from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
+from antipetros_discordbot.bot_support.bot_supporter import BotSupporter
 from antipetros_discordbot.utility.gidtools_functions import readit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 

@@ -6,8 +6,7 @@
 
 # region [Imports]
 
-# * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
-
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import gc
 import os
 import re
@@ -28,7 +27,6 @@ import platform
 import importlib
 import subprocess
 import unicodedata
-
 from io import BytesIO
 from abc import ABC, abstractmethod
 from copy import copy, deepcopy
@@ -37,7 +35,7 @@ from time import time, sleep
 from pprint import pprint, pformat
 from string import Formatter, digits, printable, whitespace, punctuation, ascii_letters, ascii_lowercase, ascii_uppercase
 from timeit import Timer
-from typing import Union, Callable, Iterable, Dict
+from typing import Dict, Union, Callable, Iterable
 from inspect import stack, getdoc, getmodule, getsource, getmembers, getmodulename, getsourcefile, getfullargspec, getsourcelines
 from zipfile import ZipFile
 from datetime import tzinfo, datetime, timezone, timedelta
@@ -53,65 +51,21 @@ from importlib.util import find_spec, module_from_spec, spec_from_file_location
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from importlib.machinery import SourceFileLoader
 
-
-# * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
-
-# import discord
-
-# import requests
-
-# import pyperclip
-
-# import matplotlib.pyplot as plt
-
-# from bs4 import BeautifulSoup
-
-# from dotenv import load_dotenv
-
-# from discord import Embed, File
-
-# from discord.ext import commands, tasks
-
-# from github import Github, GithubException
-
-# from jinja2 import BaseLoader, Environment
-
-# from natsort import natsorted
-
-# from fuzzywuzzy import fuzz, process
-
+# * Third Party Imports --------------------------------------------------------------------------------->
 import autopep8
 
-# * PyQt5 Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-
-# from PyQt5.QtGui import QFont, QIcon, QBrush, QColor, QCursor, QPixmap, QStandardItem, QRegExpValidator
-
-# from PyQt5.QtCore import (Qt, QRect, QSize, QObject, QRegExp, QThread, QMetaObject, QCoreApplication,
-#                           QFileSystemWatcher, QPropertyAnimation, QAbstractTableModel, pyqtSlot, pyqtSignal)
-
-# from PyQt5.QtWidgets import (QMenu, QFrame, QLabel, QAction, QDialog, QLayout, QWidget, QWizard, QMenuBar, QSpinBox, QCheckBox, QComboBox, QGroupBox, QLineEdit,
-#                              QListView, QCompleter, QStatusBar, QTableView, QTabWidget, QDockWidget, QFileDialog, QFormLayout, QGridLayout, QHBoxLayout,
-#                              QHeaderView, QListWidget, QMainWindow, QMessageBox, QPushButton, QSizePolicy, QSpacerItem, QToolButton, QVBoxLayout, QWizardPage,
-#                              QApplication, QButtonGroup, QRadioButton, QFontComboBox, QStackedWidget, QListWidgetItem, QSystemTrayIcon, QTreeWidgetItem,
-#                              QDialogButtonBox, QAbstractItemView, QCommandLinkButton, QAbstractScrollArea, QGraphicsOpacityEffect, QTreeWidgetItemIterator)
-
-
-# * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
-
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# from gidtools.gidfiles import (QuickFile, readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
-#                                dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
-
-
-# * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-from antipetros_discordbot.dev_tools_and_scripts.data.event_data import EVENT_MAPPING
-from antipetros_discordbot.bot_support.sub_support import SUB_SUPPORT_DIR
-from antipetros_discordbot.utility.gidtools_functions import pathmaker, create_folder, create_file
-from antipetros_discordbot.utility.exceptions import CogNameNotCamelCaseError
-from antipetros_discordbot.dev_tools_and_scripts.template_handling.templates import TEMPLATES_DIR, TEMPLATE_MANAGER
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import split_camel_case_string
+from antipetros_discordbot.utility.exceptions import CogNameNotCamelCaseError
+from antipetros_discordbot.bot_support.sub_support import SUB_SUPPORT_DIR
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, create_file, create_folder
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+from antipetros_discordbot.dev_tools_and_scripts.data.event_data import EVENT_MAPPING
+from antipetros_discordbot.dev_tools_and_scripts.template_handling.templates import TEMPLATES_DIR, TEMPLATE_MANAGER
+
 # endregion[Imports]
 
 # region [TODO]

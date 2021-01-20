@@ -2,6 +2,7 @@
 
 # region [Imports]
 
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import time
 import asyncio
@@ -9,13 +10,19 @@ from io import BytesIO
 from datetime import datetime, timedelta
 from statistics import mean, stdev, median
 from collections import deque
+
+# * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 from psutil import virtual_memory
 from discord.ext import tasks, commands
 from matplotlib.ticker import FormatStrFormatter
+
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
+
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.misc import date_today, save_commands, async_seconds_to_pretty_normal
 from antipetros_discordbot.utility.enums import DataSize

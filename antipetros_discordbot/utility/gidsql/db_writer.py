@@ -1,15 +1,15 @@
 # region [Imports]
 
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import logging
 import sqlite3 as sqlite
 import textwrap
 from typing import Union
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidsql.db_action_base import GidSqliteActionBase
 
 # endregion [Imports]

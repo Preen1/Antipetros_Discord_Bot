@@ -1,4 +1,5 @@
 # * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidtools_functions import loadjson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 
@@ -10,6 +11,7 @@ def get_aliases(command_name):
     return data.get(command_name, [])
 
 
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 
 COGS_DIR = os.path.abspath(os.path.dirname(__file__))

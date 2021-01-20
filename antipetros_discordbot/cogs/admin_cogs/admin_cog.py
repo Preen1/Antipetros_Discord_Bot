@@ -2,22 +2,23 @@
 
 # region [Imports]
 
-# * Standard Library Imports -->
-
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
+import random
 from datetime import datetime
 
-# * Third Party Imports -->
+# * Third Party Imports --------------------------------------------------------------------------------->
+import arrow
 import discord
 from discord import DiscordException
+from humanize import naturaltime
 from fuzzywuzzy import process as fuzzprocess
 from discord.ext import commands
-import random
-# * Gid Imports -->
+
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.misc import save_commands, seconds_to_pretty, async_seconds_to_pretty_normal
 from antipetros_discordbot.utility.checks import in_allowed_channels
@@ -25,11 +26,8 @@ from antipetros_discordbot.utility.named_tuples import FeatureSuggestionItem
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.data_gathering import gather_data
 from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
-from antipetros_discordbot.utility.gidtools_functions import pickleit, pathmaker, get_pickled, loadjson, writejson
+from antipetros_discordbot.utility.gidtools_functions import loadjson, pickleit, pathmaker, writejson, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from dateparser import parse as date_parse
-import arrow
-from humanize import naturaltime
 
 # endregion[Imports]
 

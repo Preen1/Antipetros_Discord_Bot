@@ -1,31 +1,37 @@
 # * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import asyncio
 import platform
 import subprocess
 from io import BytesIO, StringIO
+from pprint import pformat
 from datetime import datetime
 from tempfile import TemporaryDirectory
 from functools import partial
-from pprint import pformat
+
+# * Third Party Imports --------------------------------------------------------------------------------->
 # * Third Party Imports -->
 import discord
 from PIL import Image, ImageDraw, ImageFont
 from pytz import timezone
 from pyfiglet import Figlet
-from fuzzywuzzy import fuzz, process as fuzzprocess
+from fuzzywuzzy import process as fuzzprocess
 from discord.ext import commands
 from googletrans import LANGUAGES, Translator
+from discord.utils import parse_time
 from discord.ext.commands import Greedy
 from antistasi_template_checker.engine.antistasi_template_parser import run as template_checker_run
-from discord.utils import parse_time
+
+# * Gid Imports ----------------------------------------------------------------------------------------->
 # * Gid Imports -->
 import gidlogger as glog
 
+# * Local Imports --------------------------------------------------------------------------------------->
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.misc import save_commands, datetime_isoformat_to_discord_format
-from antipetros_discordbot.utility.checks import has_attachments, in_allowed_channels, allowed_channel_and_allowed_role, log_invoker
+from antipetros_discordbot.utility.checks import log_invoker, has_attachments, in_allowed_channels, allowed_channel_and_allowed_role
 from antipetros_discordbot.utility.converters import FlagArg, DateOnlyConverter
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper

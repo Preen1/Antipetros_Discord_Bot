@@ -1,9 +1,12 @@
 # * Third Party Imports -->
+# * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands import when_mentioned
 
+# * Gid Imports ----------------------------------------------------------------------------------------->
 # * Gid Imports -->
 import gidlogger as glog
 
+# * Local Imports --------------------------------------------------------------------------------------->
 # * Local Imports -->
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 

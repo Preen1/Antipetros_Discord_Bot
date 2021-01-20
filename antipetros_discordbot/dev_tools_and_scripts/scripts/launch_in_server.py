@@ -1,11 +1,16 @@
-from paramiko import SSHClient, AutoAddPolicy
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-from contextlib import contextmanager
 from time import sleep
+from contextlib import contextmanager
+
+# * Third Party Imports --------------------------------------------------------------------------------->
+from paramiko import SSHClient, AutoAddPolicy
+
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 def get_version():
+    # * Local Imports --------------------------------------------------------------------------------------->
     from antipetros_discordbot import __version__
     return __version__
 

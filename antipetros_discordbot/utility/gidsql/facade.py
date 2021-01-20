@@ -1,15 +1,15 @@
 # region [Imports]
 
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import logging
 from enum import Enum, auto
 from typing import Union
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidsql.phrasers import GidSqliteInserter
 from antipetros_discordbot.utility.gidsql.db_reader import Fetch, GidSqliteReader
 from antipetros_discordbot.utility.gidsql.db_writer import GidSQLiteWriter

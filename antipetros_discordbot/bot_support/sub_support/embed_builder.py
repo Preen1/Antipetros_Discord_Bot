@@ -6,41 +6,41 @@
 
 # region [Imports]
 
-# * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
-
-
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-import json
+from io import BytesIO
+from random import randint
+from typing import List, Union
+from inspect import getmembers
 from datetime import datetime, timezone
+
+# * Third Party Imports --------------------------------------------------------------------------------->
+import arrow
+from PIL import Image as PillowImage
 from pytz import timezone
-from jinja2 import Environment, BaseLoader
-from pprint import pprint, pformat
-from inspect import getmembers, isfunction, isclass, ismethod, ismodule, isawaitable, signature, getargspec, iscoroutine, iscoroutinefunction, getfullargspec
-import gidlogger as glog
-import checksumdir
-from typing import Union, List
-from functools import partial
-from time import time, sleep, time_ns
-from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
-from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+from jinja2 import BaseLoader, Environment
+from discord import File
+from discord import Color as DiscordColor
+from discord import Embed
 from benedict import benedict
-from discord import Embed, File, Color as DiscordColor
+from dateparser import parse as date_parse
+
+# * Gid Imports ----------------------------------------------------------------------------------------->
+import gidlogger as glog
+
+# * Local Imports --------------------------------------------------------------------------------------->
+from antipetros_discordbot.utility.misc import datetime_isoformat_to_discord_format
+from antipetros_discordbot.utility.enums import EmbedType
+from antipetros_discordbot.utility.exceptions import FuzzyMatchError
+from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
 from antipetros_discordbot.utility.gidtools_functions import (readit, clearit, readbin, work_in, writeit, loadjson, pickleit, splitoff, writebin, pathmaker, writejson, dir_change,
                                                               linereadit, bytes2human, create_file, file_walker, get_pickled, ishash_same, ext_splitter, appendwriteit, create_folder,
                                                               number_rename, timenamemaker, cascade_rename, file_name_time, absolute_listdir, hash_to_solidcfg, path_part_remove,
                                                               from_dict_to_file, get_absolute_path, file_name_modifier, limit_amount_of_files, limit_amount_files_absolute)
-
-from antipetros_discordbot.utility.misc import datetime_isoformat_to_discord_format
-from antipetros_discordbot.utility.exceptions import FuzzyMatchError
-from antipetros_discordbot.utility.enums import EmbedType
-from dateparser import parse as date_parse
-import arrow
-from tempfile import TemporaryDirectory
-from PIL import Image as PillowImage
-from io import BytesIO
-from random import randint
-from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
+from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+
 # endregion[Imports]
 
 # region [TODO]
@@ -211,8 +211,7 @@ class EmbedBuilder(SubSupportBase):
             _out["file"] = files[0]
         elif len(files) > 1:
             _out['files'] = files
-        if self.bot.is_debug is True:
-            writeit('debug_generic_embed.txt', pformat(_out.get('embed').to_dict()))
+
         return _out
 
     async def make_static_embed(self, category, name):

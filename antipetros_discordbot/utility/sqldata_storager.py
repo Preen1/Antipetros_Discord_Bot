@@ -1,15 +1,19 @@
 
 # * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import shutil
 from datetime import datetime
 
+# * Third Party Imports --------------------------------------------------------------------------------->
 # * Third Party Imports -->
 from fuzzywuzzy import process as fuzzprocess
 
+# * Gid Imports ----------------------------------------------------------------------------------------->
 # * Gid Imports -->
 import gidlogger as glog
 
+# * Local Imports --------------------------------------------------------------------------------------->
 # * Local Imports -->
 from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
 from antipetros_discordbot.utility.gidsql.facade import Fetch, GidSqliteDatabase
