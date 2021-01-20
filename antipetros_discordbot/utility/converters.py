@@ -13,7 +13,7 @@ from datetime import datetime
 
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands import Converter, CommandError
-
+from googletrans import LANGUAGES, Translator
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
@@ -41,6 +41,17 @@ log.info(glog.imported(__name__))
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[Constants]
+
+
+class LanguageConverter(Converter):
+    def __init__(self):
+        self.languages = {value.casefold(): key for key, value in LANGUAGES.items()}
+
+    async def convert(self, ctx, argument):
+        argument = argument.casefold()
+        if argument in self.languages:
+            return self.languages.get(argument)
+        raise CommandError
 
 
 class DateTimeFullConverter(Converter):

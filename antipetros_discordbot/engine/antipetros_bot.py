@@ -218,7 +218,8 @@ class AntiPetrosBot(commands.Bot):
 
     async def close(self):
         try:
-            await self.used_startup_message.delete()
+            if self.used_startup_message is not None:
+                await self.used_startup_message.delete()
         except discord.NotFound:
             log.debug('startup message was already deleted')
         log.info("shutting down bot loops")

@@ -43,3 +43,4 @@ arrow
 pendulum
 python-dateutil
 dateparser
+emoji

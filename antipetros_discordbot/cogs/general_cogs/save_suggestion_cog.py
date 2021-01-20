@@ -142,7 +142,8 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
         if reaction_user.bot is True or reaction_user.id in self.bot.blacklisted_user_ids():
             return
         message = await channel.fetch_message(payload.message_id)
-        emoji_name = unicodedata.name(payload.emoji.name)
+
+        emoji_name = unicodedata.name(payload.emoji.name) if not isinstance(payload.emoji.name, str) else payload.emoji.name
         log.debug(f"{emoji_name=}")
         log.debug(f"{message.id=}")
         if emoji_name == self.command_emojis['save']:

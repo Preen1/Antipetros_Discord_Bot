@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 
 # * Third Party Imports --------------------------------------------------------------------------------->
 import arrow
-from PIL import Image as PillowImage
+import PIL.Image
 from pytz import timezone
 from jinja2 import BaseLoader, Environment
 from discord import File
@@ -148,7 +148,7 @@ class EmbedBuilder(SubSupportBase):
                 return image, file
             else:
                 return image, None
-        elif isinstance(image, PillowImage):
+        elif isinstance(image, type(PIL.Image)):
             with BytesIO() as image_binary:
                 image_format = 'PNG' if image.format is None else image.format
                 image.save(image_binary, image_format, optimize=True)
@@ -160,7 +160,7 @@ class EmbedBuilder(SubSupportBase):
         elif image is None:
             return None, None
         else:
-            raise TypeError(f"'image' has to be of type 'str' or '{type(PillowImage)}' and not '{type(image)}'")
+            raise TypeError(f"'image' has to be of type 'str' or '{type(PIL.Image)}' and not '{type(image)}'")
 
     def _fix_field_item(self, field_item, ):
         if field_item.name is None:
@@ -185,7 +185,7 @@ class EmbedBuilder(SubSupportBase):
                               timestamp=self._validate_timestamp(kwargs.get('timestamp', self.default_timestamp)),
                               type=self._validate_type(kwargs.get('type', self.default_type)))
 
-        image, image_file = self._validate_image(kwargs.get('image', (None, None)))
+        image, image_file = self._validate_image(kwargs.get('image', None))
         files.append(image_file)
         thumbnail, thumbnail_file = self._validate_image(kwargs.get('thumbnail', self.default_thumbnail)) if kwargs.get('thumbnail', self.default_thumbnail) != 'no_thumbnail' else (None, None)
         files.append(thumbnail_file)

@@ -5,16 +5,19 @@
 import gc
 import os
 import unicodedata
-from datetime import datetime
-
+from datetime import datetime, timezone
+from collections import namedtuple
+import asyncio
 # * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
 import discord
 from discord import File, Embed, DiscordException
 from dateparser import parse as date_parse
-from discord.ext import tasks, commands
+from discord.ext import flags, tasks, commands
 from async_property import async_property
-
+import pytz
+import random
+import arrow
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
@@ -26,7 +29,7 @@ from antipetros_discordbot.utility.checks import log_invoker, in_allowed_channel
 from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM, GiveAwayEventItem
 from antipetros_discordbot.utility.embed_helpers import EMBED_SYMBOLS, make_basic_embed
 from antipetros_discordbot.utility.sqldata_storager import LinkDataStorageSQLite
-from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
+from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson, create_file, create_folder
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 
 # endregion[Imports]
@@ -64,6 +67,7 @@ _from_cog_config = CogConfigReadOnly(CONFIG_NAME)
 # endregion [Helper]
 
 # "GiveAwayEventItem" =  ['name', 'channel_name', 'message_id', 'enter_emoji', 'end_date_time', 'end_message', 'amount_winners']
+ExpItem = namedtuple("ExpItem", ['name', 'end_date_time', 'message', 'old_msg_id', 'channel_name'])
 
 
 class GiveAwayCog(commands.Cog, command_attrs={'name': "GiveAwayCog", "description": ""}):
@@ -75,15 +79,18 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': "GiveAwayCog", "descripti
     """
 # region [ClassAttributes]
 
+    give_away_data_file = pathmaker(APPDATA['json_data'], 'give_aways.json')
+    give_away_item = ExpItem
 # endregion [ClassAttributes]
 
 # region [Init]
 
     def __init__(self, bot):
-
         self.bot = bot
         self.support = self.bot.support
-        self.give_aways = []
+        self.give_aways = None
+        if os.path.isfile(self.give_away_data_file) is False:
+            writejson([], self.give_away_data_file)
         if os.environ.get('INFO_RUN', '') == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
@@ -99,16 +106,21 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': "GiveAwayCog", "descripti
 
 
     async def on_ready_setup(self):
+        await self.load_give_aways()
+        await asyncio.sleep(5)
+        self.check_give_away_ended_loop.start()
         log.debug('setup for cog "%s" finished', str(self))
 
 # endregion [Setup]
 
 # region [Loops]
 
-    @tasks.loop(seconds=5, reconnect=True)
+    @tasks.loop(minutes=1, reconnect=True)
     async def check_give_away_ended_loop(self):
+        if self.give_aways is None:
+            await self.load_give_aways()
         for give_away_event in self.give_aways:
-            if datetime.utcnow() >= give_away_event.end_date_time:
+            if arrow.utcnow() >= give_away_event.end_date_time:
                 await self.give_away_finished(give_away_event)
 
 # endregion [Loops]
@@ -121,12 +133,40 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': "GiveAwayCog", "descripti
 # region [Commands]
 
 
-    @commands.command(aliases=get_aliases("check_datetime_stuff"))
+    async def give_away_finished(self, event_item):
+        channel = await self.bot.channel_from_name(event_item.channel_name)
+
+        msg = await channel.fetch_message(event_item.old_msg_id)
+
+        users = []
+        for reaction in msg.reactions:
+            if reaction.emoji == "🎁":
+                users = await reaction.users().flatten()
+                users = [user for user in users if user.bot is False]
+
+        winner = random.choice(users)
+        await channel.send(event_item.message)
+        await channel.send("**all reacting user:**\n" + '\n'.join([user.display_name for user in users]))
+        await channel.send(f"__**winner is**__ {winner.display_name}")
+
+        await msg.delete()
+        self.give_aways.remove(event_item)
+        await self.save_give_aways()
+
+    @flags.add_flag("--end-date", type=str, default="in 5min")
+    @flags.add_flag("--message", type=str, default="it worked")
+    @commands.command(aliases=get_aliases("check_datetime_stuff"), cls=flags.FlagCommand)
     @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=False)
     @log_invoker(logger=log, level="info")
-    async def check_datetime_stuff(self, ctx, *, date_string: str):
-        conv_string = date_parse(date_string)
-        await ctx.send(conv_string)
+    async def check_datetime_stuff(self, ctx, **flags):
+        date_string = flags.get('end_date')
+        conv_string = date_parse(date_string).astimezone(timezone.utc)
+        embed_data = await self.bot.make_generic_embed(author='default_author', footer='default_footer', fields=[self.bot.field_item('test should end at', conv_string.strftime("%Y-%m-%d %H:%M:%S"), False),
+                                                                                                                 self.bot.field_item('this was posted at', datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), False)])
+        msg = await ctx.send(**embed_data)
+        await msg.add_reaction("🎁")
+        self.give_aways.append(self.give_away_item('test', conv_string, flags.get("message"), msg.id, ctx.channel.name))
+        await self.save_give_aways()
 
     @commands.command(aliases=get_aliases("start_giveaway"))
     @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=False)
@@ -167,11 +207,22 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': "GiveAwayCog", "descripti
 
 # region [HelperMethods]
 
+    async def load_give_aways(self):
+        self.give_aways = [] if self.give_aways is None else self.give_aways
+        for item in loadjson(self.give_away_data_file):
+            item['end_date_time'] = datetime.fromisoformat(item['end_date_time'])
+            self.give_aways.append(self.give_away_item(**item))
+
+    async def save_give_aways(self):
+
+        give_away_data = [item._asdict() for item in self.give_aways]
+        for item in give_away_data:
+            item['end_date_time'] = item['end_date_time'].isoformat()
+        writejson(give_away_data, self.give_away_data_file)
 
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True
@@ -186,8 +237,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': "GiveAwayCog", "descripti
         pass
 
     def cog_unload(self):
-
-        pass
+        self.check_give_away_ended_loop.stop()
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

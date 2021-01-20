@@ -196,11 +196,16 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
             embed.set_image(url='https://media.discordapp.net/attachments/449481990513754114/785601325329023006/2d1ca5fea58e65277ac5c18788b21d03.gif')
             last_shutdown_message = await ctx.send(embed=embed)
             pickleit({"message_id": last_shutdown_message.id, "channel_id": last_shutdown_message.channel.id}, self.shutdown_message_pickle_file)
+            try:
+                log.debug('deleting shutdown command message')
 
+                await ctx.message.delete()
+            except discord.NotFound:
+                log.debug("shutdown Message was not found")
         except Exception as error:
             log.error(error, exc_info=False)
         finally:
-            await ctx.message.delete()
+
             await self.bot.close()
 
     @ commands.command(aliases=get_aliases("list_configs"))

@@ -1,4 +1,5 @@
-# * Standard Library Imports -->
+# region [Imports]
+
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import asyncio
@@ -11,7 +12,7 @@ from tempfile import TemporaryDirectory
 from functools import partial
 
 # * Third Party Imports --------------------------------------------------------------------------------->
-# * Third Party Imports -->
+
 import discord
 from PIL import Image, ImageDraw, ImageFont
 from pytz import timezone
@@ -24,11 +25,11 @@ from discord.ext.commands import Greedy
 from antistasi_template_checker.engine.antistasi_template_parser import run as template_checker_run
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
-# * Gid Imports -->
+
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-# * Local Imports -->
+
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.misc import save_commands, datetime_isoformat_to_discord_format
 from antipetros_discordbot.utility.checks import log_invoker, has_attachments, in_allowed_channels, allowed_channel_and_allowed_role
@@ -37,6 +38,8 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.the_dragon import THE_DRAGON
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+
+# endregion [Imports]
 
 # region [Logging]
 
@@ -322,23 +325,23 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
                     _new_file = discord.File(new_file_path, new_file_name)
                     await ctx.send('The Corrected File', file=_new_file)
 
-    async def _translate(self, text, out_language, in_language=None):
-        in_lang_code = self.language_dict.get(in_language.casefold()) if in_language is not None else 'auto'
-        out_lang_code = self.language_dict.get(out_language.casefold())
+    # async def _translate(self, text, out_language, in_language=None):
+    #     in_lang_code = self.language_dict.get(in_language.casefold()) if in_language is not None else 'auto'
+    #     out_lang_code = self.language_dict.get(out_language.casefold())
 
-        x = self.translator.translate(text=text, dest=out_lang_code, src=in_lang_code)
-        return x.text
+    #     x = self.translator.translate(text=text, dest=out_lang_code, src=in_lang_code)
+    #     return x.text
 
-    @ commands.command(hidden=False, aliases=get_aliases("translate"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
-    @ in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
-    async def translate(self, ctx, out_lang, *, text):
-        log.info("command was initiated by '%s'", ctx.author.name)
-        if out_lang.casefold() not in self.language_dict:
-            await ctx.send('unknown language')
-            return
-        result = await self._translate(text, out_lang)
-        await self.bot.split_to_messages(ctx, result)
+    # @ commands.command(hidden=False, aliases=get_aliases("translate"))
+    # @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
+    # @ in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
+    # async def translate(self, ctx, out_lang, *, text):
+    #     log.info("command was initiated by '%s'", ctx.author.name)
+    #     if out_lang.casefold() not in self.language_dict:
+    #         await ctx.send('unknown language')
+    #         return
+    #     result = await self._translate(text, out_lang)
+    #     await self.bot.split_to_messages(ctx, result)
 
     @commands.command(aliases=get_aliases('search_usernames'))
     @allowed_channel_and_allowed_role(CONFIG_NAME, in_dm_allowed=True, allowed_roles_key='roles_restricted_command', allowed_in_dm_key="search_usernames_dm_allowed")
