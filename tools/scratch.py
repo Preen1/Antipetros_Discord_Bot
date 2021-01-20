@@ -3,5 +3,5 @@ from dateutil.parser import parse
 import dateparser
 import arrow
 from humanize import naturaltime
-
-print(arrow.get(8949898448))
+from datetime import datetime
+print(arrow.get(datetime.utcnow()))

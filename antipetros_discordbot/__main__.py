@@ -213,6 +213,7 @@ def main(token=None, db_key=None):
 # endregion [Main_function]
 # region [Main_Exec]
 if __name__ == '__main__':
+    print(f"{os.getenv('IS_DEV')=}")
     if os.getenv('IS_DEV') == 'true':
         load_dotenv('token.env')
         main(token=os.getenv('DISCORD_TOKEN'), db_key=os.getenv('DB_KEY'))

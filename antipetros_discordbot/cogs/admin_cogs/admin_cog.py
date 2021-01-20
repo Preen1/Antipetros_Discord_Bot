@@ -13,7 +13,7 @@ import discord
 from discord import DiscordException
 from fuzzywuzzy import process as fuzzprocess
 from discord.ext import commands
-
+import random
 # * Gid Imports -->
 import gidlogger as glog
 
@@ -25,8 +25,11 @@ from antipetros_discordbot.utility.named_tuples import FeatureSuggestionItem
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.data_gathering import gather_data
 from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
-from antipetros_discordbot.utility.gidtools_functions import pickleit, pathmaker, get_pickled
+from antipetros_discordbot.utility.gidtools_functions import pickleit, pathmaker, get_pickled, loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+from dateparser import parse as date_parse
+import arrow
+from humanize import naturaltime
 
 # endregion[Imports]
 
@@ -66,6 +69,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
 
     config_name = 'admin'
     shutdown_message_pickle_file = pathmaker(APPDATA['temp_files'], 'last_shutdown_message.pkl')
+    goodbye_quotes_file = APPDATA['goodbye_quotes.json']
     # endregion[ClassAttributes]
 
 # region [Init]
@@ -84,6 +88,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
 # endregion[Init]
 
 # region [Properties]
+
 
     @ property
     def allowed_dm_invoker_ids(self):
@@ -185,10 +190,11 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
         try:
             log.debug('shutdown command received from "%s"', ctx.author.name)
             started_at = self.bot.support.start_time
-            started_at_string = started_at.strftime(self.bot.std_date_time_format)
-            online_duration = datetime.utcnow() - started_at
 
-            embed = await make_basic_embed(title='cya!', text='AntiPetros is shutting down.', symbol='shutdown', was_online_since=started_at_string, online_for=await async_seconds_to_pretty_normal(online_duration.total_seconds(), decimal_places=0))
+            started_at_string = arrow.get(started_at).format('YYYY-MM-DD HH:mm:ss')
+            online_duration = naturaltime(datetime.utcnow() - started_at).replace(' ago', '')
+
+            embed = await make_basic_embed(title=random.choice(loadjson(self.goodbye_quotes_file)), text='AntiPetros is shutting down.', was_online_since=started_at_string, online_for=online_duration)
             embed.set_image(url='https://media.discordapp.net/attachments/449481990513754114/785601325329023006/2d1ca5fea58e65277ac5c18788b21d03.gif')
             last_shutdown_message = await ctx.send(embed=embed)
             pickleit({"message_id": last_shutdown_message.id, "channel_id": last_shutdown_message.channel.id}, self.shutdown_message_pickle_file)

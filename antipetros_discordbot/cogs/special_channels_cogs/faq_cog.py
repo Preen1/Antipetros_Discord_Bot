@@ -137,7 +137,6 @@ class FaqCog(commands.Cog, command_attrs={'name': "FaqCog", "description": ""}):
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
         await self._load_faq_embeds()
         log.debug('setup for cog "%s" finished', str(self))
@@ -157,8 +156,6 @@ class FaqCog(commands.Cog, command_attrs={'name': "FaqCog", "description": ""}):
             # embed.set_thumbnail(url=self.faq_symbol)
             embed.set_footer(text='Antistasi Community', icon_url="https://s3.amazonaws.com/files.enjin.com/1218665/site_logo/NEW%20LOGO%20BANNER.png")
             self.faq_embeds[faq_item.get('number')] = embed
-
-        log.debug(f"{self.faq_embeds=}")
 
 
 # endregion [Setup]
@@ -193,7 +190,6 @@ class FaqCog(commands.Cog, command_attrs={'name': "FaqCog", "description": ""}):
 # endregion [Listener]
 
 # region [Commands]
-
 
     @commands.command(aliases=get_aliases("post_faq_by_number"))
     @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=False)
@@ -236,7 +232,6 @@ class FaqCog(commands.Cog, command_attrs={'name': "FaqCog", "description": ""}):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

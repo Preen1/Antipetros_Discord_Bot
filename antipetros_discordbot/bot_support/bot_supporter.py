@@ -102,15 +102,15 @@ class BotSupporter:
         self.bot = bot
         self.subsupports = []
         self.available_subsupport_classes = SUB_SUPPORT_CLASSES
-        self.recruit_subsupports()
-        log.info("subsupports loaded into command-staff: %s", ', '.join(map(str, self.subsupports)))
 
     def find_available_subsupport_classes(self):
         pass
 
     def recruit_subsupports(self):
+
         for subsupport_class in self.available_subsupport_classes:
             self.subsupports.append(subsupport_class(self.bot, self))
+        log.debug("recruited subsupporters: %s", ', '.join([str(subsupporter) for subsupporter in self.subsupports]))
 
     def __getattr__(self, attribute_name):
         _out = None

@@ -67,9 +67,10 @@ class AntiPetrosBot(commands.Bot):
     def __init__(self, help_invocation='help', token=None, db_key=None, ** kwargs):
         super().__init__(owner_id=self.creator.id,
                          case_insensitive=BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive'),
-                         self_bot=False, command_prefix='$$',
+                         self_bot=False,
+                         command_prefix='$$',
                          activity=self.activity_from_config(),
-                         intents=self.get_intents()
+                         intents=self.get_intents(),
                          ** kwargs)
         self.token = token
         self.db_key = db_key
@@ -87,8 +88,9 @@ class AntiPetrosBot(commands.Bot):
         self.clients_to_close = []
         self.on_command_error = None
         self.github_url = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot"
-        self.github_image = f"https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/art/finished/images/{self.display_name}.png"
+        self.used_startup_message = None
 
+        self.support.recruit_subsupports()
         user_not_blacklisted(self, log)
 
         self._setup()
@@ -118,7 +120,7 @@ class AntiPetrosBot(commands.Bot):
     def run(self, **kwargs):
         if self.token is None:
             raise RuntimeError("Discord Token is None")
-        return super().run(token=self.token, bot=True, reconnect=True, **kwargs)
+        super().run(self.token, bot=True, reconnect=True, **kwargs)
 
     def _setup(self):
         self._get_initial_cogs()
@@ -155,21 +157,24 @@ class AntiPetrosBot(commands.Bot):
                             sys.exit()
 
     async def on_message(self, message: discord.Message) -> None:
-        await self.support.record_channel_usage(message)
+        if self.is_ready() is True:
+            await self.support.record_channel_usage(message)
         await self.process_commands(message)
 
     async def send_startup_message(self):
-        channel = self.get_channel(BASE_CONFIG.getint('startup_message', 'channel'))
+        channel = await self.channel_from_name(BASE_CONFIG.get('startup_message', 'channel'))
 
-        delete_time = 240 if self.is_debug is True else BASE_CONFIG.getint('startup_message', 'delete_after')
+        delete_time = 60 if self.is_debug is True else BASE_CONFIG.getint('startup_message', 'delete_after')
         delete_time = None if delete_time <= 0 else delete_time
         title = f"**{BASE_CONFIG.get('startup_message', 'title').title()}**"
         description = BASE_CONFIG.get('startup_message', 'description')
         image = BASE_CONFIG.get('startup_message', 'image')
         if BASE_CONFIG.getboolean('startup_message', 'as_embed') is True:
-            embed = discord.Embed
-
-        await channel.send(msg, delete_after=delete_time)
+            embed_data = await self.make_generic_embed(author='bot_author', footer='feature_request_footer', image=image, title=title, description=description, thumbnail='no_thumbnail', type='image')
+            self.used_startup_message = await channel.send(**embed_data, delete_after=delete_time)
+        else:
+            msg = f"{title}\n\n{description}\n\n{image}"
+            self.used_startup_message = await channel.send(msg, delete_after=delete_time)
 
     async def to_all_cogs(self, command, *args, **kwargs):
         for cog_name, cog_object in self.cogs.items():
@@ -213,6 +218,10 @@ class AntiPetrosBot(commands.Bot):
         log.info("extensions-cogs loaded: %s", ', '.join(self.cogs))
 
     async def close(self):
+        try:
+            await self.used_startup_message.delete()
+        except discord.NotFound:
+            log.debug('startup message was already deleted')
         log.info("shutting down bot loops")
         self.update_check_loop.stop()
 
@@ -278,7 +287,7 @@ class AntiPetrosBot(commands.Bot):
 
     @property
     def display_name(self):
-        return self.user.display_name
+        return self.bot.user.display_name
 
     @property
     def is_debug(self):

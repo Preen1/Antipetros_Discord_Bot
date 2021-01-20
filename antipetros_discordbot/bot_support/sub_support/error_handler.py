@@ -110,18 +110,28 @@ class ErrorHandler(SubSupportBase):
         self.error_handle_table = {commands.MaxConcurrencyReached: self._handle_max_concurrency,
                                    commands.CommandOnCooldown: self._handle_command_on_cooldown,
                                    commands.errors.BadArgument: self._handle_bad_argument,
-                                   MissingAttachmentError: self._handle_missing_attachment}
+                                   MissingAttachmentError: self._handle_missing_attachment,
+                                   commands.CheckFailure: self._handle_check_failure}
         self.default_delete_after_seconds = 120
         glog.class_init_notification(log, self)
 
     async def handle_errors(self, ctx, error):
         error_traceback = '\n'.join(traceback.format_exception(error, value=error, tb=None))
         await self.error_handle_table.get(type(error), self._default_handle_error)(ctx, error, error_traceback)
+        await ctx.message.delete()
+        log.error("Error '%s' was caused by '%s' on the command '%s' with args '%s' and traceback '%s'", error.__class__.__name__, ctx.author.name, ctx.command.name, ctx.args, error_traceback)
 
     async def _default_handle_error(self, ctx, error, error_traceback):
         log.error('Ignoring exception in command {}:'.format(ctx.command))
         log.exception(error, exc_info=True, stack_info=False)
         await self.bot.message_creator(embed=await self.error_reply_embed(ctx, error, 'Error With No Special Handling Occured', msg=str(error), error_traceback=error_traceback))
+
+    async def _handle_check_failure(self, ctx, error, error_traceback):
+        if self.bot.is_blacklisted(ctx.author) is False:
+            await ctx.channel.send(delete_after=self.default_delete_after_seconds, embed=await self.error_reply_embed(ctx,
+                                                                                                                      error,
+                                                                                                                      'Missing Permission',
+                                                                                                                      f'{ctx.author.mention}\n{ZERO_WIDTH}\n **You dont_have Permission to call this Command**\n{ZERO_WIDTH}'))
 
     async def _handle_missing_attachment(self, ctx, error, error_traceback):
         await ctx.channel.send(delete_after=self.default_delete_after_seconds, embed=await self.error_reply_embed(ctx,
@@ -134,10 +144,7 @@ class ErrorHandler(SubSupportBase):
                                                                                                                   error,
                                                                                                                   'Wrong Argument',
                                                                                                                   f'{ctx.author.mention}\n{ZERO_WIDTH}\n **You tried to invoke `{ctx.command.name}` with an wrong argument**\n{ZERO_WIDTH}\n```shell\n{ctx.command.name} {ctx.command.signature}\n```',
-                                                                                                                  error_traceback=error_traceback))
-        await ctx.message.delete()
-        await ctx.send(embed=await self.error_message_embed(ctx, error))
-        log.error("Error '%s' was caused by '%s' on the command '%s' with args '%s'", error.__class__.__name__, ctx.author.name, ctx.command.name, ctx.args)
+                                                                                                                  error_traceback=None))
 
     async def _handle_command_on_cooldown(self, ctx, error, error_traceback):
         await ctx.channel.send(embed=await self.error_reply_embed(ctx, error, 'STOP SPAMMING!', f'{ctx.author.mention}\n{ZERO_WIDTH}\n **Your mother was a hamster and your father smelt of elderberries!**', error_traceback=error_traceback), delete_after=self.default_delete_after_seconds)

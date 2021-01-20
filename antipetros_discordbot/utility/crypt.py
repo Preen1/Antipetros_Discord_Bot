@@ -108,7 +108,7 @@ import gidlogger as glog
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidtools_functions import readbin, writebin, readit, writeit
 
-from antipetros_discordbot.utility.general_decorator import debug_timing_print
+from antipetros_discordbot.utility.general_decorator import debug_timing_print, debug_timing_log
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 
 # endregion[Imports]
@@ -186,7 +186,7 @@ def decrypt_string(in_data: bytes, key=None, key_file=None):
     return fernet_crypt.decrypt(in_data).decode()
 
 
-@debug_timing_print
+@debug_timing_log(log)
 def encrypt_file(file_path, key=None, key_file=None):
 
     if key is None:
@@ -206,7 +206,7 @@ def encrypt_file(file_path, key=None, key_file=None):
         out_f.write(encrypt_file_data)
 
 
-@debug_timing_print
+@debug_timing_log(log)
 def decrypt_file(file_path, key=None, key_file=None):
 
     if key is None:

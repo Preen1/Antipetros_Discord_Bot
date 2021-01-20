@@ -25,7 +25,7 @@ requires = [
     "autopep8==1.5.4",
     "antistasi_template_checker==0.1.1",
     "discord==1.0.1",
-    "gidappdata==0.1.5",
+    "gidappdata==0.1.7",
     "gidlogger==0.1.7",
     "Pillow==8.1.0",
     "python-dotenv==0.15.0",

@@ -60,7 +60,8 @@ from antipetros_discordbot.utility.misc import save_commands, CogConfigReadOnly
 from antipetros_discordbot.utility.checks import in_allowed_channels, allowed_channel_and_allowed_role, log_invoker
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.named_tuples import GiveAwayEventItem
-
+from dateparser import parse as date_parse
+import arrow
 # endregion[Imports]
 
 # region [TODO]
@@ -129,6 +130,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': "GiveAwayCog", "descripti
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
         log.debug('setup for cog "%s" finished', str(self))
 
@@ -151,6 +153,13 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': "GiveAwayCog", "descripti
 
 # region [Commands]
 
+
+    @commands.command(aliases=get_aliases("check_datetime_stuff"))
+    @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=False)
+    @log_invoker(logger=log, level="info")
+    async def check_datetime_stuff(self, ctx, *, date_string: str):
+        conv_string = date_parse(date_string)
+        await ctx.send(conv_string)
 
     @commands.command(aliases=get_aliases("start_giveaway"))
     @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=False)
@@ -195,6 +204,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': "GiveAwayCog", "descripti
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

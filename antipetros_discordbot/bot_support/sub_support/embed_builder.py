@@ -99,11 +99,9 @@ class EmbedBuilder(SubSupportBase):
         self._ensure_folder_exists()
         self.embed_build_recipes = None
         self.default_empty = Embed.Empty
-        self.special_authors = {'bot_author': {'name': self.bot.display_name, 'url': self.bot.github_url, 'icon_url': self.bot.github_image},
-                                'default_author': self.default_author}
-        self.special_footers = {'feature_request_footer': {'text': "For feature suggestions and feature request, contact @Giddi".title(), "icon_url": self.bot.creator_member.member_object.avatar_url},
-                                'default_footer': self.default_footer}
-        self.replacement_map = {"$BOT_NAME$": self.bot.display_name}
+        self.special_footers = {}
+        self.special_authors = {}
+        self.replacement_map = {}
         self.default_field_name_num = 1
 
         glog.class_init_notification(log, self)
@@ -116,7 +114,7 @@ class EmbedBuilder(SubSupportBase):
                 try:
                     return self.bot.get_discord_color(color)
                 except FuzzyMatchError:
-                    return self.default_color.discord_color
+                    return self.bot.get_discord_color(self.default_color)
         elif isinstance(color, DiscordColor):
             return color
         else:
@@ -183,7 +181,7 @@ class EmbedBuilder(SubSupportBase):
         files = []
         generic_embed = Embed(title=str(kwargs.get("title", self.default_title)),
                               description=str(kwargs.get('description', self.default_description)),
-                              color=self._validate_color(kwargs.get('color', self.default_color.discord_color)),
+                              color=self._validate_color(kwargs.get('color', self.default_color)),
                               timestamp=self._validate_timestamp(kwargs.get('timestamp', self.default_timestamp)),
                               type=self._validate_type(kwargs.get('type', self.default_type)))
 
@@ -195,6 +193,7 @@ class EmbedBuilder(SubSupportBase):
         if author is not None:
             generic_embed.set_author(**author)
         if footer is not None:
+            footer['text'] = f"{ZERO_WIDTH}\n" + footer['text'] + f"\n{ZERO_WIDTH}\n{ZERO_WIDTH}"
             generic_embed.set_footer(**footer)
         if thumbnail is not None:
             generic_embed.set_thumbnail(url=thumbnail)
@@ -212,6 +211,8 @@ class EmbedBuilder(SubSupportBase):
             _out["file"] = files[0]
         elif len(files) > 1:
             _out['files'] = files
+        if self.bot.is_debug is True:
+            writeit('debug_generic_embed.txt', pformat(_out.get('embed').to_dict()))
         return _out
 
     async def make_static_embed(self, category, name):
@@ -317,6 +318,11 @@ class EmbedBuilder(SubSupportBase):
         return 'rich'
 
     async def if_ready(self):
+        self.special_authors = {'bot_author': {'name': self.bot.display_name, 'url': self.bot.github_url, 'icon_url': self.bot.user.avatar_url},
+                                'default_author': self.default_author}
+        self.special_footers = {'feature_request_footer': {'text': "For feature suggestions and feature request, contact @Giddi".title(), "icon_url": self.bot.creator.member_object.avatar_url},
+                                'default_footer': self.default_footer}
+        self.replacement_map = {"$BOT_NAME$": self.bot.display_name}
         self.collect_embed_build_recipes()
         log.debug("'%s' sub_support is READY", str(self))
 

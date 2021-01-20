@@ -42,3 +42,4 @@ invoke
 arrow
 pendulum
 python-dateutil
+dateparser

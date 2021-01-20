@@ -2,9 +2,6 @@
 
 # region [Imports]
 
-# * Standard Library Imports -->
-
-# * Standard Library Imports -->
 import os
 import time
 import asyncio
@@ -12,26 +9,20 @@ from io import BytesIO
 from datetime import datetime, timedelta
 from statistics import mean, stdev, median
 from collections import deque
-
-# * Third Party Imports -->
 import discord
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 from psutil import virtual_memory
 from discord.ext import tasks, commands
 from matplotlib.ticker import FormatStrFormatter
-
-# * Gid Imports -->
 import gidlogger as glog
-
-# * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.misc import date_today, save_commands, async_seconds_to_pretty_normal
 from antipetros_discordbot.utility.enums import DataSize
 from antipetros_discordbot.utility.checks import in_allowed_channels
 from antipetros_discordbot.utility.named_tuples import LatencyMeasurement, MemoryUsageMeasurement
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed, make_basic_embed_inline
-from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, bytes2human
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, bytes2human, create_folder
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 
@@ -84,6 +75,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         self.latency_data = deque(maxlen=DEQUE_SIZE)
         self.memory_data = deque(maxlen=DEQUE_SIZE)
         self.plot_formatting_info = {'latency': COGS_CONFIG.get(self.config_name, 'latency_graph_formatting'), 'memory': COGS_CONFIG.get(self.config_name, 'memory_graph_formatting')}
+        create_folder(self.save_folder)
         if os.environ.get('INFO_RUN', '') == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
