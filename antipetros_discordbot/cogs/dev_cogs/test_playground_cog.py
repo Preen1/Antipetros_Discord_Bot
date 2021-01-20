@@ -370,7 +370,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
     @log_invoker(log, 'debug')
     async def embed_experiment(self, ctx):
 
-        await ctx.send(**await self.bot.make_generic_embed(author='bot_author', footer=))
+        await ctx.send(**await self.bot.make_generic_embed(author='bot_author', footer='feature_request_footer', description="this is and test"))
 
 # region [SpecialMethods]
 

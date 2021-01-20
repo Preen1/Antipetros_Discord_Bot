@@ -205,6 +205,7 @@ class EmbedBuilder(SubSupportBase):
             for field in fields:
                 field = self._fix_field_item(field)
                 generic_embed.add_field(name=field.name, value=field.value, inline=field.inline)
+        self.default_field_name_num = 1
         _out = {"embed": generic_embed}
         files = [file_item for file_item in files if file_item is not None]
         if len(files) == 1:
@@ -241,13 +242,14 @@ class EmbedBuilder(SubSupportBase):
     @property
     def default_inline_value(self):
         """
-
+        "default_inline_value": [true or false]
         """
-        return False
+        return loadjson(self.default_embed_data_file).get('default_inline_value')
 
     @property
     def default_title(self):
         """
+        "default_title": ""
         replace template strings:   - $BOT_NAME$ for bot.display_name
 
         """
@@ -260,6 +262,7 @@ class EmbedBuilder(SubSupportBase):
     @property
     def default_description(self):
         """
+        "default_description": ""
         replace template strings:   - $BOT_NAME$ for bot.display_name
         """
         _out = loadjson(self.default_embed_data_file).get('default_description')
@@ -270,37 +273,42 @@ class EmbedBuilder(SubSupportBase):
     @property
     def default_author(self):
         """
-        {'name': '', 'url': '', 'icon_url': ''}
+        "default_author": {"name": "", "url": "", "icon_url": ""}
         """
         return loadjson(self.default_embed_data_file).get('default_author')
 
     @property
     def default_footer(self):
         """
-        {'text': '', 'icon_url': ''}
+
+        "default_footer": {"text": "", "icon_url": ""},
+
         """
         return loadjson(self.default_embed_data_file).get('default_footer')
 
     @property
     def default_thumbnail(self):
         """
-        {'url': ''}
+
+        "default_thumbnail": ""
+
         """
-        pass
+        return loadjson(self.default_embed_data_file).get('default_thumbnail')
 
     @property
     def default_color(self):
         """
-        {'color': ''}
+        "default_color": ""
         """
         return loadjson(self.default_embed_data_file).get('default_color')
 
     @property
     def default_timestamp(self):
         """
-        {'timestamp': ''}
+        optional!
+        "default_timestamp": ""
         """
-        return datetime.now(tz=timezone("Europe/Berlin"))
+        return loadjson(self.default_embed_data_file).get('default_timestamp', datetime.now(tz=timezone("Europe/Berlin")))
 
     @property
     def default_type(self):

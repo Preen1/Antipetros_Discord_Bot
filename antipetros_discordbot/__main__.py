@@ -19,6 +19,7 @@ from datetime import datetime
 # * Third Party Imports -->
 import click
 import discord
+from dotenv import load_dotenv, find_dotenv
 
 # * Gid Imports -->
 import gidlogger as glog
@@ -84,27 +85,6 @@ log = configure_logger()
 # region [Helper]
 
 
-def get_intents():
-    """
-    [summary]
-
-    [extended_summary]
-
-    Returns:
-        [type]: [description]
-    """
-    if BASE_CONFIG.get('intents', 'convenience_setting') == 'all':
-        intents = discord.Intents.all()
-    elif BASE_CONFIG.get('intents', 'convenience_setting') == 'default':
-        intents = discord.Intents.default()
-    else:
-        intents = discord.Intents.none()
-        for sub_intent in BASE_CONFIG.options('intents'):
-            if sub_intent != "convenience_setting":
-                setattr(intents, sub_intent, BASE_CONFIG.getboolean('intents', sub_intent))
-    return intents
-
-
 # endregion [Helper]
 
 # region [Main_function]
@@ -127,7 +107,7 @@ def command_alias_run():
     [extended_summary]
     """
     _out = {}
-    anti_petros_bot = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
+    anti_petros_bot = AntiPetrosBot()
     for command in anti_petros_bot.walk_commands():
         _out[command.name] = list(map(lambda x: x.replace('_', '-'), command.aliases))
         _out[command.name] += [alias.replace('-', '').replace('_', '') for alias in command.aliases if alias != command.name and alias.replace('-', '').replace('_', '') not in _out[command.name]]
@@ -145,7 +125,7 @@ def command_info_run():
 
     [extended_summary]
     """
-    anti_petros_bot = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
+    anti_petros_bot = AntiPetrosBot()
     _commands = {}
     for cog_name, cog_object in anti_petros_bot.cogs.items():
         for command in cog_object.get_commands():
@@ -179,7 +159,7 @@ def info_run():
     [extended_summary]
     """
     os.environ['INFO_RUN'] = "1"
-    anti_petros_bot = AntiPetrosBot(command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
+    anti_petros_bot = AntiPetrosBot()
 
 
 @cli.command(name='stop')
@@ -222,7 +202,7 @@ def main(token=None, db_key=None):
     """
     os.environ['INFO_RUN'] = "0"
     decrypt_db(db_key)
-    anti_petros_bot = AntiPetrosBot(token=token, db_key=db_key, command_prefix='$$', self_bot=False, activity=AntiPetrosBot.activity_from_config(), intents=get_intents())
+    anti_petros_bot = AntiPetrosBot(token=token, db_key=db_key)
 
     try:
         anti_petros_bot.run()
@@ -234,7 +214,8 @@ def main(token=None, db_key=None):
 # region [Main_Exec]
 if __name__ == '__main__':
     if os.getenv('IS_DEV') == 'true':
-        main(pathmaker(MAIN_DIR, 'token.env'))
+        load_dotenv('token.env')
+        main(token=os.getenv('DISCORD_TOKEN'), db_key=os.getenv('DB_KEY'))
     else:
         main()
 

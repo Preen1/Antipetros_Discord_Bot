@@ -65,7 +65,12 @@ class AntiPetrosBot(commands.Bot):
     cog_import_base_path = BASE_CONFIG.get('general_settings', 'cogs_location')
 
     def __init__(self, help_invocation='help', token=None, db_key=None, ** kwargs):
-        super().__init__(owner_id=self.creator.id, case_insensitive=BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive'), self_bot=False, ** kwargs)
+        super().__init__(owner_id=self.creator.id,
+                         case_insensitive=BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive'),
+                         self_bot=False, command_prefix='$$',
+                         activity=self.activity_from_config(),
+                         intents=self.get_intents()
+                         ** kwargs)
         self.token = token
         self.db_key = db_key
         self.help_invocation = help_invocation
@@ -89,6 +94,26 @@ class AntiPetrosBot(commands.Bot):
         self._setup()
 
         glog.class_init_notification(log, self)
+
+    def get_intents(self):
+        """
+        [summary]
+
+        [extended_summary]
+
+        Returns:
+            [type]: [description]
+        """
+        if BASE_CONFIG.get('intents', 'convenience_setting') == 'all':
+            intents = discord.Intents.all()
+        elif BASE_CONFIG.get('intents', 'convenience_setting') == 'default':
+            intents = discord.Intents.default()
+        else:
+            intents = discord.Intents.none()
+            for sub_intent in BASE_CONFIG.options('intents'):
+                if sub_intent != "convenience_setting":
+                    setattr(intents, sub_intent, BASE_CONFIG.getboolean('intents', sub_intent))
+        return intents
 
     def run(self, **kwargs):
         if self.token is None:
