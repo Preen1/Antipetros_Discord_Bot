@@ -93,8 +93,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
 
     @property
     def command_emojis(self):
-        if self.bot.is_debug:
-            COGS_CONFIG.read()
         return {'save': COGS_CONFIG.get(self.config_name, 'save_emoji'),
                 'upvote': COGS_CONFIG.get(self.config_name, 'upvote_emoji'),
                 'downvote': COGS_CONFIG.get(self.config_name, 'downvote_emoji')}
@@ -102,20 +100,14 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
     @property
     def categories(self):
         _out = self.data_storage_handler.category_emojis
-        if self.bot.is_debug:
-            log.debug(_out)
         return _out
 
     @property
     def allowed_channels(self):
-        if self.bot.is_debug:
-            COGS_CONFIG.read()
         return set(COGS_CONFIG.getlist(self.config_name, 'allowed_channels'))
 
     @property
     def notify_contact_member(self):
-        if self.bot.is_debug:
-            COGS_CONFIG.read()
         return COGS_CONFIG.get(self.config_name, 'notify_contact_member')
 
     @property
@@ -124,9 +116,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
 
     @property
     def saved_messages(self):
-        log.debug('querying saved messages')
         saved_messages = self.data_storage_handler.get_all_message_ids()
-        log.debug(f"{saved_messages=}")
         return saved_messages
 
     @property

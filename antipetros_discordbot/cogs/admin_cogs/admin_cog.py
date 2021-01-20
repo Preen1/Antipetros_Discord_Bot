@@ -85,7 +85,6 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
 
 # region [Properties]
 
-
     @ property
     def allowed_dm_invoker_ids(self):
         return set(map(int, COGS_CONFIG.getlist(self.config_name, 'allowed_dm_ids')))
@@ -258,61 +257,25 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
     @ commands.command(aliases=get_aliases("add_to_blacklist"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     @ in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
-    async def add_to_blacklist(self, ctx, user_id: int):
-        # TODO: CRITICAL ! CHANGE TO SAVE TO JSON AND MAKE BOT METHOD FOR SAVING BLACKLIST JSON FILE
-        user = await self.bot.fetch_user(user_id)
-        if user is None:
-            # TODO: make as embed
-            await ctx.send(f"Can not find a User with the id '{str(user_id)}'!")
-            return
+    async def add_to_blacklist(self, ctx, user: discord.Member):
+
         if user.bot is True:
             # TODO: make as embed
             await ctx.send("the user you are trying to add is a **__BOT__**!\n\nThis can't be done!")
             return
-        current_blacklist = self.bot.blacklisted_users
-        current_blacklist.append(user_id)
-        BASE_CONFIG.set('blacklist', 'user', current_blacklist)
-        BASE_CONFIG.save()
-        if self.bot.is_debug is True:
-            # TODO: make as embed
-            await user.send(f"***THIS IS JUST A TEST, SORRY FOR THE DM BOTHER***\n\nYou have been put on my __BLACKLIST__, you won't be able to invoke my commands.\n\nIf you think this was done in error or other questions, contact **__{self.bot.notify_contact_member}__** per DM!")
+        blacklisted_user = await self.bot.blacklist_user(user)
+        if blacklisted_user is not None:
+            await ctx.send(f"User '{user.name}' with the id '{user.id}' was added to my blacklist, he wont be able to invoke my commands!")
         else:
-            # TODO: make as embed
-            await user.send(f"You have been put on my __BLACKLIST__, you won't be able to invoke my commands.\n\nIf you think this was done in error or other questions, contact **__{self.bot.notify_contact_member}__** per DM!")
-            # TODO: make as embed
-        await ctx.send(f"User '{user.name}' with the id '{user.id}' was added to my blacklist, he wont be able to invoke my commands!\n\nI have also notified him by DM of this fact!")
+            await ctx.send("Something went wrong while blacklisting the User")
 
     @ commands.command(aliases=get_aliases("remove_from_blacklist"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
     @ in_allowed_channels(set(COGS_CONFIG.getlist('admin', 'allowed_channels')))
-    async def remove_from_blacklist(self, ctx, user_id: int):
+    async def remove_from_blacklist(self, ctx, user: discord.Member):
 
-        user = await self.bot.fetch_user(user_id)
-        if user is None:
-            # TODO: make as embed
-            await ctx.send(f"Can not find a User with the id '{str(user_id)}'!")
-            return
-        current_blacklist = self.bot.blacklisted_users
-        if user.id not in current_blacklist:
-            # TODO: make as embed
-            await ctx.send(f"User '{user.name}' with User_id '{user.id}' is currently **__NOT__** in my ***Blacklist***\n and can therefor not be removed from the ***Blacklist***!")
-            return
-
-        for index, item in enumerate(current_blacklist):
-            if item == user_id:
-                to_delete_index = index
-                break
-        current_blacklist.pop(to_delete_index)
-        BASE_CONFIG.set('blacklist', 'user', current_blacklist)
-        BASE_CONFIG.save()
-        if self.bot.is_debug is True:
-            # TODO: make as embed
-            await user.send("***THIS IS JUST A TEST, SORRY FOR THE DM BOTHER***\n\nYou have been **__REMOVED__** from my Blacklist.\n\nYou can again invoke my commands again!")
-        else:
-            # TODO: make as embed
-            await user.send("You have been **__REMOVED__** from my Blacklist.\n\nYou can again invoke my commands again!")
-            # TODO: make as embed
-        await ctx.send(f"User '{user.name}' with User_id '{user.id}' was removed from my Blacklist.\n\nHe is now able again, to invoke my commands!")
+        await self.bot.unblacklist_user(user)
+        await ctx.send(f"I have unblacklisted user {user.name}")
 
     @ commands.command(aliases=get_aliases("tell_uptime"))
     @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))

@@ -7,3 +7,4 @@ if os.path.islink(SUPPORT_DIR) is True:
     SUPPORT_DIR = os.readlink(SUPPORT_DIR).replace('\\\\?\\', '')
 
 
+from .bot_supporter import BotSupporter

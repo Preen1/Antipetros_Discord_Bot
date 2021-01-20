@@ -146,7 +146,7 @@ class BlacklistedUserItem:
         elif isinstance(other, str):
             return other == self.name
         elif isinstance(other, BlacklistedUserItem):
-            return other == self
+            return other is self
         elif isinstance(other, discord.Member):
             return other.id == self.id
         elif isinstance(other, discord.User):
@@ -154,6 +154,9 @@ class BlacklistedUserItem:
 
     def __hash__(self) -> int:
         return hash(self.notified) + hash(self._command_called) + hash(self.id) + hash(self.name)
+
+    def to_dict(self):
+        return {'id': self.id, 'name': self.name, 'command_called': self._command_called, 'notified':self.notified}
 
 # region[Main_Exec]
 

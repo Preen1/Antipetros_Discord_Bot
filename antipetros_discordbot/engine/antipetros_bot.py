@@ -64,8 +64,10 @@ class AntiPetrosBot(commands.Bot):
     bot_feature_suggestion_json_file = APPDATA['bot_feature_suggestions.json']
     cog_import_base_path = BASE_CONFIG.get('general_settings', 'cogs_location')
 
-    def __init__(self, help_invocation='help', ** kwargs):
-        super().__init__(owner_id=self.creator.id, case_insensitive=BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive'), **kwargs)
+    def __init__(self, help_invocation='help', token=None, db_key=None, ** kwargs):
+        super().__init__(owner_id=self.creator.id, case_insensitive=BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive'), self_bot=False, ** kwargs)
+        self.token = token
+        self.db_key = db_key
         self.help_invocation = help_invocation
         self.description = readit(APPDATA['bot_description.md'])
         self.support = BotSupporter(self)
@@ -86,12 +88,18 @@ class AntiPetrosBot(commands.Bot):
 
         glog.class_init_notification(log, self)
 
+    def run(self, **kwargs):
+        if self.token is None:
+            raise RuntimeError("Discord Token is None")
+        return super().run(token=self.token, bot=True, reconnect=True, **kwargs)
+
     def _setup(self):
         self._get_initial_cogs()
         self.update_check_loop.start()
 
     async def on_ready(self):
         log.info('%s has connected to Discord!', self.user.name)
+        log.info('Bot is currently rate limited: %s', str(self.is_ws_ratelimited()))
         await self._get_bot_info()
         await self._start_sessions()
         await self.wait_until_ready()
@@ -197,6 +205,7 @@ class AntiPetrosBot(commands.Bot):
                          'listening': discord.ActivityType.listening,
                          'streaming': discord.ActivityType.streaming}
         text, activity_type = BASE_CONFIG.getlist('activity', option)
+        text = text.title()
         if activity_type not in activity_dict:
             log.critical("'%s' is not an Valid ActivityType, aborting activity change")
             return

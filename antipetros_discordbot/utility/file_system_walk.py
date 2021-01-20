@@ -221,19 +221,19 @@ class FileSystemWalkerItem(namedtuple('WalkerItem', ['name', 'path'])):
 
 
 def _input_handle_excludes(value, typus="folder"):
-    _standard_exclude_folders = ['.git', '.venv', '__pychache__', '.vscode']
+    _standard_exclude_folders = ['.git', '.venv', '__pycache__', '.vscode']
     _standard_exclude_files = []
     _standard_exludes = _standard_exclude_folders if typus == 'folder' else _standard_exclude_files
     to_exclude = [] if value is None else value
-    if to_exclude == 'standard':
+    if to_exclude == 'exclusion_standard':
         to_exclude = _standard_exludes
-    if 'standard' in to_exclude:
-        to_exclude.remove('standard')
+    if 'exclusion_standard' in to_exclude:
+        to_exclude.remove('exclusion_standard')
         to_exclude += _standard_exludes
     return list(set(map(lambda x: x.casefold(), to_exclude)))
 
 
-def filesystem_walker(start_folder, exclude_folder: Union[str, Iterable] = 'standard', exclude_files: Union[str, Iterable] = 'standard'):
+def filesystem_walker(start_folder, exclude_folder: Union[str, Iterable] = 'exclusion_standard', exclude_files: Union[str, Iterable] = 'exclusion_standard'):
     folders_to_exclude = _input_handle_excludes(exclude_folder, typus='folder')
     files_to_exclude = _input_handle_excludes(exclude_files, typus='files')
 

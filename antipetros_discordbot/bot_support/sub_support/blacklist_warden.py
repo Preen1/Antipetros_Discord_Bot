@@ -177,7 +177,10 @@ class BlacklistWarden(SubSupportBase):
         return new_blacklisted_user_item
 
     def save(self):
-        pass
+        _out = []
+        for item in self._blacklisted_user:
+            _out.append(item.to_dict())
+        writejson(_out, self.blacklist_file)
 
     def _ensure_blacklist_file_exists(self):
         if self.blacklist_file_exists is False:
@@ -216,6 +219,7 @@ class BlacklistWarden(SubSupportBase):
         log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self):
+        self.save()
         log.debug("'%s' sub_support was RETIRED", str(self))
 
 

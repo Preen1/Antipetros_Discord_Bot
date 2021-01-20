@@ -235,15 +235,14 @@ def new_db_key(token_file):
             f.write(line + '\n')
 
 
-def encrypt_db():
-    key = os.getenv('DB_KEY')
+def encrypt_db(key):
     for file in os.scandir(APPDATA['database']):
         if file.is_file() and file.name.endswith('.db'):
             encrypt_file(file.path, key=key)
 
 
-def decrypt_db():
-    key = os.getenv('DB_KEY')
+def decrypt_db(key):
+
     for file in os.scandir(APPDATA['database']):
         if file.is_file() and file.name.endswith('.db'):
             try:

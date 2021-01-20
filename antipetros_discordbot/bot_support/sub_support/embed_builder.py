@@ -60,52 +60,37 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class EmbedBuilder(SubSupportBase):
-    embed_serialization_folder = pathmaker(APPDATA['fixed_data'], "embed_data")
+    """
+    [summary]
+
+    [extended_summary]
+
+    Args:
+        SubSupportBase ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
+    embed_data_folder = pathmaker(APPDATA['fixed_data'], "embed_data")
     standard_embed_symbols_file = pathmaker(APPDATA["embed_data"], "embed_symbols.json")
+    default_embed_data = pathmaker(APPDATA['default_embed_data.json'])
 
     def __init__(self, bot, support):
         self.bot = bot
         self.support = support
         # self.loop = self.bot.loop
         # self.is_debug = self.bot.is_debug
-        self.old_dir_hash = hash(self)
+        self._ensure_folder_exists()
         self.embed_build_recipes = None
-        self.collect_embed_build_recipes()
-        self.embed_prototypes = {}
-        self.collect_embed_prototypes()
-        self.jinja_env = Environment(loader=BaseLoader)
-        self.embed_subtypes = {'faq': 'standard'}  # TODO: maybe from config
+        self.default_empty = Embed.Empty
 
         glog.class_init_notification(log, self)
 
     async def make_static_embed(self, category, name):
-        return Embed.from_dict(self.embed_prototypes[category].get(name))
+        pass
 
     async def make_embed(self, typus, **kwargs):
-        return await self.embed_build_recipes.get(typus)(**kwargs)
-
-    async def _get_embed_data(self, category, name):
-        if hash(self) != self.old_dir_hash:
-            self.collect_embed_prototypes()
-        return self.embed_prototypes[category].get(name)
-
-    async def _embed_recipe_faq(self, faq_number: int, faq_question: str, faq_answer: str, faq_link: str = None, timestamp: datetime = None):
-        prototype = self.embed_prototypes['faq'].get(self.embed_subtypes['faq'])
-        timestamp = datetime.utcnow() if timestamp is None else timestamp
-        timestamp = datetime_isoformat_to_discord_format(timestamp)
-
-        faq_link = faq_link if faq_link is not None else ''
-
-        conv_callback = partial(self._convert_dict_values, replacements={k: v for k, v in locals().items() if k not in ['self', 'prototype']})
-
-        mod_embed_dict = benedict(prototype)
-        mod_embed_dict.traverse(conv_callback)
-        return Embed.from_dict(mod_embed_dict)
-
-    def collect_embed_prototypes(self):
-        for file in self.serialized_files:
-            category = os.path.splitext(file.name)[0].replace('_embeds', '').casefold()
-            self.embed_prototypes[category] = loadjson(file.path)
+        pass
 
     def collect_embed_build_recipes(self):
         self.embed_build_recipes = {}
@@ -120,36 +105,56 @@ class EmbedBuilder(SubSupportBase):
         return loadjson(self.standard_embed_symbols_file)
 
     @property
-    def serialized_files(self):
-        self._ensure_folder_exists()
-        _out = []
-        for file in os.scandir(self.embed_serialization_folder):
-            if file.is_file() and file.name.endswith('.json') and os.path.splitext(file.name)[0].endswith('_embeds'):
-                _out.append(file)
-        return _out
-
-    @property
     def folder_exists(self):
-        return os.path.isdir(self.embed_serialization_folder)
-
-    @property
-    def categories(self):
-        return [key for key in self.embed_prototypes]
-
-    def _convert_dict_values(self, source: benedict, key, value, replacements):
-        try:
-            as_template = self.jinja_env.from_string(value)
-            source[key] = as_template.render(**replacements)
-        except TypeError:
-            pass
+        return os.path.isdir(self.embed_data_folder)
 
     def _ensure_folder_exists(self):
-        create_folder(self.embed_serialization_folder)
+        create_folder(self.embed_data_folder)
 
-    def __hash__(self):
-        return hash(checksumdir.dirhash(self.embed_serialization_folder))
+    @property
+    def default_author(self):
+        """
+        {'name': '', 'url': '', 'icon_url': ''}
+        """
+        pass
+
+    @property
+    def default_footer(self):
+        """
+        {'text': '', 'icon_url': ''}
+        """
+        pass
+
+    @property
+    def default_thumbnail(self):
+        """
+        {'url': ''}
+        """
+        pass
+
+    @property
+    def default_color(self):
+        """
+        {'color': ''}
+        """
+        pass
+
+    @property
+    def default_timestamp(self):
+        """
+        {'timestamp': ''}
+        """
+        return {'timestamp': datetime.now(tz=timezone("Europe/Berlin"))}
+
+    @property
+    def default_type(self):
+        """
+        {'type': 'rich'}
+        """
+        return {'type': 'rich'}
 
     async def if_ready(self):
+        self.collect_embed_build_recipes()
         log.debug("'%s' sub_support is READY", str(self))
 
     async def update(self):
@@ -157,13 +162,6 @@ class EmbedBuilder(SubSupportBase):
 
     def retire(self):
         log.debug("'%s' sub_support was RETIRED", str(self))
-
-    # def __getattr__(self, attr_name):
-    #     if attr_name.startswith('get_'):
-    #         mod_attr_name = attr_name.replace('get_', '_embed_recipe_')
-    #         if mod_attr_name in self.embed_build_recipes:
-    #             return self.embed_build_recipes.get(mod_attr_name)
-    #     raise AttributeError
 
 
 def get_class():
