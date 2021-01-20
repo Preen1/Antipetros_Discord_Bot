@@ -49,3 +49,12 @@ class DataSize(Enum):
         if annotate is True:
             return str(converted_bytes) + ' ' + self.short_name
         return converted_bytes
+
+
+class EmbedType(Enum):
+    Rich = "rich"
+    Image = "image"
+    Video = "video"
+    Gifv = "gifv"
+    Article = "article"
+    Link = "link"

@@ -123,7 +123,7 @@ class ColorKeeper(SubSupportBase):
     def color(self, color_name: str):
         return self.colors.get(color_name)
 
-    async def discord_color(self, color_name: str):
+    def get_discord_color(self, color_name: str):
         color_name = color_name.casefold()
         if color_name in self.colors:
             return self.colors[color_name].discord_color

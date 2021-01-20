@@ -368,11 +368,9 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
     @commands.command()
     @allowed_channel_and_allowed_role(CONFIG_NAME)
     @log_invoker(log, 'debug')
-    async def embed_experiment_2(self, ctx):
+    async def embed_experiment(self, ctx):
 
-        embed = await self.bot.make_embed(typus='faq', faq_number=10, faq_question="whatever?", faq_answer="Meta programming breaks my mind!")
-
-        await ctx.send(embed=embed)
+        await ctx.send(**await self.bot.make_generic_embed(author='bot_author', footer=))
 
 # region [SpecialMethods]
 

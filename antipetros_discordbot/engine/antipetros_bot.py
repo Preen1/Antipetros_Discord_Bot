@@ -81,6 +81,8 @@ class AntiPetrosBot(commands.Bot):
         self.current_day = datetime.utcnow().day
         self.clients_to_close = []
         self.on_command_error = None
+        self.github_url = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot"
+        self.github_image = f"https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/art/finished/images/{self.display_name}.png"
 
         user_not_blacklisted(self, log)
 
@@ -133,9 +135,15 @@ class AntiPetrosBot(commands.Bot):
 
     async def send_startup_message(self):
         channel = self.get_channel(BASE_CONFIG.getint('startup_message', 'channel'))
-        msg = BASE_CONFIG.get('startup_message', 'message')
+
         delete_time = 240 if self.is_debug is True else BASE_CONFIG.getint('startup_message', 'delete_after')
-        delete_time = None if delete_time == 0 else delete_time
+        delete_time = None if delete_time <= 0 else delete_time
+        title = f"**{BASE_CONFIG.get('startup_message', 'title').title()}**"
+        description = BASE_CONFIG.get('startup_message', 'description')
+        image = BASE_CONFIG.get('startup_message', 'image')
+        if BASE_CONFIG.getboolean('startup_message', 'as_embed') is True:
+            embed = discord.Embed
+
         await channel.send(msg, delete_after=delete_time)
 
     async def to_all_cogs(self, command, *args, **kwargs):
