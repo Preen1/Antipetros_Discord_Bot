@@ -90,6 +90,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': True, "name": "KlimBimCo
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
@@ -109,20 +110,23 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': True, "name": "KlimBimCo
 
 # region [Commands]
 
+
     @ commands.command(aliases=get_aliases("the_dragon"), **get_doc_data("the_dragon"))
     @ allowed_channel_and_allowed_role(CONFIG_NAME)
+    @commands.cooldown(1, 60, commands.BucketType.channel)
     async def the_dragon(self, ctx):
         await ctx.send(THE_DRAGON)
 
     @ commands.command(aliases=get_aliases("flip_coin"), **get_doc_data("flip_coin"))
     @ allowed_channel_and_allowed_role(CONFIG_NAME)
+    @commands.cooldown(1, 30, commands.BucketType.channel)
     async def flip_coin(self, ctx: commands.Context):
         with ctx.typing():
-            result = secrets.randbelow(2)
-            if result == 0:
-                coin = 'tails'
-            else:
+            result = (secrets.randbelow(2) + 1) + random.randint(0, 10000)
+            if result % 2 == 0:
                 coin = 'heads'
+            else:
+                coin = 'tails'
             await asyncio.sleep(2)
             coin_image = "https://i.postimg.cc/mDKvvG2J/antipetros-coin-head.png" if coin == 'heads' else "https://i.postimg.cc/yx9MBrDd/antipetros-coin-tails.png"
             embed = await self.bot.make_generic_embed(title=coin.title(), description=ZERO_WIDTH, image=coin_image, thumbnail='no_thumbnail')
@@ -144,6 +148,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': True, "name": "KlimBimCo
 
     @ commands.command(aliases=get_aliases("make_figlet"), **get_doc_data("make_figlet"))
     @ allowed_channel_and_allowed_role(CONFIG_NAME)
+    @commands.cooldown(1, 60, commands.BucketType.channel)
     async def make_figlet(self, ctx, *, text: str):
 
         figlet = Figlet(font='gothic', width=300)
@@ -167,6 +172,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': True, "name": "KlimBimCo
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

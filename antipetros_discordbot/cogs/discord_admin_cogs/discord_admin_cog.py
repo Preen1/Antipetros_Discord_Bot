@@ -21,7 +21,7 @@ import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.misc import save_commands, seconds_to_pretty, async_seconds_to_pretty_normal
-from antipetros_discordbot.utility.checks import in_allowed_channels
+from antipetros_discordbot.utility.checks import in_allowed_channels, allowed_channel_and_allowed_role
 from antipetros_discordbot.utility.named_tuples import FeatureSuggestionItem
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.data_gathering import gather_data
@@ -166,8 +166,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
         await ctx.message.delete(delay=float(_delete_time))
 
     @ commands.command(aliases=get_aliases("shutdown"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_roles'))
-    @ in_allowed_channels(set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels')))
+    @ allowed_channel_and_allowed_role(CONFIG_NAME)
     async def shutdown(self, ctx):
         try:
             log.debug('shutdown command received from "%s"', ctx.author.name)
@@ -227,8 +226,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
         await ctx.send(f"__Uptime__ -->\n\t\t| {str(seconds_to_pretty(seconds))}")
 
     @ commands.command(aliases=get_aliases("delete_msg"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
-    @ in_allowed_channels(set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels')))
+    @ allowed_channel_and_allowed_role(CONFIG_NAME)
     async def delete_msg(self, ctx, msg_id: int):
 
         channel = ctx.channel

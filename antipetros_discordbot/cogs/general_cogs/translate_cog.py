@@ -143,6 +143,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": "Transla
 
     @commands.command(aliases=get_aliases('translate'), **get_doc_data('translate'))
     @allowed_channel_and_allowed_role(CONFIG_NAME)
+    @commands.cooldown(1, 10, commands.BucketType.channel)
     async def translate(self, ctx, to_language_id: Optional[LanguageConverter] = "english", *, text_to_translate: str):
         """
         Translates text into multiple different languages.

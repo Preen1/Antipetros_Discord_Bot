@@ -1,16 +1,91 @@
 [build-system]
-requires = [ "flit_core >=2,<4",]
+requires = ["flit_core >=2,<4"]
 build-backend = "flit_core.buildapi"
 
+# region [flit]
+[tool.flit.metadata]
+module = "antipetros_discordbot"
+author = "antistasi_tools"
+home-page = "https://github.com/Giddius/Antipetros_Discord_Bot"
+classifiers = ["License :: OSI Approved :: MIT License"]
+description-file = "README.md"
+license = "MIT"
+requires = [
+    "Jinja2==2.11.2",
+    "googletrans==4.0.0rc1",
+    "icecream==2.0.0",
+    "aiohttp==3.7.3",
+    "watchgod==0.6",
+    "emoji==1.1.0",
+    "discord_flags==2.1.1",
+    "cryptography==3.3.1",
+    "WeasyPrint==52.2",
+    "fuzzywuzzy==0.18.0",
+    "matplotlib==3.3.3",
+    "psutil==5.8.0",
+    "marshmallow==3.10.0",
+    "arrow==0.17.0",
+    "dateparser==1.0.0",
+    "humanize==3.2.0",
+    "pyfiglet==0.8.post1",
+    "async_property==0.2.1",
+    "click==7.1.2",
+    "pytz==2020.5",
+    "antistasi_template_checker==0.1.1",
+    "discord==1.0.1",
+    "gidappdata==0.1.8",
+    "gidlogger==0.1.7",
+    "Pillow==8.1.0",
+    "python-dotenv==0.15.0",
+    "udpy==2.0.0",
+]
+
+[tool.flit.scripts]
+antipetrosbot = "antipetros_discordbot.__main__:cli"
+mksubsupport = "antipetros_discordbot.dev_tools_and_scripts.cli.gen_sub_supporter:new_sub_supporter_class"
+
+[tool.flit.sdist]
+exclude = [
+    "antipetros_discordbot/init_userdata/data_pack",
+    "antipetros_discordbot/init_userdata/*.trigger",
+    "antipetros_discordbot/dev_tools_and_scripts",
+    "misc",
+    "temp",
+    "docs",
+    "tools",
+    ".pydeps",
+    ".isort.cfg",
+    "tests",
+    ".gitattributes",
+    ".gitignore",
+    ".editorconfig",
+    "antipetros_discordbot/utility/gidsql/_utils.archive",
+    "designer_files",
+    "art",
+    "antipetros_discordbot/dev_tools_and_scripts",
+]
+
+# endregion [flit]
+# region [autopep8]
 [tool.autopep8]
 max-line-length = 250
-ignore = [ "E402", "E501",]
+ignore = ["E402", "E501"]
 
+# endregion [autopep8]
+# region [isort]
 [tool.isort]
 line_length = 200
-sections = [ "FUTURE", "STDLIB", "THIRDPARTY", "PYQT", "GID", "FIRSTPARTY", "LOCALFOLDER",]
-known_pyqt = [ "PyQt5",]
-known_gid = [ "gidtools", "gidlogger", "gidqtutils", "gidviewmodels",]
+sections = [
+    "FUTURE",
+    "STDLIB",
+    "THIRDPARTY",
+    "PYQT",
+    "GID",
+    "FIRSTPARTY",
+    "LOCALFOLDER",
+]
+known_pyqt = ["PyQt5"]
+known_gid = ["gidtools", "gidlogger", "gidqtutils", "gidviewmodels"]
 import_heading_stdlib = "* Standard Library Imports ---------------------------------------------------------------------------->"
 import_heading_thirdparty = "* Third Party Imports --------------------------------------------------------------------------------->"
 import_heading_firstparty = "* Local Imports --------------------------------------------------------------------------------------->"
@@ -22,18 +97,24 @@ lines_after_imports = 1
 length_sort = true
 group_by_package = true
 
-[tool.flit.metadata]
-module = "antipetros_discordbot"
-author = "antistasi_tools"
-home-page = "https://github.com/Giddius/Antipetros_Discord_Bot"
-classifiers = [ "License :: OSI Approved :: MIT License",]
-description-file = "README.md"
-license = "MIT"
-requires = [ "Jinja2==2.11.2", "googletrans==4.0.0rc1", "icecream==2.0.0", "aiohttp==3.7.3", "watchgod==0.6", "emoji==1.1.0", "discord_flags==2.1.1", "cryptography==3.3.1", "WeasyPrint==52.2", "fuzzywuzzy==0.18.0", "matplotlib==3.3.3", "psutil==5.8.0", "marshmallow==3.10.0", "arrow==0.17.0", "dateparser==1.0.0", "humanize==3.2.0", "pyfiglet==0.8.post1", "async_property==0.2.1", "click==7.1.2", "pytz==2020.5", "antistasi_template_checker==0.1.1", "discord==1.0.1", "gidappdata==0.1.8", "gidlogger==0.1.7", "Pillow==8.1.0", "python-dotenv==0.15.0", "udpy==2.0.0",]
+# endregion [isort]
+# region [pytest]
+[tool.pytest.ini_options]
+addopts = "-rP -vv --durations=0 --show-capture=all --color=auto --code-highlight=yes"
 
-[tool.flit.scripts]
-antipetrosbot = "antipetros_discordbot.__main__:cli"
-mksubsupport = "antipetros_discordbot.dev_tools_and_scripts.cli.gen_sub_supporter:new_sub_supporter_class"
+# endregion [pytest]
+# region [gidvenv]
+[tool.gidvenv.base_venv_settings]
+system_site_packages = false
+clear = true
+symlinks = true
+with_pip = false
+# prompt=
+upgrade_deps = false
 
-[tool.flit.sdist]
-exclude = [ "antipetros_discordbot/init_userdata/data_pack", "antipetros_discordbot/init_userdata/*.trigger", "antipetros_discordbot/dev_tools_and_scripts", "misc", "temp", "docs", "tools", ".pydeps", ".isort.cfg", "tests", ".gitattributes", ".gitignore", ".editorconfig", "antipetros_discordbot/utility/gidsql/_utils.archive", "designer_files", "art", "antipetros_discordbot/dev_tools_and_scripts",]
+[tool.gidvenv.settings]
+verbose = false
+manipulate_script = true
+pyclean_before = true
+extra_install_instructions = []
+# endregion [gidvenv]
