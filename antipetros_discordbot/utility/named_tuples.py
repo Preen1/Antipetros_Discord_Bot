@@ -58,3 +58,6 @@ GiveAwayEventItem = namedtuple("GiveAwayEventItem", ['name', 'channel_name', 'me
 
 
 EmbedFieldItem = namedtuple("EmbedFieldItem", ['name', 'value', "inline"], defaults=(None, None, None))
+
+
+ListenerContext = namedtuple('ListenerContext', ['message', 'content', 'channel', 'author', 'creation_time', 'reactions', 'attachments'], defaults=([], []))

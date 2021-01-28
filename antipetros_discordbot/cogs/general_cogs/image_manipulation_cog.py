@@ -11,10 +11,10 @@ from tempfile import TemporaryDirectory
 
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageEnhance, ImageFont, ImageDraw
 from pytz import timezone
 from discord.ext import commands
-
+from fuzzywuzzy import fuzz, process as fuzzprocess
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
@@ -97,7 +97,6 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
 # endregion[Init]
 
 # region [Properties]
-
 
     @property
     def allowed_channels(self):
@@ -351,6 +350,60 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
             self.old_map_message = await ctx.send(embed=embed, file=discord.File(fp=image_binary, filename="map.png"), delete_after=delete_time)
 
         log.debug("finished 'map_changed' command")
+
+    async def get_text_dimensions(self, text_string, font_name, image_size):
+        # https://stackoverflow.com/a/46220683/9263761
+        font_size = 500
+        buffer = 50
+        image_width, image_height = image_size
+        image_width = image_width - (buffer * 2)
+        image_height = image_height - (buffer * 2)
+
+        text_width = 99999999999
+        text_height = 9999999999
+        while text_width > image_width or text_height > image_height:
+            font = ImageFont.truetype(font_name, font_size)
+            ascent, descent = font.getmetrics()
+
+            text_width = font.getmask(text_string).getbbox()[2]
+            text_height = font.getmask(text_string).getbbox()[3] + descent
+            font_size -= 1
+        return font, text_width, text_height, font_size
+
+    async def get_smaller_text_dimensions(self, text_string, font):
+        # https://stackoverflow.com/a/46220683/9263761
+        ascent, descent = font.getmetrics()
+
+        text_width = font.getmask(text_string).getbbox()[2]
+        text_height = font.getmask(text_string).getbbox()[3] + descent
+
+        return (text_width, text_height)
+
+    @commands.command(aliases=get_aliases("text_to_image"))
+    @allowed_channel_and_allowed_role(CONFIG_NAME)
+    async def text_to_image(self, ctx, *, text: str):
+        font_path = APPDATA['stencilla.ttf']
+        image_path = APPDATA['armaimage.png']
+
+        image = Image.open(APPDATA['armaimage.png'])
+        font, text_width, text_height, font_size = await self.get_text_dimensions(text, font_path, image.size)
+        second_font = ImageFont.truetype(font_path, size=font_size - (font_size // 35))
+        second_width, second_height = await self.get_smaller_text_dimensions(text, second_font)
+        draw_interface = ImageDraw.Draw(image, mode='RGBA')
+        draw_interface.text((((image.size[0] - text_width) // 2), 50), text, fill=(1, 1, 1), font=font)
+        draw_interface.text((((image.size[0] - second_width) // 2), 50 + 10), text, fill=(255, 226, 0), font=second_font, stroke_fill=(0, 176, 172), stroke_width=(font_size // 50))
+        await self._send_image(ctx, image, 'test', 'TEST', 'PNG')
+
+    async def _send_image(self, ctx, image, name, message_title, image_format=None, delete_after=None):
+        image_format = 'png' if image_format is None else image_format
+        with BytesIO() as image_binary:
+            image.save(image_binary, image_format.upper(), optimize=True)
+            image_binary.seek(0)
+            out_file = discord.File(image_binary, filename=name + '.' + image_format)
+            embed = discord.Embed(title=message_title)
+            embed.set_image(url=f"attachment://{name.replace('_','')}.{image_format}")
+            await ctx.send(embed=embed, file=out_file, delete_after=delete_after)
+
 # region [SpecialMethods]
 
     def __repr__(self):

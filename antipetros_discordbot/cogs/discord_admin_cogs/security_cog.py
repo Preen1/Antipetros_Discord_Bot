@@ -1,5 +1,5 @@
-#jinja2: trim_blocks:True
-#jinja2: lstrip_blocks :True
+# jinja2: trim_blocks:True
+# jinja2: lstrip_blocks :True
 # region [Imports]
 
 # * Standard Library Imports -->
@@ -46,13 +46,13 @@ import discord
 from discord.ext import tasks, commands
 from discord import DiscordException, Embed, File
 from async_property import async_property
-
+import magic
 # * Gid Imports -->
 import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.utility.enums import RequestStatus
-from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
+from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM, ListenerContext
 from antipetros_discordbot.utility.sqldata_storager import LinkDataStorageSQLite
 from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -64,9 +64,6 @@ from antipetros_discordbot.cogs import get_aliases
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
-{% for extra_import in cog_item.extra_imports %}
-{{ extra_import }}
-{% endfor %}
 
 # endregion[Imports]
 
@@ -93,7 +90,8 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-CONFIG_NAME = "{{ cog_item.config_name }}"
+CONFIG_NAME = "security"
+
 # endregion[Constants]
 
 # region [Helper]
@@ -102,7 +100,8 @@ _from_cog_config = CogConfigReadOnly(CONFIG_NAME)
 
 # endregion [Helper]
 
-class {{ cog_item.name }}(commands.Cog, command_attrs={{ "{" }}'name':"{{ cog_item.name }}", "description":""{% if cog_item.all_com_attr %}, {% endif %}{% for com_attr_name, com_attr_value in cog_item.all_com_attr.items() %}'{{ com_attr_name }}': {{ com_attr_value }}{{ ", " if not loop.last }}{% endfor %}{{ "}" }}):
+
+class SecurityCog(commands.Cog, command_attrs={'name': "SecurityCog", "description": ""}):
     """
     [summary]
 
@@ -115,10 +114,11 @@ class {{ cog_item.name }}(commands.Cog, command_attrs={{ "{" }}'name':"{{ cog_it
 
 # region [Init]
 
-    def __init__(self, bot:AntiPetrosBot):
+    def __init__(self, bot: AntiPetrosBot):
         self.bot = bot
         self.support = self.bot.support
-        if os.environ.get('INFO_RUN','') == "1":
+        self.file_magic = magic.Magic(mime=True, uncompress=True)
+        if os.environ.get('INFO_RUN', '') == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
 
@@ -126,6 +126,13 @@ class {{ cog_item.name }}(commands.Cog, command_attrs={{ "{" }}'name':"{{ cog_it
 
 # region [Properties]
 
+    @property
+    def forbidden_extensions(self):
+        return [ext.casefold() for ext in _from_cog_config('forbidden_file_extensions', list)]
+
+    @property
+    def forbidden_mime_types(self):
+        return _from_cog_config('forbidden_mime_types', list)
 
 
 # endregion [Properties]
@@ -133,69 +140,68 @@ class {{ cog_item.name }}(commands.Cog, command_attrs={{ "{" }}'name':"{{ cog_it
 # region [Setup]
 
     async def on_ready_setup(self):
-        {%- for cog_loop in cog_item.all_loops %}
-        self.{{ cog_loop.name }}.start()
-        log.debug("loop '{{cog_loop.name}}' started")
-        {%- endfor %}
         log.debug('setup for cog "%s" finished', str(self))
 
 # endregion [Setup]
 
 # region [Loops]
 
-    {% for cog_loop in cog_item.all_loops %}
-    @tasks.loop({% for loop_attr_name, loop_attr_value in cog_loop.all_attributes.items() %}{{ loop_attr_name }}={{ loop_attr_value }}{{ ", " if not loop.last }}{% endfor %})
-    async def {{ cog_loop.name }}(self):
-        pass
-
-
-    {% endfor %}
 
 # endregion [Loops]
 
 # region [Listener]
 
 
-    {% for listener in cog_item.all_listeners %}
-    @ commands.Cog.listener(name="{{ listener.event_name }}")
-    async def {{ listener.name }}(self, {% if listener.args %}{% for arg in listener.args %}{{ arg.0 }}:{{ arg.1 }} {{', ' if not loop.last}}{% endfor %}{% endif %}):
-        pass
+    @ commands.Cog.listener(name="on_message")
+    async def attachment_scanner(self, message: discord.Message):
+        if _from_cog_config('enable_attachment_scanner', bool) is False or len(message.attachments) == 0 or await self._attachment_scanner_exclusion_check(message) is True:
+            return
+        listener_context = ListenerContext(message=message,
+                                           content=message.content,
+                                           channel=message.channel,
+                                           author=message.author,
+                                           creation_time=message.created_at,
+                                           reactions=message.reactions,
+                                           attachments=message.attachments)
 
-    {% endfor %}
+        for attachment in listener_context.attachments:
+            filename = attachment.filename
+            extension = filename.split('.')[-1]
+            if extension.casefold() in self.forbidden_extensions:
+                await self._handle_forbidden_attachment(listener_context, filename)
+                return
+            bytes_content = await attachment.read()
+            if self.file_magic.from_buffer(bytes_content) in self.forbidden_mime_types:
+                await self._handle_forbidden_attachment(listener_context, filename)
+                return
 
 # endregion [Listener]
 
 # region [Commands]
 
-    {% for command in cog_item.all_commands %}
-    @commands.command(aliases=get_aliases("{{ command.name }}"))
-    @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed={{ command.dm_allowed}}{% if command.allowed_channel_key %}, allowed_channel_key="{{ command.allowed_channel_key }}"{% endif %}{% if command.allowed_roles_key %}, allowed_roles_key="{{ command.allowed_roles_key }}"{% endif %}{% if command.allowed_in_dm_key %}, allowed_in_dm_key="{{ command.allowed_in_dm_key }}"{% endif %})
-    {% if command.log_invocation %}
-    @log_invoker(logger=log, level="info")
-    {%endif%}
-    async def {{ command.name }}(self, ctx):
-        pass
-
-    {% endfor %}
-
 # endregion [Commands]
 
 # region [DataStorage]
-
-
 
 # endregion [DataStorage]
 
 # region [HelperMethods]
 
-
+    async def _attachment_scanner_exclusion_check(self, msg):
+        if msg.author.name.casefold() in [name.casefold() for name in _from_cog_config('attachment_scanner_exclude_user', list)]:
+            return True
+        allowed_roles = [role_name.casefold() for role_name in _from_cog_config('attachment_scanner_exclude_roles', list)]
+        if any(role.name.casefold() in allowed_roles for role in msg.author.roles):
+            return True
+        if msg.channel.name.casefold in [channel_name.casefold() for channel_name in _from_cog_config('attachment_scanner_exclude_channels', list)]:
+            return True
+        return False
 
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
 
-
-    def cog_check(self,ctx):
+    def cog_check(self, ctx):
         return True
 
     async def cog_command_error(self, ctx, error):
@@ -207,16 +213,9 @@ class {{ cog_item.name }}(commands.Cog, command_attrs={{ "{" }}'name':"{{ cog_it
     async def cog_after_invoke(self, ctx):
         pass
 
-
-
     def cog_unload(self):
-        {% if cog_item.all_loops is defined and cog_item.all_loops|length > 0 %}{%- for cog_loop in cog_item.all_loops -%}
-        self.{{ cog_loop.name }}.stop()
-        {% endfor %}{% else %}
+
         pass
-        {% endif %}
-
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"
@@ -232,7 +231,7 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog({{ cog_item.name }}(bot))
+    bot.add_cog(SecurityCog(bot))
 
 
 # region [Main_Exec]

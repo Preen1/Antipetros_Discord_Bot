@@ -43,3 +43,4 @@ Jinja2
 python-magic-bin
 python-magic
 asyncstdlib
+pyperclip

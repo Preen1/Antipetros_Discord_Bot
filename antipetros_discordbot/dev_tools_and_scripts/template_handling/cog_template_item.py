@@ -63,7 +63,7 @@ from antipetros_discordbot.utility.misc import split_camel_case_string
 from antipetros_discordbot.utility.exceptions import CogNameNotCamelCaseError
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, create_file, create_folder
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.dev_tools_and_scripts.data.event_data import EVENT_MAPPING
+from antipetros_discordbot.dev_tools_and_scripts.data.event_data import EVENT_MAPPING, Events
 from antipetros_discordbot.dev_tools_and_scripts.template_handling.templates import TEMPLATES_DIR, TEMPLATE_MANAGER
 
 # endregion[Imports]
@@ -97,6 +97,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class LoopTemplateItem:
+
     allowed_attributes_map = {"seconds": float,
                               "minutes": float,
                               "hours": float,
@@ -132,7 +133,7 @@ class ListenerTemplateItem:
 
     @property
     def event_name(self):
-        return self._event_name
+        return self._event_name.name
 
     @event_name.setter
     def event_name(self, value: str):
@@ -322,9 +323,5 @@ class CogTemplateItem:
 
 # region[Main_Exec]
 if __name__ == '__main__':
-    x = CogTemplateItem('GiveAwayCog', 'community_events', False)
-    x.add_command('start_giveaway', log_invocation=True)
-    x.add_command('abort_give_away', log_invocation=True)
-    x.add_command('finish_give_away', log_invocation=True)
-    x.generate()
+    pass
 # endregion[Main_Exec]

@@ -238,7 +238,8 @@ def main(token: str, db_key: str):
 if __name__ == '__main__':
     if os.getenv('IS_DEV') == 'true':
         load_dotenv('token.env')
-        main(token=os.getenv('DISCORD_TOKEN'), db_key=os.getenv('DB_KEY'))
+
+        main(token=os.getenv('ANTIDEVTROS_TOKEN'), db_key=os.getenv('DB_KEY'))
     else:
         main()
 
