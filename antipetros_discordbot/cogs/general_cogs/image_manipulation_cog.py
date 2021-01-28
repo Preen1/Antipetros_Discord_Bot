@@ -13,7 +13,7 @@ from tempfile import TemporaryDirectory
 import discord
 from PIL import Image, ImageEnhance, ImageFont, ImageDraw
 from pytz import timezone
-from discord.ext import commands
+from discord.ext import flags, tasks, commands
 from fuzzywuzzy import fuzz, process as fuzzprocess
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
@@ -95,7 +95,14 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
 
 
 # endregion[Init]
+# region [Setup]
 
+
+    async def on_ready_setup(self):
+        self._get_stamps()
+        log.debug('setup for cog "%s" finished', str(self))
+
+# endregion [Setup]
 # region [Properties]
 
     @property
@@ -229,16 +236,21 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
         with BytesIO() as image_binary:
             image.save(image_binary, image_format.upper(), optimize=True)
             image_binary.seek(0)
+            file = discord.File(fp=image_binary, filename=name.replace('_', '') + '.' + image_format)
             embed = discord.Embed(title=message_title, description=message_text, color=self.support.cyan.discord_color, timestamp=datetime.now(tz=timezone("Europe/Berlin")), type='image')
             embed.set_author(name='AntiPetros', icon_url="https://www.der-buntspecht-shop.de/wp-content/uploads/Baumwollstoff-Camouflage-olivegruen-2.jpg")
             embed.set_image(url=f"attachment://{name.replace('_','')}.{image_format}")
-            await ctx.send(embed=embed, file=discord.File(fp=image_binary, filename=name.replace('_', '') + '.' + image_format), delete_after=delete_after)
+            await ctx.send(embed=embed, file=file, delete_after=delete_after)
 
-    @commands.command(aliases=get_aliases("stamp_image"), **get_doc_data("stamp_image"))
-    @commands.has_any_role(*COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels')))
+    @flags.add_flag("--stamp-image", "-si", type=str, default='ASLOGO1')
+    @flags.add_flag("--first-pos", '-fp', type=str, default="bottom")
+    @flags.add_flag("--second-pos", '-sp', type=str, default="right")
+    @flags.add_flag('--factor', '-f', type=float, default=None)
+    @commands.command(aliases=get_aliases("stamp_image"), **get_doc_data("stamp_image"), cls=flags.FlagCommand)
+    @allowed_channel_and_allowed_role(CONFIG_NAME)
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
-    async def stamp_image(self, ctx, stamp: str = 'ASLOGO1', first_pos: str = 'bottom', second_pos: str = 'right', factor: float = None):
+    async def stamp_image(self, ctx, **flags):
+
         async with ctx.channel.typing():
             if ctx.channel.name not in self.allowed_channels:
                 return
@@ -247,12 +259,12 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
                 # TODO: make as embed
                 await ctx.send('! **there is NO image to antistasify** !')
                 return
-            if stamp not in self.stamps:
+            if flags.get('stamp_image') not in self.stamps:
                 # TODO: make as embed
                 await ctx.send("! **There is NO stamp with that name** !")
                 return
-            first_pos = self.stamp_positions.get(first_pos.casefold(), None)
-            second_pos = self.stamp_positions.get(second_pos.casefold(), None)
+            first_pos = self.stamp_positions.get(flags.get("first_pos").casefold(), None)
+            second_pos = self.stamp_positions.get(flags.get("second_pos").casefold(), None)
 
             if any(_pos is None for _pos in [first_pos, second_pos]) or first_pos | second_pos not in self.stamp_pos_functions:
                 # TODO: make as embed
@@ -261,7 +273,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
             for _file in ctx.message.attachments:
                 # TODO: maybe make extra attribute for input format, check what is possible and working. else make a generic format list
                 if any(_file.filename.endswith(allowed_ext) for allowed_ext in self.allowed_stamp_formats):
-                    _stamp = self._get_stamp_image(stamp)
+                    _stamp = self._get_stamp_image(flags.get('stamp_image'))
                     _stamp = _stamp.copy()
                     with TemporaryDirectory(prefix='temp') as temp_dir:
                         temp_file = Path(pathmaker(temp_dir, 'temp_file.png'))
@@ -269,7 +281,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
                         await _file.save(temp_file)
                         in_image = await self.bot.execute_in_thread(Image.open, temp_file)
                         in_image = await self.bot.execute_in_thread(in_image.copy)
-                    factor = self.target_stamp_fraction if factor is None else factor
+                    factor = self.target_stamp_fraction if flags.get('factor') is None else flags.get('factor')
                     pos_function = self.stamp_pos_functions.get(first_pos | second_pos)
 
                     in_image = await self.bot.execute_in_thread(pos_function, in_image, _stamp, factor)

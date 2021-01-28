@@ -114,7 +114,7 @@ class SecurityCog(commands.Cog, command_attrs={'name': "SecurityCog", "descripti
 
 # region [Init]
 
-    def __init__(self, bot: AntiPetrosBot):
+    def __init__(self, bot: "AntiPetrosBot"):
         self.bot = bot
         self.support = self.bot.support
         self.file_magic = magic.Magic(mime=True, uncompress=True)
@@ -139,6 +139,7 @@ class SecurityCog(commands.Cog, command_attrs={'name': "SecurityCog", "descripti
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
         log.debug('setup for cog "%s" finished', str(self))
 
@@ -151,9 +152,10 @@ class SecurityCog(commands.Cog, command_attrs={'name': "SecurityCog", "descripti
 
 # region [Listener]
 
-
     @ commands.Cog.listener(name="on_message")
     async def attachment_scanner(self, message: discord.Message):
+        if message.channel.name.casefold() != 'bot-testing':
+            return
         if _from_cog_config('enable_attachment_scanner', bool) is False or len(message.attachments) == 0 or await self._attachment_scanner_exclusion_check(message) is True:
             return
         listener_context = ListenerContext(message=message,
@@ -186,6 +188,10 @@ class SecurityCog(commands.Cog, command_attrs={'name': "SecurityCog", "descripti
 # endregion [DataStorage]
 
 # region [HelperMethods]
+
+    async def _handle_forbidden_attachment(self, listener_context: ListenerContext, filename: str):
+        await listener_context.message.delete()
+        await listener_context.channel.send(listener_context.author.mention + ' Your message was deleted as you tried to send a forbidden type of attachment')
 
     async def _attachment_scanner_exclusion_check(self, msg):
         if msg.author.name.casefold() in [name.casefold() for name in _from_cog_config('attachment_scanner_exclude_user', list)]:
