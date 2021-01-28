@@ -9,12 +9,13 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 from inspect import iscoroutine, iscoroutinefunction
-
+from typing import TYPE_CHECKING
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.bot_support.sub_support import SUB_SUPPORT_CLASSES
+
 
 # endregion[Imports]
 

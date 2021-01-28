@@ -17,7 +17,7 @@ import subprocess
 from enum import Enum, Flag, auto
 from time import sleep
 from pprint import pprint, pformat
-from typing import Union
+from typing import Union, TYPE_CHECKING
 from datetime import tzinfo, datetime, timezone, timedelta
 from functools import wraps, lru_cache, singledispatch, total_ordering, partial
 from contextlib import contextmanager
@@ -61,6 +61,8 @@ from antipetros_discordbot.utility.misc import save_commands, CogConfigReadOnly
 from antipetros_discordbot.utility.checks import in_allowed_channels, allowed_channel_and_allowed_role, log_invoker
 from antipetros_discordbot.cogs import get_aliases
 
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
 {% for extra_import in cog_item.extra_imports %}
 {{ extra_import }}
@@ -113,7 +115,7 @@ class {{ cog_item.name }}(commands.Cog, command_attrs={{ "{" }}'name':"{{ cog_it
 
 # region [Init]
 
-    def __init__(self,bot):
+    def __init__(self, bot:AntiPetrosBot):
         self.bot = bot
         self.support = self.bot.support
         if os.environ.get('INFO_RUN','') == "1":

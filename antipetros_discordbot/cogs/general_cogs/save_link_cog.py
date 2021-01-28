@@ -17,7 +17,7 @@ from discord.ext import tasks, commands
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.cogs import get_aliases
+from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.misc import CogConfigReadOnly, save_commands
 from antipetros_discordbot.utility.enums import RequestStatus
 from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role
@@ -80,7 +80,8 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
     # url to blacklist for forbidden_link_list
     blocklist_hostfile_url = "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn/hosts"
     config_name = 'save_link'
-
+    docattrs = {'show_in_readme': True,
+                'is_ready': True}
 # endregion [ClassAttributes]
 
 # region [Init]
@@ -237,7 +238,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
 
 # region [Commands]
 
-    @commands.command(aliases=get_aliases("add_forbidden_word"))
+    @commands.command(aliases=get_aliases("add_forbidden_word"), **get_doc_data("add_forbidden_word"))
     @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=True)
     @log_invoker(logger=log, level='info')
     async def add_forbidden_word(self, ctx, word: str):
@@ -255,7 +256,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         writejson(_forbidden_list, self.forbidden_url_words_file)
         await ctx.send(embed=await make_basic_embed(title='Added Word', text=f'The Word "{word}" was added to the forbidden url word list', symbol='update'))
 
-    @commands.command(aliases=get_aliases("remove_forbidden_word"))
+    @commands.command(aliases=get_aliases("remove_forbidden_word"), **get_doc_data("remove_forbidden_word"))
     @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=True)
     @log_invoker(logger=log, level='warning')
     async def remove_forbidden_word(self, ctx, word: str):
@@ -274,7 +275,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         writejson(_new_list, self.forbidden_url_words_file)
         await ctx.send(embed=await make_basic_embed(title='Removed Word', text=f'The Word "{word}" was removed from the forbidden url word list', symbol='update'))
 
-    @commands.command(aliases=get_aliases("clear_all_links"))
+    @commands.command(aliases=get_aliases("clear_all_links"), **get_doc_data("clear_all_links"))
     @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=True, allowed_roles_key="delete_all_allowed_roles")
     @log_invoker(logger=log, level='critical')
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
@@ -301,7 +302,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
         else:
             await self._clear_links(ctx, 'yes')
 
-    @commands.command(hidden=False, aliases=get_aliases("get_link"))
+    @commands.command(hidden=False, aliases=get_aliases("get_link"), **get_doc_data("get_link"))
     @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=False)
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def get_link(self, ctx, name: str):
@@ -319,7 +320,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
             return
         await ctx.send(embed=await make_basic_embed(title='Retrieved link!', text='Link was successfully retrieved from storage', symbol='link', **{'available for the next': '1 Hour', _name: _link}), delete_after=60 * 60)
 
-    @ commands.command(hidden=False, aliases=get_aliases("get_all_links"))
+    @ commands.command(hidden=False, aliases=get_aliases("get_all_links"), **get_doc_data("get_all_links"))
     @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=True)
     @log_invoker(logger=log, level='info')
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
@@ -357,7 +358,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
             _file = discord.File(_path, _name)
             await ctx.send(file=_file)
 
-    @ commands.command(hidden=False, aliases=get_aliases("save_link"))
+    @ commands.command(hidden=False, aliases=get_aliases("save_link"), **get_doc_data("save_link"))
     @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=True)
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def save_link(self, ctx, link: str, link_name: str = None, days_to_hold: int = None):
@@ -369,7 +370,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
             link_name (str, optional): name to save the link as, if not given will be generated from url. Defaults to None.
             days_to_hold (int, optional): time befor the link will be deleted from storage channel in days, if not give will be retrieved from config. Defaults to None.
         """
-        # TODO: refractor that monster of an function
+        # TODO: refractor that monster of a method
 
         to_check_link = await self._make_check_link(link)
         parsed_link = urlparse(link, scheme='https').geturl().replace('///', '//')
@@ -439,7 +440,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
             await user.send(embed=notify_embed)
             log.debug("notified '%s' about the offending link", user.name)
 
-    @ commands.command(hidden=False, aliases=get_aliases("get_forbidden_list"))
+    @ commands.command(hidden=False, aliases=get_aliases("get_forbidden_list"), **get_doc_data("get_forbidden_list"))
     @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=True, allowed_roles_key="delete_all_allowed_roles")
     @log_invoker(logger=log, level='warning')
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
@@ -459,7 +460,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
                 _file = discord.File(_path, filename=_name)
                 await ctx.send(file=_file, delete_after=60)
 
-    @ commands.command(aliases=get_aliases("delete_link"))
+    @ commands.command(aliases=get_aliases("delete_link"), **get_doc_data("delete_link"))
     @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=True, allowed_roles_key="delete_all_allowed_roles")
     @log_invoker(logger=log, level='critical')
     @ commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)

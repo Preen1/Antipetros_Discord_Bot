@@ -46,11 +46,14 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 class LanguageConverter(Converter):
     def __init__(self):
         self.languages = {value.casefold(): key for key, value in LANGUAGES.items()}
+        self.languages_by_country_code = {key.casefold(): key for key in LANGUAGES}
 
     async def convert(self, ctx, argument):
         argument = argument.casefold()
         if argument in self.languages:
             return self.languages.get(argument)
+        elif argument in self.languages_by_country_code:
+            return self.languages_by_country_code.get(argument)
         raise CommandError
 
 

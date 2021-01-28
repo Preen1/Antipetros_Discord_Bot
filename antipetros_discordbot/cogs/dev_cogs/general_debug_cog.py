@@ -7,7 +7,7 @@ import os
 import random
 from time import time
 from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
-
+import asyncio
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from discord.ext import commands
@@ -54,12 +54,11 @@ CONFIG_NAME = 'general_debug'
 
 class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": "GeneralDebugCog"}):
     """
-    [summary]
-
-    [extended_summary]
-
+    Soon
     """
     config_name = CONFIG_NAME
+    docattrs = {'show_in_readme': False,
+                'is_ready': True}
 
     def __init__(self, bot):
         self.bot = bot
@@ -134,6 +133,29 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": "Gene
             _messages.append(message.content)
         writejson(_messages, 'message_history')
         await ctx.send(len(_messages))
+
+    @commands.command()
+    @allowed_channel_and_allowed_role(CONFIG_NAME)
+    async def check_config_list_multiline(self, ctx):
+        the_list = COGS_CONFIG.getlist('translate', 'allowed_channels')
+        await ctx.send(str(the_list))
+
+    @commands.command()
+    @allowed_channel_and_allowed_role(CONFIG_NAME)
+    async def check_embed_split(self, ctx, typus: str):
+        if typus == 'amount':
+            async for embed_data in self.bot.make_paginatedfields_generic_embed(title='Test',
+                                                                                description='This is a test of the embed splitter',
+                                                                                fields=[self.bot.field_item(name=str(i), value=str(i) + ' -- ' + str(i), inline=False) for i in range(40)]):
+
+                await ctx.send(**embed_data)
+                await asyncio.sleep(2)
+        elif typus == 'size':
+            async for embed_data in self.bot.make_paginatedfields_generic_embed(title='Test',
+                                                                                description='This is a test of the embed splitter',
+                                                                                fields=[self.bot.field_item(name=str(i), value=str(i) * 500, inline=False) for i in range(20)]):
+                await ctx.send(**embed_data)
+                await asyncio.sleep(2)
 
 
 def setup(bot):

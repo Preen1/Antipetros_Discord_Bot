@@ -22,9 +22,10 @@ import gidlogger as glog
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 
+
 log = glog.aux_logger(__name__)
 glog.import_notification(log, __name__)
-
+APPDATA = ParaStorageKeeper.get_appdata()
 
 SGF = 1024  # SIZE_GENERAL_FACTOR
 SIZE_CONV = {'byte': {'factor': SGF**0, 'short_name': 'b'},
@@ -143,15 +144,33 @@ def sync_to_async(_func):
 
 def save_commands(cog):
     command_json_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/commands.json')
+    command_help_file = pathmaker(APPDATA['documentation'], 'command_help.json')
+    if os.path.isfile(command_json_file) is False:
+        writejson({}, command_json_file)
+    if os.path.isfile(command_help_file) is False:
+        writejson({}, command_help_file)
     command_json = loadjson(command_json_file)
+    command_help = loadjson(command_help_file)
     command_json[str(cog)] = {'file_path': pathmaker(os.path.abspath(inspect.getfile(cog.__class__))),
                               'description': dedent(str(inspect.getdoc(cog.__class__))),
-                              "commands": {}}
+                              "commands": {}} | cog.docattrs
     for command in cog.get_commands():
         command_json[str(cog)]["commands"][command.name.strip()] = {"signature": command.signature.replace('<ctx>', '').replace('  ', ' ').strip(),
                                                                     "aliases": command.aliases,
                                                                     "parameter": [param_string for param_string, _ in command.clean_params.items() if param_string != 'ctx'],
-                                                                    "checks": [str(check).split()[1].split('.')[0] for check in command.checks]}
+                                                                    "checks": [str(check).split()[1].split('.')[0] for check in command.checks],
+                                                                    'short_doc': command.short_doc,
+                                                                    'usage': command.usage,
+                                                                    'description': command.description,
+                                                                    'is_hidden': command.hidden,
+                                                                    'is_enabled': command.enabled,
+                                                                    'qualified_name': command.qualified_name}
+
+        command_help[command.name.strip()] = {'brief': command.brief,
+                                              'description': command.description,
+                                              'usage': command.usage,
+                                              'help': command.help}
+    writejson(command_help, command_help_file)
     writejson(command_json, command_json_file, indent=4)
     log.debug("commands for %s saved to %s", cog, command_json_file)
 
@@ -271,7 +290,7 @@ class CogConfigReadOnly():
     def __init__(self, config_name):
         self.config_name = config_name
 
-    def __call__(self, key, typus: type):
+    def __call__(self, key, typus: type = str):
         return self.retriev_map.get(typus)(section=self.config_name, option=key)
 
     def __repr__(self) -> str:

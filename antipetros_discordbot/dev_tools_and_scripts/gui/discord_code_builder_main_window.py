@@ -68,8 +68,10 @@ from antipetros_discordbot.utility.gidtools_functions import (readit, clearit, r
                                                               linereadit, bytes2human, create_file, file_walker, get_pickled, ishash_same, ext_splitter, appendwriteit, create_folder,
                                                               number_rename, timenamemaker, cascade_rename, file_name_time, absolute_listdir, hash_to_solidcfg, path_part_remove,
                                                               from_dict_to_file, get_absolute_path, file_name_modifier, limit_amount_of_files, limit_amount_files_absolute)
-from antipetros_discordbot.dev_tools_and_scripts.gui.converted_designer_files.Ui_discord_code_builder_mainwindow import Ui_DiscordCodeBuilderMainWindow
 
+from antipetros_discordbot.dev_tools_and_scripts.gui.converted_designer_files.Ui_discord_code_builder_mainwindow import Ui_DiscordCodeBuilderMainWindow
+from antipetros_discordbot.dev_tools_and_scripts.gui.converted_designer_files.Ui_discord_code_builder_main_selection_screen import Ui_MainSelectionScreen
+from antipetros_discordbot.dev_tools_and_scripts.gui.converted_designer_files.Ui_discord_code_builder_cog_builder import Ui_CogBuilder
 # endregion[Imports]
 
 # region [TODO]
@@ -96,11 +98,20 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
+class MainSelectionScreen(Ui_MainSelectionScreen, QWidget):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        super().setupUi(self)
+
+
 class DiscordCodeBuilderMainWindow(Ui_DiscordCodeBuilderMainWindow, QMainWindow):
 
     def __init__(self, app, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        super().setupUi(self)
         self.app = app
+        self.main_selection_screen = MainSelectionScreen()
+        self.gridLayout_2.addWidget(self.main_selection_screen)
 
 
 def main():

@@ -72,15 +72,14 @@ ExpItem = namedtuple("ExpItem", ['name', 'end_date_time', 'message', 'old_msg_id
 
 class GiveAwayCog(commands.Cog, command_attrs={'name': "GiveAwayCog", "description": ""}):
     """
-    [summary]
-
-    [extended_summary]
-
+    Soon
     """
 # region [ClassAttributes]
 
     give_away_data_file = pathmaker(APPDATA['json_data'], 'give_aways.json')
-    give_away_item = ExpItem
+    give_away_item = GiveAwayEventItem
+    docattrs = {'show_in_readme': True,
+                'is_ready': False}
 # endregion [ClassAttributes]
 
 # region [Init]
@@ -104,7 +103,6 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': "GiveAwayCog", "descripti
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
         await self.load_give_aways()
         await asyncio.sleep(5)
@@ -127,68 +125,104 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': "GiveAwayCog", "descripti
 
 # region [Listener]
 
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        channel = self.bot.get_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
+        for item in self.give_aways:
+            if payload.message_id == item.message_id and payload.emoji != item.enter_emoji:
+                for reaction in message.reactions:
+                    if reaction.emoji != item.enter_emoji:
+                        await reaction.remove(payload.member)
 
 # endregion [Listener]
 
 # region [Commands]
 
-
     async def give_away_finished(self, event_item):
         channel = await self.bot.channel_from_name(event_item.channel_name)
 
-        msg = await channel.fetch_message(event_item.old_msg_id)
+        msg = await channel.fetch_message(event_item.message_id)
 
         users = []
         for reaction in msg.reactions:
-            if reaction.emoji == "🎁":
+            if reaction.emoji == event_item.enter_emoji:
                 users = await reaction.users().flatten()
                 users = [user for user in users if user.bot is False]
 
-        winner = random.choice(users)
-        await channel.send(event_item.message)
-        await channel.send("**all reacting user:**\n" + '\n'.join([user.display_name for user in users]))
-        await channel.send(f"__**winner is**__ {winner.display_name}")
-
+        winners = random.choices(users, k=event_item.amount_winners)
+        await channel.send(event_item.end_message)
+        await channel.send('\n'.join([winner.display_name for winner in winners]))
         await msg.delete()
         self.give_aways.remove(event_item)
         await self.save_give_aways()
 
-    @flags.add_flag("--end-date", type=str, default="in 5min")
-    @flags.add_flag("--message", type=str, default="it worked")
-    @commands.command(aliases=get_aliases("check_datetime_stuff"), cls=flags.FlagCommand)
+    @flags.add_flag("--end-date", type=str, default="5min")
+    @flags.add_flag("--name", type=str)
+    @flags.add_flag("--num-winners", type=int, default=1)
+    @flags.add_flag("--end-message", type=str, default="give away has finished!")
+    @flags.add_flag("--start-message", type=str)
+    @commands.command(aliases=get_aliases("create_giveaway"), cls=flags.FlagCommand)
     @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=False)
     @log_invoker(logger=log, level="info")
-    async def check_datetime_stuff(self, ctx, **flags):
-        date_string = flags.get('end_date')
-        conv_string = date_parse(date_string).astimezone(timezone.utc)
-        embed_data = await self.bot.make_generic_embed(author='default_author', footer='default_footer', fields=[self.bot.field_item('test should end at', conv_string.strftime("%Y-%m-%d %H:%M:%S"), False),
-                                                                                                                 self.bot.field_item('this was posted at', datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), False)])
-        msg = await ctx.send(**embed_data)
-        await msg.add_reaction("🎁")
-        self.give_aways.append(self.give_away_item('test', conv_string, flags.get("message"), msg.id, ctx.channel.name))
-        await self.save_give_aways()
+    async def create_giveaway(self, ctx, **flags):
+        give_away_name = flags.get('name')
+        if give_away_name in [item.name for item in self.give_aways]:
+            await ctx.send(f"Name '{give_away_name}' already is in use for another active give away")
+            return
+        date_string = 'in ' + flags.get('end_date')
+        end_date_time = date_parse(date_string).astimezone(timezone.utc)
+        end_date_time = end_date_time.replace(second=0)
+        await ctx.message.delete()
+        confirm_embed = await self.bot.make_generic_embed(title='Do you want to start a give away with these parameters?', fields=[self.bot.field_item('Name', give_away_name, False),
+                                                                                                                                   self.bot.field_item('Number of Winners', flags.get('num_winners'), False),
+                                                                                                                                   self.bot.field_item('End Date', end_date_time.strftime("%Y.%m.%d %H:%M:%S UTC"), False),
+                                                                                                                                   self.bot.field_item('Start Message', flags.get('start_message'), False),
+                                                                                                                                   self.bot.field_item('End Message', flags.get('end_message'), False)],
+                                                          footer={'text': '5min to answer'})
+        confirm_message = await ctx.send(**confirm_embed)
+        await confirm_message.add_reaction('✅')
+        await confirm_message.add_reaction('❎')
 
-    @commands.command(aliases=get_aliases("start_giveaway"))
-    @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=False)
-    @log_invoker(logger=log, level="info")
-    async def create_giveaway(self, ctx):
-        pass
+        def check_confirm(reaction, user):
+            return user == ctx.author and str(reaction.emoji) in ['✅', '❎']
 
-    @commands.command(aliases=get_aliases("start_giveaway"))
-    @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=False)
-    @log_invoker(logger=log, level="info")
-    async def start_giveaway(self, ctx):
-        pass
+        try:
+            reaction, user = await self.bot.wait_for('reaction_add', timeout=300.0, check=check_confirm)
+        except asyncio.TimeoutError:
+            await confirm_message.delete()
+            await ctx.send('give_away initiation aborted, because of time out')
+            return
+        else:
+            await confirm_message.delete()
+            if str(reaction.emoji) == '❎':
+                await ctx.send('give_away initiation aborted, user abort')
+                return
 
-    @commands.command(aliases=get_aliases("abort_give_away"))
-    @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=False)
-    @log_invoker(logger=log, level="info")
+            embed_data = await self.bot.make_generic_embed(author='default_author',
+                                                           footer='default_footer',
+                                                           title=flags.get('start_message'),
+                                                           fields=[self.bot.field_item('Give Away ends at', end_date_time.strftime("%H:%M UTC"), False)])
+            give_away_message = await ctx.send(**embed_data)
+            await give_away_message.add_reaction("🎁")
+            self.give_aways.append(self.give_away_item(name=give_away_name,
+                                                       channel_name=ctx.channel.name,
+                                                       message_id=give_away_message.id,
+                                                       enter_emoji="🎁",
+                                                       end_date_time=end_date_time,
+                                                       end_message=flags.get('end_message'),
+                                                       amount_winners=flags.get('num_winners')))
+            await self.save_give_aways()
+
+    @ commands.command(aliases=get_aliases("abort_give_away"))
+    @ allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=False)
+    @ log_invoker(logger=log, level="info")
     async def abort_give_away(self, ctx):
         pass
 
-    @commands.command(aliases=get_aliases("finish_give_away"))
-    @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=False)
-    @log_invoker(logger=log, level="info")
+    @ commands.command(aliases=get_aliases("finish_give_away"))
+    @ allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=False)
+    @ log_invoker(logger=log, level="info")
     async def finish_give_away(self, ctx):
         pass
 
@@ -206,6 +240,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': "GiveAwayCog", "descripti
 # endregion [Embeds]
 
 # region [HelperMethods]
+
 
     async def load_give_aways(self):
         self.give_aways = [] if self.give_aways is None else self.give_aways

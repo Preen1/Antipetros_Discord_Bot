@@ -22,7 +22,6 @@ from jinja2 import BaseLoader, Environment
 from discord import File
 from discord import Color as DiscordColor
 from discord import Embed
-from benedict import benedict
 from dateparser import parse as date_parse
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
@@ -40,6 +39,7 @@ from antipetros_discordbot.utility.gidtools_functions import (readit, clearit, r
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from typing import TYPE_CHECKING
 
 # endregion[Imports]
 
@@ -90,6 +90,8 @@ class EmbedBuilder(SubSupportBase):
     datetime_int_parser = arrow.get
     generic_image_name_range = (1, 9999)
     field_item = EmbedFieldItem
+    max_embed_size = 6000
+    max_embed_fields = 25
 
     def __init__(self, bot, support):
         self.bot = bot
@@ -172,11 +174,43 @@ class EmbedBuilder(SubSupportBase):
             field_item = field_item._replace(inline=self.default_inline_value)
         return field_item
 
+    @staticmethod
+    def _size_of_field(field):
+        return len(field.name) + len(field.value)
+
+    def _paginatedfields_generic_embed_helper(self, fields, embed):
+        amount_fields = len(fields)
+        applied_fields = 0
+
+        for _ in range(amount_fields):
+            if (len(embed) + self._size_of_field(fields[0])) < self.max_embed_size and applied_fields < self.max_embed_fields:
+                field = self._fix_field_item(fields.pop(0))
+                embed.add_field(name=field.name, value=field.value, inline=field.inline)
+                applied_fields += 1
+            else:
+                return embed, fields
+        return embed, fields
+
+    async def make_paginatedfields_generic_embed(self, fields: List[EmbedFieldItem], **kwargs):
+        is_first = True
+        while len(fields) > 0:
+            if is_first is False:
+                kwargs['title'] = 'CONTINUED'
+            _embed_data = await self.make_generic_embed(**kwargs)
+            _actual_embed = _embed_data.get('embed')
+            if len(_actual_embed) > self.max_embed_size:
+                # TODO: make custom error
+                raise RuntimeError('Base embed without fields is already larger than max size')
+            embed, fields = self._paginatedfields_generic_embed_helper(fields, _actual_embed)
+            _embed_data['embed'] = embed
+            yield _embed_data
+            is_first = False
+
     async def make_generic_embed(self, author: Union[str, dict] = None, footer: Union[str, dict] = None, fields: List[EmbedFieldItem] = None, **kwargs):
         if isinstance(author, str):
             author = self.special_authors.get(author, self.default_author) if author != 'not_set' else None
         if isinstance(footer, str):
-            footer = self.special_footers.get(footer, self.default_footer) if author != 'not_set' else None
+            footer = self.special_footers.get(footer, self.default_footer) if footer != 'not_set' else None
 
         files = []
         generic_embed = Embed(title=str(kwargs.get("title", self.default_title)),

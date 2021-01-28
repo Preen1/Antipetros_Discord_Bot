@@ -2,6 +2,7 @@
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands.errors import CommandError
 
+
 class AntiPetrosBaseError(Exception):
     pass
 
@@ -72,4 +73,13 @@ class IsNotTextChannelError(BaseExtendedCommandError):
         self.command = self.ctx.command
         self.channel_type = channel_type
         self.msg = f"The command '{self.command.name}' is not allowed in DM's"
+        super().__init__(self.msg)
+
+
+class IsNotDMChannelError(BaseExtendedCommandError):
+    def __init__(self, ctx, channel_type):
+        self.ctx = ctx
+        self.command = self.ctx.command
+        self.channel_type = channel_type
+        self.msg = f"The command '{self.command.name}' is not allowed outside of DM's"
         super().__init__(self.msg)

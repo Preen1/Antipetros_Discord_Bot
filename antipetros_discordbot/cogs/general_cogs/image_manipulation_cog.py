@@ -19,7 +19,7 @@ from discord.ext import commands
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.cogs import get_aliases
+from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.misc import save_commands
 from antipetros_discordbot.utility.enums import WatermarkPosition
 from antipetros_discordbot.utility.checks import log_invoker, in_allowed_channels, allowed_channel_and_allowed_role
@@ -56,12 +56,15 @@ CONFIG_NAME = 'image_manipulation'
 
 
 class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "ImageManipulationCog"}):
-
+    """
+    Soon
+    """
     # region [ClassAttributes]
 
     allowed_stamp_formats = set(loadjson(APPDATA["image_file_extensions.json"]))
     stamp_positions = {'top': WatermarkPosition.Top, 'bottom': WatermarkPosition.Bottom, 'left': WatermarkPosition.Left, 'right': WatermarkPosition.Right, 'center': WatermarkPosition.Center}
-
+    docattrs = {'show_in_readme': True,
+                'is_ready': True}
 # endregion[ClassAttributes]
 
 # region [Init]
@@ -232,7 +235,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
             embed.set_image(url=f"attachment://{name.replace('_','')}.{image_format}")
             await ctx.send(embed=embed, file=discord.File(fp=image_binary, filename=name.replace('_', '') + '.' + image_format), delete_after=delete_after)
 
-    @commands.command(aliases=get_aliases("stamp_image"))
+    @commands.command(aliases=get_aliases("stamp_image"), **get_doc_data("stamp_image"))
     @commands.has_any_role(*COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels')))
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
@@ -275,7 +278,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
                     # TODO: make as embed
                     await self._send_image(ctx, in_image, name, f"__**{name}**__")
 
-    @commands.command(aliases=get_aliases("available_stamps"))
+    @commands.command(aliases=get_aliases("available_stamps"), **get_doc_data("available_stamps"))
     @commands.has_any_role(*COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels')))
     @commands.cooldown(1, 120, commands.BucketType.channel)
@@ -295,7 +298,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
                 embed.set_image(url=f"attachment://{name}.png")
                 await ctx.send(embed=embed, file=_file, delete_after=120)
 
-    @commands.command(aliases=get_aliases("member_avatar"))
+    @commands.command(aliases=get_aliases("member_avatar"), **get_doc_data("member_avatar"))
     @commands.has_any_role(*COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_avatar_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels')))
     @commands.cooldown(1, 30, commands.BucketType.member)
@@ -330,7 +333,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
         bytes_out.seek(0)
         return base_image, bytes_out
 
-    @commands.command(aliases=get_aliases("map_changed"))
+    @commands.command(aliases=get_aliases("map_changed"), **get_doc_data("map_changed"))
     @allowed_channel_and_allowed_role(config_name=CONFIG_NAME)
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def map_changed(self, ctx, marker, color):

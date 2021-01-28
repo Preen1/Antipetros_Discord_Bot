@@ -1,14 +1,16 @@
-pep517
-memory-profiler
-matplotlib
-import-profiler
-objectgraph
-pipreqs
-pydeps
 --force-reinstall numpy==1.19.3
 pyqt5-tools
-PyQt5-stubs
+pypandoc
+pydeps
+pipreqs
+pep517
+objectgraph
+memory-profiler
+matplotlib
+isort
 icecream
 autopep8
-pypandoc
-isort
+PyQt5-stubs
+pipdeptree
+python-magic
+grip

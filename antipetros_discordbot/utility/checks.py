@@ -14,7 +14,7 @@ from discord.ext import commands
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.exceptions import NotNecessaryRole, IsNotTextChannelError, MissingAttachmentError, NotAllowedChannelError
+from antipetros_discordbot.utility.exceptions import NotNecessaryRole, IsNotTextChannelError, MissingAttachmentError, NotAllowedChannelError, IsNotDMChannelError
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 
 # endregion[Imports]
@@ -144,6 +144,19 @@ def allowed_channel_and_allowed_role(config_name: str, in_dm_allowed: bool = Fal
             if all(role.name.casefold() not in allowed_roles for role in roles):
                 raise NotNecessaryRole(ctx, COGS_CONFIG.getlist(config_name, allowed_roles_key))
         return True
+    return commands.check(predicate)
+
+
+def only_dm_only_allowed_id(config_name: str, allowed_id_key: str = "allowed_in_dms"):
+    async def predicate(ctx):
+        user_id = ctx.author.id
+        channel_type = ctx.channel.type
+        if channel_type is not discord.ChannelType.private:
+            raise IsNotDMChannelError(ctx, channel_type)
+        if user_id not in set(map(int, COGS_CONFIG.getlist(config_name, allowed_id_key))):
+            return False
+        return True
+
     return commands.check(predicate)
 
 # region[Main_Exec]

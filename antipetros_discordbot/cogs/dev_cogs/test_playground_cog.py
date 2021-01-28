@@ -71,8 +71,13 @@ Your contribution and participation to this community will determine how long th
 
 
 class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "TestPlayground"}):
+    """
+    Soon
+    """
     config_name = "test_playground"
     language_dict = {value: key for key, value in LANGUAGES.items()}
+    docattrs = {'show_in_readme': False,
+                'is_ready': True}
 
     def __init__(self, bot):
         self.bot = bot
@@ -82,15 +87,6 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
         if os.environ.get('INFO_RUN', '') == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
-
-    @commands.command(aliases=get_aliases("make_figlet"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist("test_playground", 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
-    async def make_figlet(self, ctx, *, text: str):
-
-        figlet = Figlet(font='gothic', width=300)
-        new_text = figlet.renderText(text.upper())
-        await ctx.send(f"```fix\n{new_text}\n```")
 
     async def get_text_dimensions(self, text_string, font_name, image_size):
         # https://stackoverflow.com/a/46220683/9263761
@@ -255,11 +251,6 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
                         await ctx.send(file=_all_item_file)
                         await asyncio.sleep(5)
 
-    @ commands.command(aliases=get_aliases("the_dragon"))
-    @ allowed_channel_and_allowed_role("test_playground")
-    async def the_dragon(self, ctx):
-        await ctx.send(THE_DRAGON)
-
     @ commands.command(aliases=get_aliases("random_embed_color"))
     @ allowed_channel_and_allowed_role("test_playground")
     async def random_embed_color(self, ctx):
@@ -325,24 +316,6 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
                     _new_file = discord.File(new_file_path, new_file_name)
                     await ctx.send('The Corrected File', file=_new_file)
 
-    # async def _translate(self, text, out_language, in_language=None):
-    #     in_lang_code = self.language_dict.get(in_language.casefold()) if in_language is not None else 'auto'
-    #     out_lang_code = self.language_dict.get(out_language.casefold())
-
-    #     x = self.translator.translate(text=text, dest=out_lang_code, src=in_lang_code)
-    #     return x.text
-
-    # @ commands.command(hidden=False, aliases=get_aliases("translate"))
-    # @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
-    # @ in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
-    # async def translate(self, ctx, out_lang, *, text):
-    #     log.info("command was initiated by '%s'", ctx.author.name)
-    #     if out_lang.casefold() not in self.language_dict:
-    #         await ctx.send('unknown language')
-    #         return
-    #     result = await self._translate(text, out_lang)
-    #     await self.bot.split_to_messages(ctx, result)
-
     @commands.command(aliases=get_aliases('search_usernames'))
     @allowed_channel_and_allowed_role(CONFIG_NAME, in_dm_allowed=True, allowed_roles_key='roles_restricted_command', allowed_in_dm_key="search_usernames_dm_allowed")
     @log_invoker(log, 'critical')
@@ -380,6 +353,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
     async def embed_experiment(self, ctx):
 
         await ctx.send(**await self.bot.make_generic_embed(author='bot_author', footer='feature_request_footer', description="this is and test"))
+
 
 # region [SpecialMethods]
 

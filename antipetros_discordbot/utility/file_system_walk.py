@@ -196,13 +196,13 @@ def filesystem_walker(start_folder, exclude_folder: Union[str, Iterable] = 'excl
                     yield FileSystemWalkerItem(folder, folder_path)
 
 
-def filesystem_walker_files(start_folder, exclude_folder: Union[str, Iterable] = 'standard', exclude_files: Union[str, Iterable] = 'standard'):
+def filesystem_walker_files(start_folder, exclude_folder: Union[str, Iterable] = 'exclusion_standard', exclude_files: Union[str, Iterable] = 'exclusion_standard'):
     for item in filesystem_walker(start_folder, exclude_folder, exclude_files):
         if item.is_file() is True:
             yield item
 
 
-def filesystem_walker_folders(start_folder, exclude_folder: Union[str, Iterable] = 'standard', exclude_files: Union[str, Iterable] = 'standard'):
+def filesystem_walker_folders(start_folder, exclude_folder: Union[str, Iterable] = 'exclusion_standard', exclude_files: Union[str, Iterable] = 'exclusion_standard'):
     for item in filesystem_walker(start_folder, exclude_folder, exclude_files):
         if item.is_dir() is True:
             yield item

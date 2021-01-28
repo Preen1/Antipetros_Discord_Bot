@@ -68,18 +68,18 @@ _from_cog_config = CogConfigReadOnly(CONFIG_NAME)
 class FaqCog(commands.Cog, command_attrs={'name': "FaqCog", "description": ""}):
 
     """
-    [summary]
-
-    [extended_summary]
+    Soon
 
     """
+# region [ClassAttributes]
     faq_data_file = APPDATA["converted_faq_list.json"]
     q_emoji = "🇶"
     a_emoji = "🇦"
     faq_symbol = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/FAQ_icon.svg/1280px-FAQ_icon.svg.png"
     embed_color = "blue"
-# region [ClassAttributes]
 
+    docattrs = {'show_in_readme': True,
+                'is_ready': False}
 # endregion [ClassAttributes]
 
 # region [Init]

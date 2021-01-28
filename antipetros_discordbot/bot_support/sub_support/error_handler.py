@@ -12,7 +12,7 @@ import traceback
 from datetime import datetime
 
 # * Third Party Imports --------------------------------------------------------------------------------->
-from discord import Embed
+from discord import Embed, ChannelType
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process as fuzzprocess
 from discord.ext import commands
@@ -27,6 +27,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from typing import TYPE_CHECKING
 
 # endregion[Imports]
 
@@ -77,13 +78,15 @@ class ErrorHandler(SubSupportBase):
     async def handle_errors(self, ctx, error):
         error_traceback = '\n'.join(traceback.format_exception(error, value=error, tb=None))
         await self.error_handle_table.get(type(error), self._default_handle_error)(ctx, error, error_traceback)
-        await ctx.message.delete()
-        log.error("Error '%s' was caused by '%s' on the command '%s' with args '%s' and traceback '%s'", error.__class__.__name__, ctx.author.name, ctx.command.name, ctx.args, error_traceback)
+        if ctx.channel.type is ChannelType.text:
+            await ctx.message.delete()
+            log.error("Error '%s' was caused by '%s' on the command '%s' with args '%s' and traceback '%s'", error.__class__.__name__, ctx.author.name, ctx.command.name, ctx.args, error_traceback)
 
     async def _default_handle_error(self, ctx, error, error_traceback):
         log.error('Ignoring exception in command {}:'.format(ctx.command))
         log.exception(error, exc_info=True, stack_info=False)
-        await self.bot.message_creator(embed=await self.error_reply_embed(ctx, error, 'Error With No Special Handling Occured', msg=str(error), error_traceback=error_traceback))
+        if ctx.channel.type is ChannelType.text:
+            await self.bot.message_creator(embed=await self.error_reply_embed(ctx, error, 'Error With No Special Handling Occured', msg=str(error), error_traceback=error_traceback))
 
     async def _handle_check_failure(self, ctx, error, error_traceback):
         if self.bot.is_blacklisted(ctx.author) is False:

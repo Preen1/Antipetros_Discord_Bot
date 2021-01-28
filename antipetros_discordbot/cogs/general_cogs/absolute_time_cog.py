@@ -52,9 +52,13 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "AbsoluteTimeCog"}):
-
+    """
+    Soon
+    """
     # region [ClassAttributes]
     config_name = "absolute_time"
+    docattrs = {'show_in_readme': True,
+                'is_ready': False}
 # endregion [ClassAttributes]
 
 # region [Init]

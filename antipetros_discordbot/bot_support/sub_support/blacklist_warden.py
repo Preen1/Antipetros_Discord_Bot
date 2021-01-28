@@ -27,6 +27,7 @@ from antipetros_discordbot.utility.gidtools_functions import (readit, clearit, r
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.bot_support.sub_support.sub_support_helper.blacklisted_user_item import BlacklistedUserItem
+from typing import TYPE_CHECKING
 
 # endregion[Imports]
 
@@ -71,7 +72,7 @@ class BlacklistWarden(SubSupportBase):
     """
     blacklist_file = pathmaker(APPDATA["json_data"], "blacklist.json")
 
-    def __init__(self, bot: commands.Bot, support):
+    def __init__(self, bot, support):
         self.bot = bot
         self.support = support
         self.loop = self.bot.loop

@@ -21,7 +21,7 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 
 def when_mentioned_or_roles_or(prefixes=None):
 
-    prefixes = BASE_CONFIG.get('prefix', 'command_prefix') if prefixes is None else prefixes
+    prefixes = BASE_CONFIG.getlist('prefix', 'command_prefix') if prefixes is None else prefixes
     role_exceptions = BASE_CONFIG.getlist('prefix', 'invoke_by_role_exceptions')
 
     def inner(bot, msg):

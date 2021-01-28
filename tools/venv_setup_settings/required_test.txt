@@ -1,5 +1,5 @@
 pytest
-pytest-qt
-pytest-cov
-pytest-venv
 pytest-click
+pytest-venv
+pytest-cov
+pytest-qt
