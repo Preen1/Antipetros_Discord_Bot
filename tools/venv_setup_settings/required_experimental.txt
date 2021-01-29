@@ -4,3 +4,6 @@ imperfect
 peewee
 pyparsing
 please-readme
+discord-py-slash-command
+image-to-text-art
+txt2image
