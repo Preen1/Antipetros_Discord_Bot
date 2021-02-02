@@ -49,7 +49,7 @@ class SubSupportBase(ABC):
         ...
 
     @abstractmethod
-    async def update(self):
+    async def update(self, typus):
         ...
 
     def __str__(self) -> str:

@@ -49,7 +49,7 @@ glog.import_notification(log, __name__)
 
 APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
-
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[Constants]
@@ -158,14 +158,35 @@ class AntiPetrosBot(commands.Bot):
             await self.debug_function()
         if BASE_CONFIG.getboolean('startup_message', 'use_startup_message') is True:
             await self.send_startup_message()
-        await self._watch_for_shutdown_trigger()
+        self._watch_for_shutdown_trigger.start()
+        self._watch_for_config_changes.start()
+        self._watch_for_alias_changes.start()
 
     async def set_delayed_bot_attributes(self):
         self.on_command_error = self.support.handle_errors
 
+    @ tasks.loop(count=1, reconnect=True)
+    async def _watch_for_config_changes(self):
+        # TODO: How to make sure they are also correctly restarted, regarding all loops on the bot
+        async for changes in awatch(APPDATA['config'], loop=self.loop):
+            for change_typus, change_path in changes:
+                log.debug("%s ----> %s", str(change_typus).split('.')[-1].upper(), os.path.basename(change_path))
+            BASE_CONFIG.read()
+            COGS_CONFIG.read()
+            await self.to_all_cogs('update', typus='data')
+
+    @ tasks.loop(count=1, reconnect=True)
+    async def _watch_for_alias_changes(self):
+        async for changes in awatch(APPDATA['command_aliases.json'], loop=self.loop):
+            for change_typus, change_path in changes:
+                log.debug("%s ----> %s", str(change_typus).split('.')[-1].upper(), os.path.basename(change_path))
+            await self.to_all_cogs('update', typus='data')
+
+    @ tasks.loop(count=1, reconnect=True)
     async def _watch_for_shutdown_trigger(self):
         async for changes in awatch(APPDATA['shutdown_trigger'], loop=self.loop):
             for change_typus, change_path in changes:
+                log.debug("%s ----> %s", str(change_typus).split('.')[-1].upper(), os.path.basename(change_path))
                 if change_typus is Change.added:
                     name, extension = os.path.basename(change_path).split('.')
                     if extension.casefold() == 'trigger':
@@ -279,8 +300,8 @@ class AntiPetrosBot(commands.Bot):
         if self.current_day == datetime.utcnow().day:
             return
         self.current_day = datetime.utcnow().day
-        await self.to_all_subsupports('update')
-        await self.to_all_cogs('updated')
+        await self.to_all_subsupports('update', typus='time')
+        await self.to_all_cogs('updated', typus='time')
 
     @ update_check_loop.before_loop
     async def before_update_check_loop(self):

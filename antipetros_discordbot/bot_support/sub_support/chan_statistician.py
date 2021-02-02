@@ -93,18 +93,20 @@ class ChannelStatistician(SubSupportBase):
             if channel.name not in self.channel_usage_stats['overall']:
                 self.channel_usage_stats['overall'][channel.name] = 0
         writejson(self.channel_usage_stats, self.channel_usage_stats_file)
-        await self.update()
+        await self.update(typus='time')
         log.debug("'%s' sub_support is READY", str(self))
 
-    async def update(self):
-        writejson(self.channel_usage_stats, self.channel_usage_stats_file)
-        if await async_date_today() not in self.channel_usage_stats:
-            self.channel_usage_stats[await async_date_today()] = {}
-        for channel in self.bot.antistasi_guild.channels:
-            if channel.name not in self.channel_usage_stats[await async_date_today()]:
-                self.channel_usage_stats[await async_date_today()][channel.name] = 0
-        writejson(self.channel_usage_stats, self.channel_usage_stats_file)
-
+    async def update(self, typus):
+        if typus == 'time':
+            writejson(self.channel_usage_stats, self.channel_usage_stats_file)
+            if await async_date_today() not in self.channel_usage_stats:
+                self.channel_usage_stats[await async_date_today()] = {}
+            for channel in self.bot.antistasi_guild.channels:
+                if channel.name not in self.channel_usage_stats[await async_date_today()]:
+                    self.channel_usage_stats[await async_date_today()][channel.name] = 0
+            writejson(self.channel_usage_stats, self.channel_usage_stats_file)
+        else:
+            return
         log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self):

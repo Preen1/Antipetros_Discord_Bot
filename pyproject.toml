@@ -1,15 +1,16 @@
 [build-system]
-requires = ["flit_core >=2,<4"]
 build-backend = "flit_core.buildapi"
+requires = ["flit_core >=2,<4"]
 
 # region [flit]
+
 [tool.flit.metadata]
-module = "antipetros_discordbot"
 author = "antistasi_tools"
-home-page = "https://github.com/Giddius/Antipetros_Discord_Bot"
 classifiers = ["License :: OSI Approved :: MIT License"]
 description-file = "README.md"
+home-page = "https://github.com/Giddius/Antipetros_Discord_Bot"
 license = "MIT"
+module = "antipetros_discordbot"
 requires = [
     "Jinja2==2.11.2",
     "googletrans==4.0.0rc1",
@@ -33,11 +34,12 @@ requires = [
     "pytz==2020.5",
     "antistasi_template_checker==0.1.1",
     "discord==1.0.1",
-    "gidappdata==0.1.8",
+    "gidappdata==0.1.11",
     "gidlogger==0.1.7",
     "Pillow==8.1.0",
     "python-dotenv==0.15.0",
     "udpy==2.0.0",
+    "gidconfig==0.1.14",
 ]
 
 [tool.flit.scripts]
@@ -63,18 +65,31 @@ exclude = [
     "designer_files",
     "art",
     "antipetros_discordbot/dev_tools_and_scripts",
+    "pytest_coverage",
 ]
 
 # endregion [flit]
 # region [autopep8]
 [tool.autopep8]
-max-line-length = 250
 ignore = ["E402", "E501"]
+max-line-length = 250
 
 # endregion [autopep8]
 # region [isort]
 [tool.isort]
+balanced_wrapping = true
+ensure_newline_before_comments = true
+group_by_package = true
+import_heading_firstparty = "* Local Imports --------------------------------------------------------------------------------------->"
+import_heading_gid = "* Gid Imports ----------------------------------------------------------------------------------------->"
+import_heading_pyqt = "* PyQt5 Imports --------------------------------------------------------------------------------------->"
+import_heading_stdlib = "* Standard Library Imports ---------------------------------------------------------------------------->"
+import_heading_thirdparty = "* Third Party Imports --------------------------------------------------------------------------------->"
+known_gid = ["gidtools", "gidlogger", "gidqtutils", "gidviewmodels"]
+known_pyqt = ["PyQt5"]
+length_sort = true
 line_length = 200
+lines_after_imports = 1
 sections = [
     "FUTURE",
     "STDLIB",
@@ -84,18 +99,6 @@ sections = [
     "FIRSTPARTY",
     "LOCALFOLDER",
 ]
-known_pyqt = ["PyQt5"]
-known_gid = ["gidtools", "gidlogger", "gidqtutils", "gidviewmodels"]
-import_heading_stdlib = "* Standard Library Imports ---------------------------------------------------------------------------->"
-import_heading_thirdparty = "* Third Party Imports --------------------------------------------------------------------------------->"
-import_heading_firstparty = "* Local Imports --------------------------------------------------------------------------------------->"
-import_heading_pyqt = "* PyQt5 Imports --------------------------------------------------------------------------------------->"
-import_heading_gid = "* Gid Imports ----------------------------------------------------------------------------------------->"
-ensure_newline_before_comments = true
-balanced_wrapping = true
-lines_after_imports = 1
-length_sort = true
-group_by_package = true
 
 # endregion [isort]
 # region [pytest]
@@ -105,16 +108,16 @@ addopts = "-rP -vv --durations=0 --show-capture=all --color=auto --code-highligh
 # endregion [pytest]
 # region [gidvenv]
 [tool.gidvenv.base_venv_settings]
-system_site_packages = false
 clear = true
 symlinks = true
+system_site_packages = false
 with_pip = false
 # prompt=
 upgrade_deps = false
 
 [tool.gidvenv.settings]
-verbose = false
+extra_install_instructions = []
 manipulate_script = true
 pyclean_before = true
-extra_install_instructions = []
+verbose = false
 # endregion [gidvenv]

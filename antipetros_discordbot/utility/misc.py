@@ -8,10 +8,13 @@ from datetime import datetime
 from textwrap import dedent
 from functools import wraps, partial
 from concurrent.futures import ThreadPoolExecutor
+from inspect import getfullargspec, getmembers, getargspec, signature, currentframe, getclosurevars
+from pprint import pprint
 
 # * Third Party Imports --------------------------------------------------------------------------------->
 # * Third Party Imports -->
 import discord
+from discord.ext import commands
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
 # * Gid Imports -->
@@ -21,11 +24,13 @@ import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from antipetros_discordbot.utility.data import COMMAND_CONFIG_SUFFIXES, DEFAULT_CONFIG_OPTION_NAMES
 
 log = glog.aux_logger(__name__)
 glog.import_notification(log, __name__)
 APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 
 SGF = 1024  # SIZE_GENERAL_FACTOR
 SIZE_CONV = {'byte': {'factor': SGF**0, 'short_name': 'b'},
@@ -175,6 +180,35 @@ def save_commands(cog):
     log.debug("commands for %s saved to %s", cog, command_json_file)
 
 
+def update_config(cog: commands.Cog):
+    config_name = cog.config_name
+    if not COGS_CONFIG.has_section(config_name):
+        COGS_CONFIG.add_section(config_name)
+
+    for _, default_option_name in DEFAULT_CONFIG_OPTION_NAMES.items():
+        if not COGS_CONFIG.has_option(config_name, default_option_name):
+            COGS_CONFIG.set(config_name, default_option_name, '')
+
+    for option_name, default_value in cog.required_config_options.items():
+        if not COGS_CONFIG.has_option(config_name, option_name):
+            COGS_CONFIG.set(config_name, option_name, default_value)
+
+    for command in cog.get_commands():
+        for key, option_values in COMMAND_CONFIG_SUFFIXES.items():
+            if key == 'dm_ids' and all(getclosurevars(check).nonlocals.get('in_dm_allowed', False) is False for check in command.checks):
+                continue
+            option_name = command.name + option_values[0]
+            if not COGS_CONFIG.has_option(config_name, option_name):
+                COGS_CONFIG.set(config_name, option_name, option_values[1])
+
+    for listener_name, listener_func in cog.get_listeners():
+        option_name = listener_name + '_listener_enabled'
+        if not COGS_CONFIG.has_option(config_name, option_name):
+            COGS_CONFIG.set(config_name, option_name, 'no')
+
+    COGS_CONFIG.save()
+
+
 async def async_load_json(json_file):
     return loadjson(json_file)
 
@@ -312,3 +346,9 @@ def day_to_second(days: int):
 def datetime_isoformat_to_discord_format(in_data: datetime):
 
     return in_data.replace(microsecond=0).isoformat()
+
+
+def make_config_name(name):
+    name = split_camel_case_string(name).replace('Cog', '').strip().replace(' ', '_').casefold()
+
+    return name

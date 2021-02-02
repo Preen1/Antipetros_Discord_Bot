@@ -151,7 +151,8 @@ class BlacklistWarden(SubSupportBase):
         self.get_blacklisted_user()
         log.debug("'%s' sub_support is READY", str(self))
 
-    async def update(self):
+    async def update(self, typus):
+        return
         log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self):

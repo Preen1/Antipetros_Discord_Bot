@@ -45,7 +45,7 @@ class MissingAttachmentError(BaseExtendedCommandError):
         self.command = self.ctx.command
         self.min_attachments = min_attachments
         self.attachments = self.ctx.message.attachments
-        self.msg = f"This command requires at least {str(self.min_attachments)} attachments to work\nAmount attachments provided: {str(len(self.attachments))}."
+        self.msg = f"This command requires at least '{str(self.min_attachments)}' attachments to work\nAmount attachments provided: '{str(len(self.attachments))}'."
         super().__init__(self.msg)
 
 
@@ -53,9 +53,10 @@ class NotAllowedChannelError(BaseExtendedCommandError):
     def __init__(self, ctx, allowed_channels):
         self.ctx = ctx
         self.command_name = ctx.command
+        self.alias_used = ctx.invoked_with
         self.channel_name = self.ctx.channel.name
         self.allowed_channels = allowed_channels
-        self.msg = f"The command '{self.command_name}' is not allowed in channel '{self.channel_name}'"
+        self.msg = f"The command '{self.command_name}' (alias used: '{self.alias_used}') is not allowed in channel '{self.channel_name}'"
         super().__init__(self.msg)
 
 
@@ -63,7 +64,10 @@ class NotNecessaryRole(BaseExtendedCommandError):
     def __init__(self, ctx, allowed_roles):
         self.ctx = ctx
         self.allowed_roles = allowed_roles
-        self.msg = "You do not have the necessary Role to invoke this command"
+        self.command_name = self.ctx.command
+        self.alias_used = self.ctx.invoked_with
+        self.channel_name = self.ctx.channel.name
+        self.msg = f"You do not have the necessary Role to invoke the command '{self.command_name}' (alias used: '{self.alias_used}')"
         super().__init__(self.msg)
 
 
@@ -82,4 +86,13 @@ class IsNotDMChannelError(BaseExtendedCommandError):
         self.command = self.ctx.command
         self.channel_type = channel_type
         self.msg = f"The command '{self.command.name}' is not allowed outside of DM's"
+        super().__init__(self.msg)
+
+
+class NotNecessaryDmId(BaseExtendedCommandError):
+    def __init__(self, ctx):
+        self.ctx = ctx
+        self.command_name = ctx.command
+        self.alias_used = ctx.invoked_with
+        self.msg = f"You do not have the necessary Permission to invoke the Dm command '{self.command_name}' (alias used: '{self.alias_used}')!"
         super().__init__(self.msg)

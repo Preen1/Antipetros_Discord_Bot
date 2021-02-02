@@ -20,7 +20,7 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import save_commands
+from antipetros_discordbot.utility.misc import save_commands, make_config_name
 from antipetros_discordbot.utility.enums import WatermarkPosition
 from antipetros_discordbot.utility.checks import log_invoker, in_allowed_channels, allowed_channel_and_allowed_role
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
@@ -47,7 +47,8 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-CONFIG_NAME = 'image_manipulation'
+COG_NAME = "ImageManipulationCog"
+CONFIG_NAME = make_config_name(COG_NAME)
 
 # endregion [Constants]
 
@@ -55,12 +56,12 @@ CONFIG_NAME = 'image_manipulation'
 # TODO: Document and Docstrings
 
 
-class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "ImageManipulationCog"}):
+class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
     """
     Soon
     """
     # region [ClassAttributes]
-
+    config_name = CONFIG_NAME
     allowed_stamp_formats = set(loadjson(APPDATA["image_file_extensions.json"]))
     stamp_positions = {'top': WatermarkPosition.Top, 'bottom': WatermarkPosition.Bottom, 'left': WatermarkPosition.Left, 'right': WatermarkPosition.Right, 'center': WatermarkPosition.Center}
     docattrs = {'show_in_readme': True,

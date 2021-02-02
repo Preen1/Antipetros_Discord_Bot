@@ -89,7 +89,8 @@ class RegexKeeper(SubSupportBase):
         await self.bot.execute_in_thread(self._compile_all_regexes)
         log.debug("'%s' sub_support is READY", str(self))
 
-    async def update(self):
+    async def update(self, typus):
+        return
         log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self):

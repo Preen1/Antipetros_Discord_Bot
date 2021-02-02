@@ -61,7 +61,8 @@ class TimeKeeper(SubSupportBase):
         self.start_time = datetime.utcnow()
         log.debug("'%s' sub_support is READY", str(self))
 
-    async def update(self):
+    async def update(self, typus):
+        return
         log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self):

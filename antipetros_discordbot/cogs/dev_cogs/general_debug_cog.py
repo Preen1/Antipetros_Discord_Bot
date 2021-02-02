@@ -17,8 +17,8 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import save_commands, color_hex_embed, async_seconds_to_pretty_normal
-from antipetros_discordbot.utility.checks import log_invoker, in_allowed_channels, allowed_channel_and_allowed_role
+from antipetros_discordbot.utility.misc import save_commands, color_hex_embed, async_seconds_to_pretty_normal, make_config_name, update_config
+from antipetros_discordbot.utility.checks import log_invoker, in_allowed_channels, allowed_channel_and_allowed_role, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester
 from antipetros_discordbot.utility.named_tuples import MovieQuoteItem
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
@@ -39,7 +39,11 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-CONFIG_NAME = 'general_debug'
+
+COG_NAME = "GeneralDebugCog"
+CONFIG_NAME = make_config_name(COG_NAME)
+
+get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 # endregion [Constants]
 
@@ -52,31 +56,37 @@ CONFIG_NAME = 'general_debug'
 # endregion [TODO]
 
 
-class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": "GeneralDebugCog"}):
+class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
     """
-    Soon
+    Cog for debug or test commands, should not be enabled fo normal Bot operations.
     """
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': False,
                 'is_ready': True}
+    required_config_options = {}
 
     def __init__(self, bot):
         self.bot = bot
         self.support = self.bot.support
-        self.movie_quotes = None
-        self._make_movie_quote_items()
+        update_config(self)
+        self.allowed_channels_checker = allowed_requester(self, 'channels')
+        self.allowed_roles_checker = allowed_requester(self, 'roles')
+        self.allowed_dm_ids_checker = allowed_requester(self, 'dm_ids')
         if os.environ.get('INFO_RUN', '') == "1":
             save_commands(self)
+
         glog.class_init_notification(log, self)
 
-    def _make_movie_quote_items(self):
-        self.movie_quotes = []
-        for item in loadjson(APPDATA['movie_quotes.json']):
-            self.movie_quotes.append(MovieQuoteItem(**item))
+    async def on_ready_setup(self):
 
-    @commands.command(aliases=get_aliases("roll"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist("general_debug", 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist("general_debug", 'allowed_channels')))
+        log.debug('setup for cog "%s" finished', str(self))
+
+    async def update(self, typus):
+        return
+        log.debug('cog "%s" was updated', str(self))
+
+    @commands.command(aliases=get_aliases("roll"), enabled=get_command_enabled('roll'))
+    @allowed_channel_and_allowed_role_2()
     async def roll(self, ctx, target_time: int = 1):
         start_time = time()
         time_multiplier = 151267
@@ -90,9 +100,8 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": "Gene
                               ("pvariance", pvariance),
                               ('amount', len),
                               ('sum', sum)]
-        roll_data = []
-        for i in range(target_time * time_multiplier):
-            roll_data.append(random.randint(1, 10))
+        roll_data = [random.randint(1, 10) for _ in range(target_time * time_multiplier)]
+
         stats_data = {}
         log.debug("starting calculating statistics")
         for key, func in random_stats_funcs:
@@ -102,60 +111,11 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": "Gene
         time_taken = await async_seconds_to_pretty_normal(time_taken_seconds) if time_taken_seconds != 0 else "less than 1 second"
         await ctx.send(embed=await make_basic_embed(title='Roll Result', text='this is a long blocking command for debug purposes', symbol='debug_2', duration=time_taken, ** stats_data))
 
-    @commands.command(aliases=get_aliases("quote"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist("general_debug", 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist("general_debug", 'allowed_channels')))
-    async def quote(self, ctx):
-        quote_item = random.choice(self.movie_quotes)
-        embed = discord.Embed(title=quote_item.quote, description=quote_item.movie + ' - ' + str(quote_item.year), color=color_hex_embed("0xf5b042"))
-        embed.set_thumbnail(url="https://cdn4.iconfinder.com/data/icons/planner-color/64/popcorn-movie-time-512.png")
-        await ctx.send(embed=embed)
-
-    @commands.command(aliases=get_aliases("multiple_quotes"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist("general_debug", 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist("general_debug", 'allowed_channels')))
-    async def multiple_quotes(self, ctx, amount: int = 10):
-        for i in range(amount):
-            await ctx.invoke(self.bot.get_command("quote"))
-        await ctx.send('done')
-
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"
 
     def __str__(self):
         return self.qualified_name
-
-    @commands.command(aliases=get_aliases("get_messages"))
-    @allowed_channel_and_allowed_role(CONFIG_NAME)
-    async def get_messages(self, ctx, channel: discord.TextChannel):
-        _messages = []
-        async for message in channel.history(limit=5):
-            _messages.append(message.content)
-        writejson(_messages, 'message_history')
-        await ctx.send(len(_messages))
-
-    @commands.command()
-    @allowed_channel_and_allowed_role(CONFIG_NAME)
-    async def check_config_list_multiline(self, ctx):
-        the_list = COGS_CONFIG.getlist('translate', 'allowed_channels')
-        await ctx.send(str(the_list))
-
-    @commands.command()
-    @allowed_channel_and_allowed_role(CONFIG_NAME)
-    async def check_embed_split(self, ctx, typus: str):
-        if typus == 'amount':
-            async for embed_data in self.bot.make_paginatedfields_generic_embed(title='Test',
-                                                                                description='This is a test of the embed splitter',
-                                                                                fields=[self.bot.field_item(name=str(i), value=str(i) + ' -- ' + str(i), inline=False) for i in range(40)]):
-
-                await ctx.send(**embed_data)
-                await asyncio.sleep(2)
-        elif typus == 'size':
-            async for embed_data in self.bot.make_paginatedfields_generic_embed(title='Test',
-                                                                                description='This is a test of the embed splitter',
-                                                                                fields=[self.bot.field_item(name=str(i), value=str(i) * 500, inline=False) for i in range(20)]):
-                await ctx.send(**embed_data)
-                await asyncio.sleep(2)
 
 
 def setup(bot):

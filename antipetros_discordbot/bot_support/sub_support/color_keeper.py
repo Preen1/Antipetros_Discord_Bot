@@ -113,7 +113,8 @@ class ColorKeeper(SubSupportBase):
         await self._make_color_items()
         log.debug("'%s' sub_support is READY", str(self))
 
-    async def update(self):
+    async def update(self, typus):
+        return
         log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self):

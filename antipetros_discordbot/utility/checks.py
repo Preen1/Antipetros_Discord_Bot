@@ -5,7 +5,10 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 from typing import Iterable
-
+from configparser import NoOptionError, NoSectionError
+from functools import partial, lru_cache
+from typing import List, Set, Tuple
+from pprint import pprint
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from discord.ext import commands
@@ -14,8 +17,9 @@ from discord.ext import commands
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.exceptions import NotNecessaryRole, IsNotTextChannelError, MissingAttachmentError, NotAllowedChannelError, IsNotDMChannelError
+from antipetros_discordbot.utility.exceptions import NotNecessaryRole, IsNotTextChannelError, MissingAttachmentError, NotAllowedChannelError, IsNotDMChannelError, NotNecessaryDmId
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+from antipetros_discordbot.utility.data import COMMAND_CONFIG_SUFFIXES, DEFAULT_CONFIG_OPTION_NAMES, COG_CHECKER_ATTRIBUTE_NAMES
 
 # endregion[Imports]
 
@@ -159,9 +163,71 @@ def only_dm_only_allowed_id(config_name: str, allowed_id_key: str = "allowed_in_
 
     return commands.check(predicate)
 
+
+def allowed_channel_and_allowed_role_2(in_dm_allowed: bool = False):
+    async def predicate(ctx: commands.Context):
+        cog = ctx.cog
+        command = ctx.command
+        author = ctx.author
+        channel = ctx.channel
+        bot = ctx.bot
+
+        if channel.type is discord.ChannelType.private:
+            if in_dm_allowed is False:
+                raise IsNotTextChannelError(ctx, channel.type)
+
+            allowed_dm_ids = getattr(cog, COG_CHECKER_ATTRIBUTE_NAMES.get('dm_ids'))(command)
+            if allowed_dm_ids != ["all"] and author.id not in allowed_dm_ids:
+                raise NotNecessaryDmId(ctx)
+        else:
+            allowed_channel_names = getattr(cog, COG_CHECKER_ATTRIBUTE_NAMES.get('channels'))(command)
+            if allowed_channel_names != ['all'] and channel.name.casefold() not in allowed_channel_names:
+                raise NotAllowedChannelError(ctx, allowed_channel_names)
+
+            if await bot.is_owner(author):
+                log.debug("skipping permission check as user is creator/owner: %s", ctx.bot.creator.name)
+                return True
+
+            allowed_role_names = getattr(cog, COG_CHECKER_ATTRIBUTE_NAMES.get('roles'))(command)
+            if allowed_role_names != 'all' and all(role.name.casefold() not in allowed_role_names for role in author.roles):
+                raise NotNecessaryRole(ctx, allowed_role_names)
+
+        return True
+
+    return commands.check(predicate)
+
+
+def mod_func_all_in_int(x):
+    if x.casefold() == 'all':
+        return x.casefold()
+    return int(x)
+
+
+def command_enabled_checker(config_name: str):
+
+    def _check_command_enabled(command_name: str):
+        option_name = command_name + COMMAND_CONFIG_SUFFIXES.get('enabled')[0]
+        return COGS_CONFIG.retrieve(config_name, option_name, typus=bool, direct_fallback=True)
+
+    return _check_command_enabled
+
+
+def allowed_requester(cog, data_type: str):
+    cog_section_name = cog.config_name
+    if data_type not in COMMAND_CONFIG_SUFFIXES:
+        raise TypeError(f"data_type '{data_type}' is not an valid option")
+
+    def _allowed_roles(command):
+        option_name = command.name + COMMAND_CONFIG_SUFFIXES.get(data_type)[0]
+        fallback_option = DEFAULT_CONFIG_OPTION_NAMES.get(data_type)
+        if data_type == 'dm_ids':
+            return COGS_CONFIG.retrieve(cog_section_name, option_name, typus=Set[str], fallback_option=fallback_option, mod_func=mod_func_all_in_int)
+        return COGS_CONFIG.retrieve(cog_section_name, option_name, typus=List[str], fallback_option=fallback_option, mod_func=lambda x: x.casefold())
+
+    return _allowed_roles
+
+
 # region[Main_Exec]
-
-
 if __name__ == '__main__':
     pass
 

@@ -5,5 +5,15 @@ peewee
 pyparsing
 please-readme
 discord-py-slash-command
-image-to-text-art
+ascii-img
 txt2image
+textblob
+spacy
+snowballstemmer
+nltk
+markdown2
+ascii-magic
+twemoji-parser
+iipp
+justipy
+piltextbox

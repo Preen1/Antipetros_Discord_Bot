@@ -69,6 +69,8 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[Constants]
 
+# EmbedFieldItem = namedtuple("EmbedFieldItem", ['name', 'value', "inline"], defaults=(None, None, None))
+
 
 class EmbedBuilder(SubSupportBase):
     """
@@ -359,7 +361,8 @@ class EmbedBuilder(SubSupportBase):
         self.collect_embed_build_recipes()
         log.debug("'%s' sub_support is READY", str(self))
 
-    async def update(self):
+    async def update(self, typus):
+        return
         log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self):

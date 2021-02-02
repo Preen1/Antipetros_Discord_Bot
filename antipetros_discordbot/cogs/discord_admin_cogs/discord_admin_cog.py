@@ -21,7 +21,7 @@ import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.misc import save_commands, seconds_to_pretty, async_seconds_to_pretty_normal
-from antipetros_discordbot.utility.checks import in_allowed_channels, allowed_channel_and_allowed_role
+from antipetros_discordbot.utility.checks import in_allowed_channels, allowed_channel_and_allowed_role, allowed_channel_and_allowed_role_2
 from antipetros_discordbot.utility.named_tuples import FeatureSuggestionItem
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.data_gathering import gather_data
@@ -137,8 +137,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
         await ctx.send(content=f"your suggestion has been sent to the bot creator --> **{self.bot.creator.name}** <--")
 
     @ commands.command(aliases=get_aliases("reload_all_ext"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_roles'))
-    @ in_allowed_channels(set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels')))
+    @allowed_channel_and_allowed_role_2(in_dm_allowed=True)
     async def reload_all_ext(self, ctx):
         standard_space_amount = 30
         BASE_CONFIG.read()
@@ -166,7 +165,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
         await ctx.message.delete(delay=float(_delete_time))
 
     @ commands.command(aliases=get_aliases("shutdown"))
-    @ allowed_channel_and_allowed_role(CONFIG_NAME)
+    @allowed_channel_and_allowed_role_2()
     async def shutdown(self, ctx):
         try:
             log.debug('shutdown command received from "%s"', ctx.author.name)
@@ -192,8 +191,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
             await self.bot.close()
 
     @ commands.command(aliases=get_aliases("add_to_blacklist"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
-    @ in_allowed_channels(set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels')))
+    @allowed_channel_and_allowed_role_2()
     async def add_to_blacklist(self, ctx, user: discord.Member):
 
         if user.bot is True:
@@ -207,16 +205,14 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
             await ctx.send("Something went wrong while blacklisting the User")
 
     @ commands.command(aliases=get_aliases("remove_from_blacklist"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
-    @ in_allowed_channels(set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels')))
+    @allowed_channel_and_allowed_role_2()
     async def remove_from_blacklist(self, ctx, user: discord.Member):
 
         await self.bot.unblacklist_user(user)
         await ctx.send(f"I have unblacklisted user {user.name}")
 
     @ commands.command(aliases=get_aliases("tell_uptime"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
-    @ in_allowed_channels(set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels')))
+    @allowed_channel_and_allowed_role_2()
     async def tell_uptime(self, ctx):
 
         now_time = datetime.utcnow()
@@ -226,7 +222,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
         await ctx.send(f"__Uptime__ -->\n\t\t| {str(seconds_to_pretty(seconds))}")
 
     @ commands.command(aliases=get_aliases("delete_msg"))
-    @ allowed_channel_and_allowed_role(CONFIG_NAME)
+    @allowed_channel_and_allowed_role_2()
     async def delete_msg(self, ctx, msg_id: int):
 
         channel = ctx.channel
@@ -236,14 +232,13 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
 
     @ commands.command(aliases=get_aliases("write_data"))
     @ commands.is_owner()
-    @ in_allowed_channels(set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels')))
+    @ allowed_channel_and_allowed_role_2()
     async def write_data(self, ctx):
         await gather_data(self.bot)
         await ctx.send(embed=await make_basic_embed(title='Data Collected', text='Data was gathered and written to the assigned files', symbol='save', collected_data='This command only collected fixed data like role_ids, channel_ids,...\n', reason='Data is collected and saved to a json file so to not relying on getting it at runtime, as this kind of data is unchanging', if_it_changes='then this command can just be run again'))
 
     @ commands.command(aliases=get_aliases("show_command_names"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
-    @ in_allowed_channels(set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels')))
+    @allowed_channel_and_allowed_role_2()
     async def show_command_names(self, ctx):
 
         _out = []
