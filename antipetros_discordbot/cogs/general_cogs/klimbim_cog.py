@@ -140,7 +140,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME})
             else:
                 coin = 'tails'
             await asyncio.sleep(2)
-            coin_image = "https://i.postimg.cc/mDKvvG2J/antipetros-coin-head.png" if coin == 'heads' else "https://i.postimg.cc/yx9MBrDd/antipetros-coin-tails.png"
+            coin_image = "https://i.postimg.cc/XY4fhCf5/antipetros-coin-head.png" if coin == 'heads' else "https://i.postimg.cc/HsQ0B2yH/antipetros-coin-tails.png"
             embed = await self.bot.make_generic_embed(title=coin.title(), description=ZERO_WIDTH, image=coin_image, thumbnail='no_thumbnail')
             await ctx.reply(**embed, allowed_mentions=AllowedMentions.none())
 
