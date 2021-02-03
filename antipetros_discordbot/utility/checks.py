@@ -176,11 +176,19 @@ def allowed_channel_and_allowed_role_2(in_dm_allowed: bool = False):
             if in_dm_allowed is False:
                 raise IsNotTextChannelError(ctx, channel.type)
 
-            allowed_dm_ids = getattr(cog, COG_CHECKER_ATTRIBUTE_NAMES.get('dm_ids'))(command)
+            if await bot.is_owner(author):
+                log.debug("skipping permission check as user is creator/owner: %s", ctx.author.name)
+                return True
+
+            allowed_dm_ids = getattr(cog, COG_CHECKER_ATTRIBUTE_NAMES.get('dm_ids'))
+            if callable(allowed_dm_ids):
+                allowed_dm_ids = allowed_dm_ids(command)
             if allowed_dm_ids != ["all"] and author.id not in allowed_dm_ids:
                 raise NotNecessaryDmId(ctx)
         else:
-            allowed_channel_names = getattr(cog, COG_CHECKER_ATTRIBUTE_NAMES.get('channels'))(command)
+            allowed_channel_names = getattr(cog, COG_CHECKER_ATTRIBUTE_NAMES.get('channels'))
+            if callable(allowed_channel_names):
+                allowed_channel_names = allowed_channel_names(command)
             if allowed_channel_names != ['all'] and channel.name.casefold() not in allowed_channel_names:
                 raise NotAllowedChannelError(ctx, allowed_channel_names)
 
@@ -188,7 +196,9 @@ def allowed_channel_and_allowed_role_2(in_dm_allowed: bool = False):
                 log.debug("skipping permission check as user is creator/owner: %s", ctx.bot.creator.name)
                 return True
 
-            allowed_role_names = getattr(cog, COG_CHECKER_ATTRIBUTE_NAMES.get('roles'))(command)
+            allowed_role_names = getattr(cog, COG_CHECKER_ATTRIBUTE_NAMES.get('roles'))
+            if callable(allowed_role_names):
+                allowed_role_names = allowed_role_names(command)
             if allowed_role_names != 'all' and all(role.name.casefold() not in allowed_role_names for role in author.roles):
                 raise NotNecessaryRole(ctx, allowed_role_names)
 
@@ -218,13 +228,26 @@ def allowed_requester(cog, data_type: str):
         raise TypeError(f"data_type '{data_type}' is not an valid option")
 
     def _allowed_roles(command):
-        option_name = command.name + COMMAND_CONFIG_SUFFIXES.get(data_type)[0]
+
+        command_name = command if isinstance(command, str) else command.name
+
+        option_name = command_name + COMMAND_CONFIG_SUFFIXES.get(data_type)[0]
         fallback_option = DEFAULT_CONFIG_OPTION_NAMES.get(data_type)
         if data_type == 'dm_ids':
             return COGS_CONFIG.retrieve(cog_section_name, option_name, typus=Set[str], fallback_option=fallback_option, mod_func=mod_func_all_in_int)
         return COGS_CONFIG.retrieve(cog_section_name, option_name, typus=List[str], fallback_option=fallback_option, mod_func=lambda x: x.casefold())
 
     return _allowed_roles
+
+
+def owner_or_admin():
+    async def predicate(ctx: commands.Context):
+        if await ctx.bot.is_owner(ctx.author):
+            return True
+        if 'Admin' in ctx.author.roles:
+            return True
+        return False
+    return commands.check(predicate)
 
 
 # region[Main_Exec]

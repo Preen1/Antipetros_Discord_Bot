@@ -7,14 +7,17 @@ import time
 import asyncio
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
-from typing import Union, TYPE_CHECKING
+from typing import Union, TYPE_CHECKING, List, Set, Tuple
+import random
 # * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
 import discord
+
 from udpy import AsyncUrbanClient
 from watchgod import Change, awatch
 from discord.ext import tasks, commands
-
+import arrow
+from humanize import naturaltime
 try:
     from icecream import ic
 except ImportError:  # Graceful fallback if IceCream isn't installed.
@@ -25,12 +28,13 @@ import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import save_bin_file, sync_to_async
 from antipetros_discordbot.engine.global_checks import user_not_blacklisted
+from antipetros_discordbot.utility.checks import owner_or_admin
 from antipetros_discordbot.utility.named_tuples import CreatorMember
 from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
 from antipetros_discordbot.bot_support.bot_supporter import BotSupporter
-from antipetros_discordbot.utility.gidtools_functions import readit, loadjson, pathmaker, writejson
+from antipetros_discordbot.utility.gidtools_functions import readit, loadjson, pathmaker, writejson, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 # endregion[Imports]
 
 
@@ -64,10 +68,9 @@ class AntiPetrosBot(commands.Bot):
     discord_admin_cog_import_path = "antipetros_discordbot.cogs.discord_admin_cogs.discord_admin_cog"
     bot_feature_suggestion_folder = APPDATA["bot_feature_suggestion_data"]
     bot_feature_suggestion_json_file = APPDATA['bot_feature_suggestions.json']
-    cog_import_base_path = BASE_CONFIG.get('general_settings', 'cogs_location')
 
     def __init__(self, help_invocation='help', token=None, db_key=None, ** kwargs):
-        super().__init__(owner_id=self.creator.id,
+        super().__init__(owner_ids={self.creator.id, 413109712695984130, 122348088319803392},
                          case_insensitive=BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive'),
                          self_bot=False,
                          command_prefix='$$',
@@ -84,7 +87,6 @@ class AntiPetrosBot(commands.Bot):
         self.commands_executed = 0
         self.bot_member = None
         self.aio_request_session = None
-        self.urban_client = None
         self.all_bot_roles = None
         self.current_day = datetime.utcnow().day
         self.clients_to_close = []
@@ -158,9 +160,20 @@ class AntiPetrosBot(commands.Bot):
             await self.debug_function()
         if BASE_CONFIG.getboolean('startup_message', 'use_startup_message') is True:
             await self.send_startup_message()
+        await self.handle_previous_shutdown_msg()
         self._watch_for_shutdown_trigger.start()
         self._watch_for_config_changes.start()
         self._watch_for_alias_changes.start()
+
+    async def handle_previous_shutdown_msg(self):
+        if os.path.isfile(self.shutdown_message_pickle_file):
+            last_shutdown_message = get_pickled(self.shutdown_message_pickle_file)
+            channel_id = last_shutdown_message.get('channel_id')
+            message_id = last_shutdown_message.get('message_id')
+            channel = await self.fetch_channel(channel_id)
+            message = await channel.fetch_message(message_id)
+            await message.delete()
+            os.remove(self.shutdown_message_pickle_file)
 
     async def set_delayed_bot_attributes(self):
         self.on_command_error = self.support.handle_errors
@@ -240,13 +253,9 @@ class AntiPetrosBot(commands.Bot):
             self.aio_request_session = aiohttp.ClientSession(loop=self.loop)
             self.clients_to_close.append(self.aio_request_session)
             log.debug("'%s' was started", str(self.aio_request_session))
-        if self.urban_client is None:
-            self.urban_client = AsyncUrbanClient(self.aio_request_session)
-            log.debug("'%s' was started", str(self.urban_client))
 
     def _get_initial_cogs(self):
-        self.load_extension(self.discord_admin_cog_import_path)
-        log.debug("loaded extension\cog: '%s' from '%s'", self.discord_admin_cog_import_path.split('.')[-1], self.discord_admin_cog_import_path)
+
         for _cog in BASE_CONFIG.options('extensions'):
             if BASE_CONFIG.getboolean('extensions', _cog) is True:
                 name = _cog.split('.')[-1]

@@ -119,7 +119,7 @@ class ErrorHandler(SubSupportBase):
         error_traceback = '\n'.join(traceback.format_exception(error, value=error, tb=None))
         await self.error_handle_table.get(type(error), self._default_handle_error)(ctx, error, error_traceback)
         if ctx.channel.type is ChannelType.text:
-            log.error("Error '%s' was caused by '%s' on the command '%s' with args '%s' and traceback '%s'", error.__class__.__name__, ctx.author.name, ctx.command.name, ctx.args, error_traceback)
+            log.error("Error '%s' was caused by '%s' on the command '%s' with args '%s' and traceback --> %s", error.__class__.__name__, ctx.author.name, ctx.command.name, ctx.args, error_traceback)
             if self.delete_invoking_messages is True:
                 await ctx.message.delete()
 

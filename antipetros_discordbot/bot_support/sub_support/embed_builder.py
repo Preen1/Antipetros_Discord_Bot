@@ -87,6 +87,7 @@ class EmbedBuilder(SubSupportBase):
     embed_data_folder = pathmaker(APPDATA['fixed_data'], "embed_data")
     standard_embed_symbols_file = pathmaker(APPDATA["embed_data"], "embed_symbols.json")
     default_embed_data_file = pathmaker(APPDATA['default_embed_data.json'])
+    embed_types_enum = EmbedType
     allowed_embed_types = [embed_type_member.value for embed_type_member in EmbedType]
     datetime_parser = date_parse
     datetime_int_parser = arrow.get
@@ -150,8 +151,10 @@ class EmbedBuilder(SubSupportBase):
                 file = File(fp=image, filename=file_name)
                 image = f"attachment://{file_name}"
                 return image, file
-            else:
-                return image, None
+            if image in self.standard_embed_symbols:
+                return self.standard_embed_symbols.get(image), None
+
+            return image, None
         elif isinstance(image, type(PIL.Image)):
             with BytesIO() as image_binary:
                 image_format = 'PNG' if image.format is None else image.format

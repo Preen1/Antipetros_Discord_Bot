@@ -69,8 +69,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
     # region [ClassAttributes]
 
     config_name = CONFIG_NAME
-    shutdown_message_pickle_file = pathmaker(APPDATA['temp_files'], 'last_shutdown_message.pkl')
-    goodbye_quotes_file = APPDATA['goodbye_quotes.json']
+
     docattrs = {'show_in_readme': False,
                 'is_ready': True}
     # endregion[ClassAttributes]
@@ -90,7 +89,6 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
 
 # region [Properties]
 
-
     @ property
     def allowed_dm_invoker_ids(self):
         return set(map(int, COGS_CONFIG.getlist(self.config_name, 'allowed_dm_ids')))
@@ -102,14 +100,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
 # endregion[Properties]
 
     async def on_ready_setup(self):
-        if os.path.isfile(self.shutdown_message_pickle_file):
-            last_shutdown_message = get_pickled(self.shutdown_message_pickle_file)
-            channel_id = last_shutdown_message.get('channel_id')
-            message_id = last_shutdown_message.get('message_id')
-            channel = await self.bot.fetch_channel(channel_id)
-            message = await channel.fetch_message(message_id)
-            await message.delete()
-            os.remove(self.shutdown_message_pickle_file)
+        pass
 
     @ commands.command(aliases=get_aliases("make_feature_suggestion"))
     async def make_feature_suggestion(self, ctx, *, suggestion_content):
@@ -135,60 +126,6 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
         feature_suggestion_item = feature_suggestion_item._replace(message=suggestion_content)
         await self.bot.add_to_feature_suggestions(feature_suggestion_item)
         await ctx.send(content=f"your suggestion has been sent to the bot creator --> **{self.bot.creator.name}** <--")
-
-    @ commands.command(aliases=get_aliases("reload_all_ext"))
-    @allowed_channel_and_allowed_role_2(in_dm_allowed=True)
-    async def reload_all_ext(self, ctx):
-        standard_space_amount = 30
-        BASE_CONFIG.read()
-        COGS_CONFIG.read()
-        reloaded_extensions = {}
-        _base_location = BASE_CONFIG.get('general_settings', 'cogs_location')
-        for _extension in BASE_CONFIG.options('extensions'):
-            if _extension not in self.do_not_reload_cogs and BASE_CONFIG.getboolean('extensions', _extension) is True:
-                _location = _base_location + '.' + _extension
-                try:
-                    self.bot.unload_extension(_location)
-                    self.bot.load_extension(_location)
-                    log.debug('Extension Cog "%s" was successfully reloaded from "%s"', _extension.split('.')[-1], _location)
-                    _category, _extension = _extension.split('.')
-
-                    if _category not in reloaded_extensions:
-                        reloaded_extensions[_category] = ""
-                    spaces = ' ' * (standard_space_amount - len(_extension))
-                    reloaded_extensions[_category] += f"*{_extension}:*\n:white_check_mark:\n\n"
-                except DiscordException as error:
-                    log.error(error)
-        await self.bot.to_all_cogs('on_ready_setup')
-        _delete_time = 15 if self.bot.is_debug is True else 60
-        await ctx.send(embed=await make_basic_embed(title="**successfully reloaded the following extensions**", symbol="update", **reloaded_extensions), delete_after=_delete_time)
-        await ctx.message.delete(delay=float(_delete_time))
-
-    @ commands.command(aliases=get_aliases("shutdown"))
-    @allowed_channel_and_allowed_role_2()
-    async def shutdown(self, ctx):
-        try:
-            log.debug('shutdown command received from "%s"', ctx.author.name)
-            started_at = self.bot.support.start_time
-
-            started_at_string = arrow.get(started_at).format('YYYY-MM-DD HH:mm:ss')
-            online_duration = naturaltime(datetime.utcnow() - started_at).replace(' ago', '')
-
-            embed = await make_basic_embed(title=random.choice(loadjson(self.goodbye_quotes_file)), text='AntiPetros is shutting down.', was_online_since=started_at_string, online_for=online_duration)
-            embed.set_image(url='https://media.discordapp.net/attachments/449481990513754114/785601325329023006/2d1ca5fea58e65277ac5c18788b21d03.gif')
-            last_shutdown_message = await ctx.send(embed=embed)
-            pickleit({"message_id": last_shutdown_message.id, "channel_id": last_shutdown_message.channel.id}, self.shutdown_message_pickle_file)
-            try:
-                log.debug('deleting shutdown command message')
-
-                await ctx.message.delete()
-            except discord.NotFound:
-                log.debug("shutdown Message was not found")
-        except Exception as error:
-            log.error(error, exc_info=False)
-        finally:
-
-            await self.bot.close()
 
     @ commands.command(aliases=get_aliases("add_to_blacklist"))
     @allowed_channel_and_allowed_role_2()

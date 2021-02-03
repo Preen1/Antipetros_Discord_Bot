@@ -23,7 +23,7 @@ from antipetros_discordbot.utility.named_tuples import MovieQuoteItem
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 # endregion [Imports]
 
 # region [Logging]
@@ -69,9 +69,9 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         self.bot = bot
         self.support = self.bot.support
         update_config(self)
-        self.allowed_channels_checker = allowed_requester(self, 'channels')
-        self.allowed_roles_checker = allowed_requester(self, 'roles')
-        self.allowed_dm_ids_checker = allowed_requester(self, 'dm_ids')
+        self.allowed_channels = allowed_requester(self, 'channels')
+        self.allowed_roles = allowed_requester(self, 'roles')
+        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
         if os.environ.get('INFO_RUN', '') == "1":
             save_commands(self)
 
@@ -122,4 +122,4 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(GeneralDebugCog(bot))
+    bot.add_cog(attribute_checker(GeneralDebugCog(bot)))

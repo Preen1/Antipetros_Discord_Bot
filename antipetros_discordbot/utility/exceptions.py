@@ -7,6 +7,14 @@ class AntiPetrosBaseError(Exception):
     pass
 
 
+class MissingNeededAttributeError(AntiPetrosBaseError):
+    def __init__(self, attr_name, cog) -> None:
+        self.cog = cog
+        self.attr_name = attr_name
+        self.msg = f"Cog '{self.cog.qualified_name}' is missing the needed attribute '{self.attr_name}'"
+        super().__init__(self.msg)
+
+
 class CogNameNotCamelCaseError(AntiPetrosBaseError):
     pass
 

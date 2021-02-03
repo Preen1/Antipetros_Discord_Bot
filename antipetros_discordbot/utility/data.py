@@ -4,4 +4,7 @@ COMMAND_CONFIG_SUFFIXES = {'enabled': ('_enabled', True), 'channels': ('_allowed
 DEFAULT_CONFIG_OPTION_NAMES = {'dm_ids': 'default_allowed_dm_ids', 'channels': 'default_allowed_channels', 'roles': 'default_allowed_roles'}
 
 
-COG_CHECKER_ATTRIBUTE_NAMES = {'dm_ids': "allowed_dm_ids_checker", 'channels': 'allowed_channels_checker', 'roles': 'allowed_roles_checker'}
+COG_CHECKER_ATTRIBUTE_NAMES = {'dm_ids': "allowed_dm_ids", 'channels': 'allowed_channels', 'roles': 'allowed_roles'}
+
+
+COG_NEEDED_ATTRIBUTES = ['on_ready_setup', 'update', 'config_name', 'docattrs', 'required_config_options', 'support', 'allowed_channels', 'allowed_dm_ids', 'allowed_roles']

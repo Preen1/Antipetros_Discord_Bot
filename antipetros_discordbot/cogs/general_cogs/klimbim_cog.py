@@ -8,7 +8,7 @@ import random
 import secrets
 import typing
 import asyncio
-
+from urllib.parse import quote as urlquote
 # * Third Party Imports --------------------------------------------------------------------------------->
 from pytz import timezone, country_timezones
 from fuzzywuzzy import fuzz
@@ -19,7 +19,7 @@ import discord
 from pyfiglet import Figlet
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-
+import aiohttp
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, save_commands, CogConfigReadOnly, make_config_name, update_config
@@ -29,7 +29,8 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.the_dragon import THE_DRAGON
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-
+from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
+from antipetros_discordbot.utility.enums import RequestStatus
 # endregion[Imports]
 
 # region [TODO]
@@ -82,9 +83,9 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME})
         self.bot = bot
         self.support = self.bot.support
         update_config(self)
-        self.allowed_channels_checker = allowed_requester(self, 'channels')
-        self.allowed_roles_checker = allowed_requester(self, 'roles')
-        self.allowed_dm_ids_checker = allowed_requester(self, 'dm_ids')
+        self.allowed_channels = allowed_requester(self, 'channels')
+        self.allowed_roles = allowed_requester(self, 'roles')
+        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
         if os.environ.get('INFO_RUN', '') == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
@@ -97,7 +98,6 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME})
 # endregion [Properties]
 
 # region [Setup]
-
 
     async def on_ready_setup(self):
 
@@ -122,6 +122,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME})
 
 # region [Commands]
 
+
     @ commands.command(aliases=get_aliases("the_dragon"), enabled=get_command_enabled('the_dragon'))
     @allowed_channel_and_allowed_role_2()
     @commands.cooldown(1, 60, commands.BucketType.channel)
@@ -143,28 +144,39 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME})
             embed = await self.bot.make_generic_embed(title=coin.title(), description=ZERO_WIDTH, image=coin_image, thumbnail='no_thumbnail')
             await ctx.reply(**embed, allowed_mentions=AllowedMentions.none())
 
-    @ commands.command(aliases=get_aliases("urban"), enabled=get_command_enabled('urban_dictionary'))
+    @ commands.command(aliases=get_aliases("urban_dictionary"), enabled=get_command_enabled('urban_dictionary'))
     @allowed_channel_and_allowed_role_2()
-    async def urban_dictionary(self, ctx, term: str):
-        _out = {}
-        x = await self.bot.urban_client.get_definition(term)
-        for index, y in enumerate(x):
-            if index < 15:
-                definition = x[0].definition
-                cleaned_definition = definition.replace('[', '**').replace(']', '**')
-                cleaned_definition = definition.replace('[', '**').replace(']', '**')
-                if cleaned_definition not in _out.values():
-                    _out[str(index)] = cleaned_definition
-        await ctx.send(f"```fix\n{_out['0']}```")
+    @commands.cooldown(1, 30, commands.BucketType.user)
+    async def urban_dictionary(self, ctx, term: str, entries: int = 1):
+        if entries > 5:
+            await ctx.send('To many requested entries,max allowed return entries is 5')
+            return
+
+        urban_request_url = "https://api.urbandictionary.com/v0/define?term="
+        full_url = urban_request_url + urlquote(term)
+        async with self.bot.aio_request_session.get(full_url) as _response:
+            if RequestStatus(_response.status) is RequestStatus.Ok:
+                json_content = await _response.json()
+                content_list = sorted(json_content.get('list'), key=lambda x: x.get('thumbs_up') + x.get('thumbs_down'), reverse=True)
+
+                for index, item in enumerate(content_list):
+                    if index <= entries - 1:
+                        _embed_data = await self.bot.make_generic_embed(title=f"Definition for '{item.get('word')}'",
+                                                                        description=item.get('definition').replace('[', '*').replace(']', '*'),
+                                                                        fields=[self.bot.field_item(name='EXAMPLE:', value=item.get('example').replace('[', '*').replace(']', '*'), inline=False),
+                                                                                self.bot.field_item(name='LINK:', value=item.get('permalink'), inline=False)],
+                                                                        thumbnail="https://gamers-palace.de/wordpress/wp-content/uploads/2019/10/Urban-Dictionary-e1574592239378-820x410.jpg")
+                        await ctx.send(**_embed_data)
+                        await asyncio.sleep(1)
 
     @ commands.command(aliases=get_aliases("make_figlet"), enabled=get_command_enabled('make_figlet'))
-    @allowed_channel_and_allowed_role_2()
-    @commands.cooldown(1, 60, commands.BucketType.channel)
+    @ allowed_channel_and_allowed_role_2()
+    @ commands.cooldown(1, 60, commands.BucketType.channel)
     async def make_figlet(self, ctx, *, text: str):
-
         figlet = Figlet(font='gothic', width=300)
         new_text = figlet.renderText(text.upper())
         await ctx.send(f"```fix\n{new_text}\n```")
+
 # endregion [Commands]
 
 # region [DataStorage]
@@ -184,7 +196,6 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME})
 
 # region [SpecialMethods]
 
-
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"
 
@@ -203,4 +214,4 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(KlimBimCog(bot))
+    bot.add_cog(attribute_checker(KlimBimCog(bot)))
