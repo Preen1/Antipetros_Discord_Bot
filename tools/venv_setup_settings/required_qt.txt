@@ -1,6 +1,6 @@
 PyQt5
+PyQtChart
 PyQtDataVisualization
 PyQtWebEngine
 QScintilla
 pyqtgraph
-PyQtChart

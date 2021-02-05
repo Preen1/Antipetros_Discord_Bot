@@ -323,7 +323,7 @@ class AntiPetrosBot(commands.Bot):
 
     async def get_antistasi_emoji(self, name):
         for _emoji in self.antistasi_guild.emojis:
-            if _emoji.name == name:
+            if _emoji.name.casefold() == name.casefold():
                 return _emoji
 
     @ property

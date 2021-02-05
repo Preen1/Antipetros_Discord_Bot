@@ -155,19 +155,19 @@ class EmbedBuilder(SubSupportBase):
                 return self.standard_embed_symbols.get(image), None
 
             return image, None
-        elif isinstance(image, type(PIL.Image)):
+        elif isinstance(image, PIL.Image.Image):
             with BytesIO() as image_binary:
                 image_format = 'PNG' if image.format is None else image.format
                 image.save(image_binary, image_format, optimize=True)
                 image_binary.seek(0)
-                file_name = os.path.basename(image.filename).replace('_', '') if image.filename != '' else f"image{randint(*self.generic_image_name_range)}.{image_format.lower()}"
+                file_name = f"image{randint(*self.generic_image_name_range)}.{image_format.lower()}"
                 file = File(fp=image_binary, filename=file_name)
                 image = f"attachment://{file_name}"
                 return image, file
         elif image is None:
             return None, None
         else:
-            raise TypeError(f"'image' has to be of type 'str' or '{type(PIL.Image)}' and not '{type(image)}'")
+            raise TypeError(f"'image' has to be of type 'str' or '{type(PIL.Image.Image)}' and not '{type(image)}'")
 
     def _fix_field_item(self, field_item, ):
         if field_item.name is None:

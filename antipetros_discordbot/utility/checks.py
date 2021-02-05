@@ -227,7 +227,7 @@ def allowed_requester(cog, data_type: str):
     if data_type not in COMMAND_CONFIG_SUFFIXES:
         raise TypeError(f"data_type '{data_type}' is not an valid option")
 
-    def _allowed_roles(command):
+    def _allowed_data(command):
 
         command_name = command if isinstance(command, str) else command.name
 
@@ -237,7 +237,7 @@ def allowed_requester(cog, data_type: str):
             return COGS_CONFIG.retrieve(cog_section_name, option_name, typus=Set[str], fallback_option=fallback_option, mod_func=mod_func_all_in_int)
         return COGS_CONFIG.retrieve(cog_section_name, option_name, typus=List[str], fallback_option=fallback_option, mod_func=lambda x: x.casefold())
 
-    return _allowed_roles
+    return _allowed_data
 
 
 def owner_or_admin():

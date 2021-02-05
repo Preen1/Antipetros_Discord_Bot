@@ -14,6 +14,8 @@ from googletrans import LANGUAGES, Translator
 from typing import Optional
 import unicodedata
 import emoji
+import discord
+from icecream import ic
 from discord import AllowedMentions
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
@@ -77,7 +79,9 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
                           }
     docattrs = {'show_in_readme': True,
                 'is_ready': True}
-    required_config_options = {}
+    required_config_options = {"emoji_translate_listener_enabled": "yes",
+                               "emoji_translate_listener_allowed_channels": "bot-testing",
+                               "emoji_translate_listener_allowed_roles": "member"}
     config_name = CONFIG_NAME
 # endregion [ClassAttributes]
 
@@ -105,7 +109,6 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
@@ -123,34 +126,50 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 
 # region [Listener]
 
+    async def _emoji_translate_checks(self, payload):
+        command_name = "emoji_translate_listener"
+        channel = self.bot.get_channel(payload.channel_id)
+
+        if get_command_enabled(command_name) is False:
+            return False
+
+        member = payload.member
+        if member.bot is True:
+            return False
+
+        channel = self.bot.get_channel(payload.channel_id)
+        if channel.type is not discord.ChannelType.text:
+            return False
+
+        if channel.name.casefold() not in self.allowed_channels(command_name):
+            return False
+
+        emoji_name = payload.emoji.name
+        log.debug(ic.format(emoji_name))
+        if emoji_name not in self.language_emoji_map:
+            return False
+
+        if all(role.name.casefold() not in self.allowed_roles(command_name) for role in member.roles):
+            return False
+
+        return True
+
     @commands.Cog.listener(name="on_raw_reaction_add")
-    async def emoji_translate(self, payload):
-        if get_command_enabled("emoji_translate") is False:
+    async def emoji_translate_listener(self, payload):
+        if await self._emoji_translate_checks(payload) is False:
             return
         channel = self.bot.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
-        user = payload.member
-        if channel.name.casefold() not in self.allowed_channels("emoji_translate"):
-            return
 
-        if all(role.name.casefold() not in self.allowed_roles("emoji_translate") for role in user.roles):
-            return
-
-        if user.bot:
-
-            return
-
-        log.debug(self.get_emoji_name(payload.emoji.name))
-        match = self.flag_emoji_regex.findall(self.get_emoji_name(payload.emoji.name))
-        if match:
-            country_code = self.language_emoji_map.get(''.join(match).lower())
-            translated = self.translator.translate(text=message.content, dest=country_code, src="auto")
-            await message.reply(f"**in {LANGUAGES.get(country_code)}:** *{translated.text}*", allowed_mentions=AllowedMentions.none())
+        country_code = self.language_emoji_map.get(payload.emoji.name)
+        translated = self.translator.translate(text=message.content, dest=country_code, src="auto")
+        await message.reply(f"**in {LANGUAGES.get(country_code)}:** *{translated.text}*", allowed_mentions=AllowedMentions.none())
 
 
 # endregion [Listener]
 
 # region [Commands]
+
 
     @commands.command(aliases=get_aliases('translate'), **get_doc_data('translate'))
     @allowed_channel_and_allowed_role_2()
@@ -182,6 +201,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 
 # region [HelperMethods]
 
+
     @staticmethod
     def get_emoji_name(s):
         return s.encode('ascii', 'namereplace').decode('utf-8', 'namereplace')
@@ -190,6 +210,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

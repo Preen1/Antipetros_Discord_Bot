@@ -8,10 +8,12 @@ import random
 from time import time
 from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
 import asyncio
+from io import BytesIO
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from discord.ext import commands
-
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
@@ -87,6 +89,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
     @commands.command(aliases=get_aliases("roll"), enabled=get_command_enabled('roll'))
     @allowed_channel_and_allowed_role_2()
+    @log_invoker(log, 'debug')
     async def roll(self, ctx, target_time: int = 1):
         start_time = time()
         time_multiplier = 151267
@@ -110,6 +113,36 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         time_taken_seconds = int(round(time() - start_time))
         time_taken = await async_seconds_to_pretty_normal(time_taken_seconds) if time_taken_seconds != 0 else "less than 1 second"
         await ctx.send(embed=await make_basic_embed(title='Roll Result', text='this is a long blocking command for debug purposes', symbol='debug_2', duration=time_taken, ** stats_data))
+
+    @commands.command(aliases=get_aliases("roll"), enabled=get_command_enabled('roll'))
+    @allowed_channel_and_allowed_role_2()
+    @log_invoker(log, 'debug')
+    async def check_random(self, ctx, amount_data_points: int = 10000, amount_possible_values: int = 100):
+        async with ctx.typing():
+            _sleep_marker = 1000 if amount_data_points >= 100000 else 100
+            _results = {pos_num + 1: 0 for pos_num in range(amount_possible_values)}
+            for i in range(amount_data_points):
+                point = random.randint(1, amount_possible_values)
+                _results[point] += 1
+                if (i + 1) % (amount_data_points // _sleep_marker) == 0:
+                    percent = round(((i + 1) / amount_data_points) * 100, ndigits=1)
+                    log.debug(f"reached {i+1}, {percent}% done!")
+                    await asyncio.sleep(1 / random.randint(1, 100))
+            await asyncio.sleep(2)
+            x = []
+            y = []
+            for key, value in _results.items():
+                x.append(key)
+                y.append(value)
+            plt.plot(x, y)
+
+            plt.axis(ymin=0, ymax=max(value for key, value in _results.items()) * 1.05, xmax=amount_possible_values, xmin=1)
+            with BytesIO() as image_binary:
+                plt.savefig(image_binary, format='png')
+                plt.close()
+                image_binary.seek(0)
+
+                await ctx.send(file=discord.File(image_binary, filename='checkrandomgraph.png'), delete_after=120)
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

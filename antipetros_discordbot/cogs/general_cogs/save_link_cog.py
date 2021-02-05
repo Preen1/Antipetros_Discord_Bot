@@ -37,6 +37,8 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 # TODO: need help figuring out how to best check bad link or how to format/normalize it
 
 
+# TODO: fix db access because aio bullshit
+
 # endregion [TODO]
 
 # region [Logging]

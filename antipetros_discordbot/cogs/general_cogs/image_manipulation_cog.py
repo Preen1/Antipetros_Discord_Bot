@@ -20,13 +20,13 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import save_commands, make_config_name
+from antipetros_discordbot.utility.misc import save_commands, make_config_name, update_config
 from antipetros_discordbot.utility.enums import WatermarkPosition
-from antipetros_discordbot.utility.checks import log_invoker, in_allowed_channels, allowed_channel_and_allowed_role
+from antipetros_discordbot.utility.checks import log_invoker, in_allowed_channels, allowed_channel_and_allowed_role, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 # endregion[Imports]
 
 # region [TODO]
@@ -49,7 +49,7 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 COG_NAME = "ImageManipulationCog"
 CONFIG_NAME = make_config_name(COG_NAME)
-
+get_command_enabled = command_enabled_checker(CONFIG_NAME)
 # endregion [Constants]
 
 # TODO: create regions for this file
@@ -66,6 +66,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
     stamp_positions = {'top': WatermarkPosition.Top, 'bottom': WatermarkPosition.Bottom, 'left': WatermarkPosition.Left, 'right': WatermarkPosition.Right, 'center': WatermarkPosition.Center}
     docattrs = {'show_in_readme': True,
                 'is_ready': True}
+    required_config_options = {}
 # endregion[ClassAttributes]
 
 # region [Init]
@@ -90,26 +91,30 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
                                 'airport': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_airport_marker.png")}
         self.old_map_message = None
         self._get_stamps()
+        update_config(self)
+        self.allowed_channels = allowed_requester(self, 'channels')
+        self.allowed_roles = allowed_requester(self, 'roles')
+        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
         if os.environ.get('INFO_RUN', '') == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
 
 
 # endregion[Init]
-# region [Setup]
 
+# region [Setup]
 
     async def on_ready_setup(self):
         self._get_stamps()
         log.debug('setup for cog "%s" finished', str(self))
 
-# endregion [Setup]
+    async def update(self, typus):
+        return
+        log.debug('cog "%s" was updated', str(self))
+
+# endregion[Setup]
+
 # region [Properties]
-
-    @property
-    def allowed_channels(self):
-
-        return set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels'))
 
     @property
     def target_stamp_fraction(self):
@@ -247,14 +252,12 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
     @flags.add_flag("--first-pos", '-fp', type=str, default="bottom")
     @flags.add_flag("--second-pos", '-sp', type=str, default="right")
     @flags.add_flag('--factor', '-f', type=float, default=None)
-    @commands.command(aliases=get_aliases("stamp_image"), **get_doc_data("stamp_image"), cls=flags.FlagCommand)
-    @allowed_channel_and_allowed_role(CONFIG_NAME)
+    @commands.command(aliases=get_aliases("stamp_image"), enabled=get_command_enabled("stamp_image"), cls=flags.FlagCommand)
+    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def stamp_image(self, ctx, **flags):
 
         async with ctx.channel.typing():
-            if ctx.channel.name not in self.allowed_channels:
-                return
 
             if len(ctx.message.attachments) == 0:
                 # TODO: make as embed
@@ -287,15 +290,15 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
 
                     in_image = await self.bot.execute_in_thread(pos_function, in_image, _stamp, factor)
                     name = 'antistasified_' + os.path.splitext(_file.filename)[0]
+                    await ctx.message.delete()
                     # TODO: make as embed
                     await self._send_image(ctx, in_image, name, f"__**{name}**__")
 
-    @commands.command(aliases=get_aliases("available_stamps"), **get_doc_data("available_stamps"))
-    @commands.has_any_role(*COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels')))
+    @commands.command(aliases=get_aliases("available_stamps"), enabled=get_command_enabled("available_stamps"))
+    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     @commands.cooldown(1, 120, commands.BucketType.channel)
     async def available_stamps(self, ctx):
-
+        await ctx.message.delete()
         await ctx.send(embed=await make_basic_embed(title="__**Currently available Stamps are:**__", footer="These messages will be deleted in 120 seconds", symbol='photo'), delete_after=120)
         for name, image_path in self.stamps.items():
 
@@ -310,10 +313,9 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
                 embed.set_image(url=f"attachment://{name}.png")
                 await ctx.send(embed=embed, file=_file, delete_after=120)
 
-    @commands.command(aliases=get_aliases("member_avatar"), **get_doc_data("member_avatar"))
-    @commands.has_any_role(*COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_avatar_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels')))
-    @commands.cooldown(1, 30, commands.BucketType.member)
+    @commands.command(aliases=get_aliases("member_avatar"), enabled=get_command_enabled("member_avatar"))
+    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @commands.cooldown(1, 120, commands.BucketType.member)
     async def member_avatar(self, ctx):
         avatar_image = await self.get_avatar_from_user(ctx.author)
         stamp = self.avatar_stamp
@@ -345,8 +347,8 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
         bytes_out.seek(0)
         return base_image, bytes_out
 
-    @commands.command(aliases=get_aliases("map_changed"), **get_doc_data("map_changed"))
-    @allowed_channel_and_allowed_role(config_name=CONFIG_NAME)
+    @commands.command(aliases=get_aliases("map_changed"), enabled=get_command_enabled("map_changed"))
+    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def map_changed(self, ctx, marker, color):
         log.info("command was initiated by '%s'", ctx.author.name)
@@ -364,60 +366,9 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
 
         log.debug("finished 'map_changed' command")
 
-    async def get_text_dimensions(self, text_string, font_name, image_size):
-        # https://stackoverflow.com/a/46220683/9263761
-        font_size = 500
-        buffer = 50
-        image_width, image_height = image_size
-        image_width = image_width - (buffer * 2)
-        image_height = image_height - (buffer * 2)
-
-        text_width = 99999999999
-        text_height = 9999999999
-        while text_width > image_width or text_height > image_height:
-            font = ImageFont.truetype(font_name, font_size)
-            ascent, descent = font.getmetrics()
-
-            text_width = font.getmask(text_string).getbbox()[2]
-            text_height = font.getmask(text_string).getbbox()[3] + descent
-            font_size -= 1
-        return font, text_width, text_height, font_size
-
-    async def get_smaller_text_dimensions(self, text_string, font):
-        # https://stackoverflow.com/a/46220683/9263761
-        ascent, descent = font.getmetrics()
-
-        text_width = font.getmask(text_string).getbbox()[2]
-        text_height = font.getmask(text_string).getbbox()[3] + descent
-
-        return (text_width, text_height)
-
-    @commands.command(aliases=get_aliases("text_to_image"))
-    @allowed_channel_and_allowed_role(CONFIG_NAME)
-    async def text_to_image(self, ctx, *, text: str):
-        font_path = APPDATA['stencilla.ttf']
-        image_path = APPDATA['armaimage.png']
-
-        image = Image.open(APPDATA['armaimage.png'])
-        font, text_width, text_height, font_size = await self.get_text_dimensions(text, font_path, image.size)
-        second_font = ImageFont.truetype(font_path, size=font_size - (font_size // 35))
-        second_width, second_height = await self.get_smaller_text_dimensions(text, second_font)
-        draw_interface = ImageDraw.Draw(image, mode='RGBA')
-        draw_interface.text((((image.size[0] - text_width) // 2), 50), text, fill=(1, 1, 1), font=font)
-        draw_interface.text((((image.size[0] - second_width) // 2), 50 + 10), text, fill=(255, 226, 0), font=second_font, stroke_fill=(0, 176, 172), stroke_width=(font_size // 50))
-        await self._send_image(ctx, image, 'test', 'TEST', 'PNG')
-
-    async def _send_image(self, ctx, image, name, message_title, image_format=None, delete_after=None):
-        image_format = 'png' if image_format is None else image_format
-        with BytesIO() as image_binary:
-            image.save(image_binary, image_format.upper(), optimize=True)
-            image_binary.seek(0)
-            out_file = discord.File(image_binary, filename=name + '.' + image_format)
-            embed = discord.Embed(title=message_title)
-            embed.set_image(url=f"attachment://{name.replace('_','')}.{image_format}")
-            await ctx.send(embed=embed, file=out_file, delete_after=delete_after)
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"
@@ -432,4 +383,4 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(ImageManipulatorCog(bot))
+    bot.add_cog(attribute_checker(ImageManipulatorCog(bot)))

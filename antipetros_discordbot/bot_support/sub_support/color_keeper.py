@@ -85,7 +85,12 @@ class ColorKeeper(SubSupportBase):
     async def _make_color_items(self):
         for name, values in loadjson(self.all_colors_json_file).items():
             discord_color = Color.from_rgb(*values.get('rgb'))
-            self.colors[name.casefold()] = ColorItem(name=name.casefold(), discord_color=discord_color, ** values)
+            new_values = {}
+            for key, data in values.items():
+                if isinstance(data, list):
+                    data = tuple(data)
+                new_values[key] = data
+            self.colors[name.casefold()] = ColorItem(name=name.casefold(), discord_color=discord_color, ** new_values)
 
     @staticmethod
     def dict_to_color_item(color_name, color_data):
@@ -93,7 +98,7 @@ class ColorKeeper(SubSupportBase):
         return ColorItem(name=color_name.casefold(), discord_color=discord_color, ** color_data)
 
     def color(self, color_name: str):
-        return self.colors.get(color_name)
+        return self.colors.get(color_name.casefold())
 
     def get_discord_color(self, color_name: str):
         color_name = color_name.casefold()

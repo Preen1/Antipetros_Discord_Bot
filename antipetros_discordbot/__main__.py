@@ -157,6 +157,13 @@ def command_info_run():
     writejson(_commands, pathmaker(APPDATA['documentation'], 'command_data.json'), sort_keys=True)
 
 
+@cli.command(name="clean")
+def clean_user_data():
+    if os.environ['IS_DEV'].casefold() in ['true', 'yes', '1'] or APPDATA.dev is True:
+        raise RuntimeError("Cleaning not possible in Dev Mode")
+    APPDATA.clean(APPDATA.AllFolder)
+
+
 @cli.command(name='only_info')
 def info_run():
     """

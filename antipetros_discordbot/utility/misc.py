@@ -201,11 +201,6 @@ def update_config(cog: commands.Cog):
             if not COGS_CONFIG.has_option(config_name, option_name):
                 COGS_CONFIG.set(config_name, option_name, option_values[1])
 
-    for listener_name, listener_func in cog.get_listeners():
-        option_name = listener_name + '_listener_enabled'
-        if not COGS_CONFIG.has_option(config_name, option_name):
-            COGS_CONFIG.set(config_name, option_name, 'no')
-
     COGS_CONFIG.save()
 
 

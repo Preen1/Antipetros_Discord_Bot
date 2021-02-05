@@ -40,5 +40,6 @@ for req_file in REQUIRED_FILES:
             mod_line = mod_line.strip()
             if all(exist_item.casefold() != mod_line.casefold() for exist_item in cleaned_lines):
                 cleaned_lines.append(line)
+    cleaned_lines = sorted(cleaned_lines)
     with req_file.open('w') as f:
         f.write('\n'.join(cleaned_lines))
