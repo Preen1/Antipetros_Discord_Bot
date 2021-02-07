@@ -24,7 +24,7 @@ import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.misc import CogConfigReadOnly, save_commands
-from antipetros_discordbot.utility.enums import RequestStatus
+from antipetros_discordbot.utility.enums import RequestStatus, CogState
 from antipetros_discordbot.utility.checks import log_invoker, in_allowed_channels, allowed_channel_and_allowed_role
 from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM, GiveAwayEventItem
 from antipetros_discordbot.utility.embed_helpers import EMBED_SYMBOLS, make_basic_embed
@@ -79,7 +79,9 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': "GiveAwayCog", "descripti
     give_away_data_file = pathmaker(APPDATA['json_data'], 'give_aways.json')
     give_away_item = GiveAwayEventItem
     docattrs = {'show_in_readme': True,
-                'is_ready': False}
+                'is_ready': (CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.CRASHING,
+                             "2021-02-06 05:22:34",
+                             "8afa88580ca36d0f7f103683f1fe29c200a2981113b8bb4b8ef9d52a4129de62545f1db6fd27be8c26e2fb52408b9f0f62e07faa4e23adf8e8c5d8864da389b1")}
 # endregion [ClassAttributes]
 
 # region [Init]
@@ -140,6 +142,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': "GiveAwayCog", "descripti
 # region [Commands]
 
     async def give_away_finished(self, event_item):
+
         channel = await self.bot.channel_from_name(event_item.channel_name)
 
         msg = await channel.fetch_message(event_item.message_id)
@@ -149,7 +152,9 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': "GiveAwayCog", "descripti
             if reaction.emoji == event_item.enter_emoji:
                 users = await reaction.users().flatten()
                 users = [user for user in users if user.bot is False]
-
+        check_randint = random.randint(1, 100000)
+        if random.randint(1, 100000) == check_randint:
+            log.error("warning, random does not seem to be random, could have been initialized with an specific value")
         winners = random.choices(users, k=event_item.amount_winners)
         await channel.send(event_item.end_message)
         await channel.send('\n'.join([winner.display_name for winner in winners]))

@@ -38,7 +38,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.the_dragon import THE_DRAGON
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-
+from antipetros_discordbot.utility.enums import CogState
 # endregion [Imports]
 
 # region [Logging]
@@ -77,7 +77,9 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
     config_name = "test_playground"
     language_dict = {value: key for key, value in LANGUAGES.items()}
     docattrs = {'show_in_readme': False,
-                'is_ready': True}
+                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.CRASHING,
+                             "2021-02-06 05:27:52",
+                             "206141b64e3688eedda4d196dada700bdff9a22170c5557515d8cfd99706d56e42771c27e121dfddbbfb093a1edcdf7bde66fada427201e47ef72a40d7b4f2b1")}
 
     def __init__(self, bot):
         self.bot = bot
@@ -289,6 +291,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
 
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

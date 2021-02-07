@@ -223,16 +223,6 @@ def main(token: str, db_key: str):
     os.environ['INFO_RUN'] = "0"
     decrypt_db(db_key)
     anti_petros_bot = AntiPetrosBot(token=token, db_key=db_key)
-    _out = {}
-
-    for command in anti_petros_bot.walk_commands():
-        _out[command.name] = list(map(lambda x: x.replace('_', '-'), command.aliases))
-        _out[command.name] += [alias.replace('-', '').replace('_', '') for alias in command.aliases if alias != command.name and alias.replace('-', '').replace('_', '') not in _out[command.name]]
-        _out[command.name] += [alias.replace('-', '.').replace('_', '.') for alias in command.aliases if alias != command.name and alias.replace('-', '.').replace('_', '.') not in _out[command.name]]
-        if '_' in command.name and command.name.replace('_', '-') not in _out[command.name]:
-            _out[command.name].append(command.name.replace('_', '-'))
-        _out[command.name] = list(set(_out[command.name]))
-    writejson(_out, APPDATA['command_aliases.json'])
 
     try:
         anti_petros_bot.run()

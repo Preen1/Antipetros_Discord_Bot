@@ -30,6 +30,8 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.converters import LanguageConverter
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
+from antipetros_discordbot.utility.enums import RequestStatus, CogState
+
 # endregion[Imports]
 
 # region [TODO]
@@ -78,7 +80,10 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
                           'za': 'af',
                           }
     docattrs = {'show_in_readme': True,
-                'is_ready': True}
+                'is_ready': (CogState.WORKING | CogState.UNTESTED | CogState.FEATURE_MISSING,
+                             "2021-02-06 03:40:46",
+                             "29d140f50313ab11e4ec463a204b56dbcba90f86502c5f4a027f4d1ab7f25525dcf97a5619fd1b88709b95e6facb81a7620b39551c98914dcb6f6fbf3038f542")}
+
     required_config_options = {"emoji_translate_listener_enabled": "yes",
                                "emoji_translate_listener_allowed_channels": "bot-testing",
                                "emoji_translate_listener_allowed_roles": "member"}
@@ -145,7 +150,6 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
             return False
 
         emoji_name = payload.emoji.name
-        log.debug(ic.format(emoji_name))
         if emoji_name not in self.language_emoji_map:
             return False
 

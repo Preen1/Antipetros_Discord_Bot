@@ -27,9 +27,13 @@ from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
+from antipetros_discordbot.utility.enums import CogState
 # endregion[Imports]
 
 # region [TODO]
+
+# TODO: create regions for this file
+# TODO: Document and Docstrings
 
 
 # endregion [TODO]
@@ -52,9 +56,6 @@ CONFIG_NAME = make_config_name(COG_NAME)
 get_command_enabled = command_enabled_checker(CONFIG_NAME)
 # endregion [Constants]
 
-# TODO: create regions for this file
-# TODO: Document and Docstrings
-
 
 class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
     """
@@ -65,7 +66,9 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
     allowed_stamp_formats = set(loadjson(APPDATA["image_file_extensions.json"]))
     stamp_positions = {'top': WatermarkPosition.Top, 'bottom': WatermarkPosition.Bottom, 'left': WatermarkPosition.Left, 'right': WatermarkPosition.Right, 'center': WatermarkPosition.Center}
     docattrs = {'show_in_readme': True,
-                'is_ready': True}
+                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,
+                             "2021-02-06 05:09:20",
+                             "f166431cb83ae36c91d70d7d09020e274a7ebea84d5a0c724819a3ecd2230b9eca0b3e14c2d473563d005671b7a2bf9d87f5449544eb9b57bcab615035b0f83d")}
     required_config_options = {}
 # endregion[ClassAttributes]
 

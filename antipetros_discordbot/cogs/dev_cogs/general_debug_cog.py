@@ -26,6 +26,8 @@ from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
+from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 # endregion [Imports]
 
 # region [Logging]
@@ -62,9 +64,12 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     """
     Cog for debug or test commands, should not be enabled fo normal Bot operations.
     """
+    command_enabled = get_command_enabled
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': False,
-                'is_ready': True}
+                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,
+                             "2021-02-06 05:26:32",
+                             "a296317ad6ce67b66c11e18769b28ef24060e5dac5a0b61a9b00653ffbbd9f4e521b2481189f075d029a4e9745892052413d2364e0666a97d9ffc7561a022b07")}
     required_config_options = {}
 
     def __init__(self, bot):
@@ -114,7 +119,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         time_taken = await async_seconds_to_pretty_normal(time_taken_seconds) if time_taken_seconds != 0 else "less than 1 second"
         await ctx.send(embed=await make_basic_embed(title='Roll Result', text='this is a long blocking command for debug purposes', symbol='debug_2', duration=time_taken, ** stats_data))
 
-    @commands.command(aliases=get_aliases("roll"), enabled=get_command_enabled('roll'))
+    @auto_meta_info_command()
     @allowed_channel_and_allowed_role_2()
     @log_invoker(log, 'debug')
     async def check_random(self, ctx, amount_data_points: int = 10000, amount_possible_values: int = 100):
@@ -134,7 +139,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             for key, value in _results.items():
                 x.append(key)
                 y.append(value)
-            plt.plot(x, y)
+            plt.plot(x, y, 's-b', markersize=4, linewidth=0.2, alpha=1)
 
             plt.axis(ymin=0, ymax=max(value for key, value in _results.items()) * 1.05, xmax=amount_possible_values, xmin=1)
             with BytesIO() as image_binary:
@@ -149,6 +154,53 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
     def __str__(self):
         return self.qualified_name
+
+    @commands.command(aliases=get_aliases("request_server_restart"))
+    @allowed_channel_and_allowed_role_2()
+    @commands.cooldown(1, 30, commands.BucketType.channel)
+    async def request_server_restart(self, ctx):
+
+        if ctx.prefix != "<@&800769712879042612> ":
+
+            return
+
+        servers = ["COMMUNITY_SERVER_1", "TEST_SERVER_1", "TEST_SERVER_2"]
+        await ctx.send(f"please specify the server name in the next 20 seconds | OPTIONS: {', '.join(servers)}")
+        user = ctx.author
+        channel = ctx.channel
+
+        def check(m):
+            return m.author.name == user.name and m.channel.name == channel.name
+        try:
+            msg = await self.bot.wait_for('message', check=check, timeout=20.0)
+            if any(server.casefold() in msg.content.casefold() for server in servers):
+                for server in servers:
+                    if server.casefold() in msg.content.casefold():
+                        _server = server
+            else:
+                await ctx.send('No valid answer received, aborting request, you can always try again')
+                return
+            await ctx.send("Did the commander save and is everyone ready for a restart? answer time: 20 seconds | OPTIONS: YES, NO")
+            try:
+                msg_2 = await self.bot.wait_for('message', check=check, timeout=20.0)
+                if msg_2.content.casefold() == 'yes':
+                    is_saved = 'yes'
+                elif msg_2.content.casefold() == 'no':
+                    is_saved = 'no'
+                else:
+                    await ctx.send('No valid answer received, aborting request, you can always try again')
+                    return
+                await ctx.send("notifying admin now")
+                member = await self.bot.retrieve_antistasi_member(576522029470056450)
+                await member.send(f"This is a notification from {ctx.author.name}!\nHe requests a server restart for server {_server}, saved and ready: {is_saved}")
+                await ctx.send(f"I have notified {member.name} per DM!")
+            except asyncio.TimeoutError:
+                await ctx.send('No answer received, aborting request, you can always try again')
+                return
+
+        except asyncio.TimeoutError:
+            await ctx.send('No answer received, aborting request, you can always try again')
+            return
 
 
 def setup(bot):

@@ -26,7 +26,7 @@ from antipetros_discordbot.utility.embed_helpers import EMBED_SYMBOLS, make_basi
 from antipetros_discordbot.utility.sqldata_storager import LinkDataStorageSQLite
 from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from antipetros_discordbot.utility.enums import CogState
 # endregion [Imports]
 
 # region [TODO]
@@ -83,7 +83,9 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
     blocklist_hostfile_url = "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn/hosts"
     config_name = 'save_link'
     docattrs = {'show_in_readme': True,
-                'is_ready': True}
+                'is_ready': (CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.CRASHING,
+                             "2021-02-06 03:42:57",
+                             "2402582530a0b952213fab313e39f3fb40566a07c496490e4d2937efab3063e55ae376ad53409da29144a512b5e1bd85457da8381cd0673c4215fb0f8ba86e6f")}
 # endregion [ClassAttributes]
 
 # region [Init]
@@ -177,7 +179,6 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
 
 # region [Properties]
 
-
     @property
     def forbidden_url_words(self):
         """
@@ -239,6 +240,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
 # endregion [Listener]
 
 # region [Commands]
+
 
     @commands.command(aliases=get_aliases("add_forbidden_word"), **get_doc_data("add_forbidden_word"))
     @allowed_channel_and_allowed_role(config_name=CONFIG_NAME, in_dm_allowed=True)
@@ -501,6 +503,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
 
 # region [DataStorage]
 
+
     async def link_name_list(self):
         """
         Retrieves all saved link names from the DataStorage.
@@ -529,7 +532,6 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
 # endregion [DataStorage]
 
 # region [Embeds]
-
 
     async def _answer_embed(self, link_item):
         """
@@ -603,7 +605,6 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
 
 
 # region [HelperMethods]
-
 
     async def _get_bad_link_image(self):
         """
@@ -711,6 +712,7 @@ class SaveLinkCog(commands.Cog, command_attrs={"name": "SaveLinkCog"}):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

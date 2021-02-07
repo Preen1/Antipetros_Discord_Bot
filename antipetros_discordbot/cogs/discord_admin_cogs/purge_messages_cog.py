@@ -19,7 +19,7 @@ from antipetros_discordbot.utility.misc import save_commands
 from antipetros_discordbot.utility.checks import in_allowed_channels
 from antipetros_discordbot.utility.converters import DateOnlyConverter
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from antipetros_discordbot.utility.enums import CogState
 # endregion[Imports]
 
 # region [TODO]
@@ -60,7 +60,9 @@ class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": "Pur
     """
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': False,
-                'is_ready': True}
+                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.CRASHING,
+                             "2021-02-06 05:19:50",
+                             "b0fabfbd25ed7b45a009737879c2ef61262acce2c3e9043d7b2b27e51f6cd8de27fea94d52e1f97739765b4629d534de76bf28b241c5f27bd96917f3eb8c7e6e")}
 
     def __init__(self, bot):
         self.bot = bot

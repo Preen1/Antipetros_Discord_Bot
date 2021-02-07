@@ -69,7 +69,7 @@ class AntiPetrosBot(commands.Bot):
     bot_feature_suggestion_folder = APPDATA["bot_feature_suggestion_data"]
     bot_feature_suggestion_json_file = APPDATA['bot_feature_suggestions.json']
 
-    def __init__(self, help_invocation='help', token=None, db_key=None, ** kwargs):
+    def __init__(self, help_invocation='help', token=None, db_key=None, is_test=False, ** kwargs):
         super().__init__(owner_ids={self.creator.id, 413109712695984130, 122348088319803392},
                          case_insensitive=BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive'),
                          self_bot=False,
@@ -96,8 +96,8 @@ class AntiPetrosBot(commands.Bot):
 
         self.support.recruit_subsupports()
         user_not_blacklisted(self, log)
-
-        self._setup()
+        if is_test is False:
+            self._setup()
 
         glog.class_init_notification(log, self)
 

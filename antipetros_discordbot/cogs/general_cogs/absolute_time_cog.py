@@ -21,7 +21,7 @@ from antipetros_discordbot.utility.checks import in_allowed_channels
 from antipetros_discordbot.utility.named_tuples import CITY_ITEM, COUNTRY_ITEM
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from antipetros_discordbot.utility.enums import CogState
 # endregion[Imports]
 
 # region [TODO]
@@ -58,7 +58,9 @@ class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "Abso
     # region [ClassAttributes]
     config_name = "absolute_time"
     docattrs = {'show_in_readme': True,
-                'is_ready': False}
+                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY,
+                             "2021-02-06 05:16:51",
+                             "ed8f3b4d66db18f01a1d7c0fefd24434c07a0035c5582fd79b75782ab28498170967dc42582d2ac10b208f662a03302532bad1c128c1b82a7b1edec96447f8a4")}
 # endregion [ClassAttributes]
 
 # region [Init]
@@ -143,6 +145,7 @@ class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "Abso
 
 # region [Commands]
 
+
     @commands.command(aliases=get_aliases("to_absolute_times"))
     @ commands.has_any_role(*COGS_CONFIG.getlist("absolute_time", 'allowed_roles'))
     @in_allowed_channels(set(COGS_CONFIG.getlist("absolute_time", 'allowed_channels')))
@@ -185,7 +188,6 @@ class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "Abso
 # endregion [Embeds]
 
 # region [HelperMethods]
-
 
     @staticmethod
     def id_to_item(in_id, in_items):

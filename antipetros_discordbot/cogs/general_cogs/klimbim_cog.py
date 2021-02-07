@@ -22,7 +22,7 @@ import gidlogger as glog
 import aiohttp
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, save_commands, CogConfigReadOnly, make_config_name, update_config
+from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, save_commands, CogConfigReadOnly, make_config_name, update_config, is_even
 from antipetros_discordbot.utility.checks import in_allowed_channels, allowed_channel_and_allowed_role, has_attachments, command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2
 from antipetros_discordbot.utility.named_tuples import CITY_ITEM, COUNTRY_ITEM
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
@@ -30,7 +30,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.discord_markdown_helper.the_dragon import THE_DRAGON
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus
+from antipetros_discordbot.utility.enums import RequestStatus, CogState
 # endregion[Imports]
 
 # region [TODO]
@@ -72,9 +72,15 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME})
     """
     # region [ClassAttributes]
     config_name = CONFIG_NAME
+
     docattrs = {'show_in_readme': True,
-                'is_ready': True}
-    required_config_options = {}
+                'is_ready': (CogState.WORKING | CogState.UNTESTED | CogState.FEATURE_MISSING,
+                             "2021-02-06 03:32:39",
+                             "05703df4faf098a7f3f5cea49c51374b3225162318b081075eb0745cc36ddea6ff11d2f4afae1ac706191e8db881e005104ddabe5ba80687ac239ede160c3178")}
+
+    required_config_options = {'coin_image_heads': "https://i.postimg.cc/XY4fhCf5/antipetros-coin-head.png",
+                               "coin_image_tails": "https://i.postimg.cc/HsQ0B2yH/antipetros-coin-tails.png"}
+
     # endregion [ClassAttributes]
 
     # region [Init]
@@ -135,13 +141,14 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME})
     async def flip_coin(self, ctx: commands.Context):
         with ctx.typing():
             result = (secrets.randbelow(2) + 1)
-            if result % 2 == 0:
-                coin = 'heads'
-            else:
-                coin = 'tails'
-            await asyncio.sleep(2)
-            coin_image = "https://i.postimg.cc/XY4fhCf5/antipetros-coin-head.png" if coin == 'heads' else "https://i.postimg.cc/HsQ0B2yH/antipetros-coin-tails.png"
+            coin = "heads" if is_even(result) is True else 'tails'
+
+            await asyncio.sleep(random.random() * random.randint(1, 2))
+
+            coin_image = COGS_CONFIG.retrieve(self.config_name, f"coin_image_{coin}", typus=str)
+
             embed = await self.bot.make_generic_embed(title=coin.title(), description=ZERO_WIDTH, image=coin_image, thumbnail='no_thumbnail')
+
             await ctx.reply(**embed, allowed_mentions=AllowedMentions.none())
 
     @ commands.command(aliases=get_aliases("urban_dictionary"), enabled=get_command_enabled('urban_dictionary'))

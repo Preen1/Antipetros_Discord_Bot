@@ -33,7 +33,7 @@ from antipetros_discordbot.utility.sqldata_storager import AioSuggestionDataStor
 from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
-
+from antipetros_discordbot.utility.enums import CogState
 # endregion[Imports]
 
 # region [Logging]
@@ -74,15 +74,23 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
     # region [ClassAttributes]
 
     suggestion_name_regex = re.compile(r"(?P<name>(?<=#).*)")
+
     config_name = CONFIG_NAME
+
     jinja_env = Environment(loader=FileSystemLoader(APPDATA["report_templates"]))
+
     css_files = {"basic_report_style.css": (APPDATA["basic_report_style.css"], "basic_report_style.css"),
                  'style.css': (APPDATA["style.css"], "style.css"),
                  'experiment_css_1.css': (APPDATA['experiment_css_1.css'], 'experiment_css_1.css'),
                  'experiment_3.css': (APPDATA['experiment_3.css'], 'experiment_3.css')}
+
     auto_accept_user_file = APPDATA["auto_accept_suggestion_users.json"]
+
     docattrs = {'show_in_readme': True,
-                'is_ready': True}
+                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,
+                             "2021-02-06 03:41:58",
+                             "82a2afc155a40808a8e2dcf7385bb5db0769ff2bf8e08f1829b97bfc58551531ebc0deeb178e850b3fb89cbe55522812226865fac0b389a082992130de175fcb")}
+
     required_config_options = {"suggestion_reaction_listener_enabled": "yes",
                                "suggestion_reaction_listener_allowed_channels": "suggestions, bot-testing",
                                "suggestion_reaction_listener_allowed_roles": "Dev Helper, Admin",
@@ -118,7 +126,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
 # endregion [Init]
 # region [Setup]
-
 
     async def on_ready_setup(self):
         # await self.data_storage_handler.insert_emojis()
@@ -434,6 +441,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
 # region [Embeds]
 
+
     async def make_add_success_embed(self, suggestion_item: SUGGESTION_DATA_ITEM):
         _filtered_content = []
         if suggestion_item.name is not None:
@@ -481,6 +489,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 # endregion [Embeds]
 
 # region [HelperMethods]
+
 
     async def _collect_title(self, content):
         name_result = self.suggestion_name_regex.search(content)

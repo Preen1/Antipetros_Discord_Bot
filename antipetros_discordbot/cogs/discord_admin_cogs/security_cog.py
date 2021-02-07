@@ -60,7 +60,7 @@ from antipetros_discordbot.utility.embed_helpers import make_basic_embed, EMBED_
 from antipetros_discordbot.utility.misc import save_commands, CogConfigReadOnly
 from antipetros_discordbot.utility.checks import in_allowed_channels, allowed_channel_and_allowed_role, log_invoker
 from antipetros_discordbot.cogs import get_aliases
-
+from antipetros_discordbot.utility.enums import CogState
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -109,7 +109,10 @@ class SecurityCog(commands.Cog, command_attrs={'name': "SecurityCog", "descripti
 
     """
 # region [ClassAttributes]
-
+    docattrs = {'show_in_readme': True,
+                'is_ready': (CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.CRASHING,
+                             "2021-02-06 05:18:25",
+                             "917274ca9966d8de3909eb5ac74869405c35f062db243440215e4f956b8e6beddd9cc812fe7e2f1b64fc93cf4b690f060c2b1da0e2f3aab6b39afe2f727013e1")}
 # endregion [ClassAttributes]
 
 # region [Init]
@@ -139,7 +142,6 @@ class SecurityCog(commands.Cog, command_attrs={'name': "SecurityCog", "descripti
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
         log.debug('setup for cog "%s" finished', str(self))
 
@@ -151,6 +153,7 @@ class SecurityCog(commands.Cog, command_attrs={'name': "SecurityCog", "descripti
 # endregion [Loops]
 
 # region [Listener]
+
 
     @ commands.Cog.listener(name="on_message")
     async def attachment_scanner(self, message: discord.Message):

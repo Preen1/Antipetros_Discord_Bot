@@ -33,6 +33,7 @@ from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pickleit, pathmaker, writejson, get_pickled, readit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from antipetros_discordbot.utility.enums import CogState
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion[Imports]
@@ -82,7 +83,9 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": "ConfigCog"
     config_dir = APPDATA['config']
     alias_file = APPDATA['command_aliases.json']
     docattrs = {'show_in_readme': False,
-                'is_ready': True}
+                'is_ready': (CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.CRASHING,
+                             "2021-02-06 05:24:31",
+                             "87f320af11ad9e4bd1743d9809c3af554bedab8efe405cd81309088960efddba539c3a892101943902733d783835373760c8aabbcc2409db9403366373891baf")}
     # endregion[ClassAttributes]
 
     # region [Init]
@@ -101,6 +104,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": "ConfigCog"
 # endregion[Init]
 
 # region [Properties]
+
 
     @property
     def all_command_aliases(self):
@@ -123,7 +127,6 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": "ConfigCog"
 # endregion[Properties]
 
 # region [HelperMethods]
-
 
     async def on_ready_setup(self):
         """

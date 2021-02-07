@@ -8,6 +8,7 @@ import asyncio
 import unicodedata
 from datetime import datetime
 import re
+from typing import List, Tuple, Set, Union
 import random
 from io import BytesIO
 from textwrap import indent
@@ -34,6 +35,8 @@ from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, 
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
+from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.replacements import auto_meta_info_command
 # endregion[Imports]
 
 # region [TODO]
@@ -91,22 +94,29 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
     embed_color = "blue"
 
     docattrs = {'show_in_readme': True,
-                'is_ready': False}
-    required_config_options = {"faq_channel": "faq",
+                "is_ready": (CogState.WORKING | CogState.UNTESTED | CogState.FEATURE_MISSING,
+                             "2021-02-06 03:33:42",
+                             "6e72c93ce50bf8f6a95d55b1a8c1c8b51588f5a804902c2ba57c9f5b2afe3f35b31b5bc52d3f6a71b1a887e82345453771c797b53e41780e4beaff3388b64331")}
+
+    required_config_options = {"use_templated_faq": "yes",
+                               "faq_channel": "faq",
                                "numbers_background_image": "faq_num_background.png",
-                               "antistasi_decoration_pre": '',
+                               "antistasi_decoration_pre": '**',
                                "antistasi_decoration_corpus": 'Antistasi',
-                               "antistasi_decoration_post": '',
+                               "antistasi_decoration_post": '**',
                                "link_decoration_pre": '',
                                "link_decoration_post": '',
                                "step_decoration_pre": '',
                                "step_decoration_post": '',
-                               "number": "1, 2, 3, 4, 5, 6, 7, 8, 9",
-                               "emphasis_decoration_pre": '**',
-                               "emphasis_decoration_post": '**'}
+                               "number": "1️⃣, 2️⃣, 3️⃣, 4️⃣, 5️⃣, 6️⃣, 7️⃣, 8️⃣, 9️⃣",
+                               "emphasis_decoration_pre": '***',
+                               "emphasis_decoration_post": '***'}
+
+
 # endregion [ClassAttributes]
 
 # region [Init]
+
 
     def __init__(self, bot):
 
@@ -126,6 +136,10 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 # endregion [Init]
 
 # region [Properties]
+
+    @property
+    def use_templated(self):
+        return COGS_CONFIG.retrieve(self.config_name, 'use_templated_faq', typus=bool, direct_fallback=False)
 
     @property
     def all_faq_data(self):
@@ -149,7 +163,6 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
         # await self._load_faq_embeds()
         log.debug('setup for cog "%s" finished', str(self))
@@ -157,24 +170,6 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
     async def update(self, typus):
         return
         log.debug('cog "%s" was updated', str(self))
-
-    # !Implemented as per request basis, not sure if I will keep
-
-    # async def _load_faq_embeds(self):
-    #     self.faq_embeds = {}
-
-    #     faq_data_json = loadjson(self.faq_data_file)
-    #     for faq_number, faq_data in faq_data_json:
-    #         question = f"{self.q_emoji} {faq_data['content'].get('question')}"
-    #         answer = f"{ZERO_WIDTH} \n {self.a_emoji}\n{faq_data['content'].get('answer')}\n{ZERO_WIDTH}"
-    #         embed_data = await self.bot.make_generic_embed(author={"name": f"FAQ No {faq_number}", "url": faq_data.get('link'), "icon_url": "https://pbs.twimg.com/profile_images/1123720788924932098/C5bG5UPq.jpg"},
-    #                                                        thumbnail=await self._make_number_image(faq_number),
-    #                                                        title=question,
-    #                                                        description=answer,
-    #                                                        footer={"text": 'Antistasi Community', "icon_url": "https://s3.amazonaws.com/files.enjin.com/1218665/site_logo/NEW%20LOGO%20BANNER.png"},
-    #                                                        timestamp=datetime.strptime(faq_data.get('created_datetime'), self.bot.std_date_time_format))
-
-    #         self.faq_embeds[faq_number] = embed_data
 
 
 # endregion [Setup]
@@ -210,10 +205,11 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 
 # region [Commands]
 
-    @commands.command(aliases=get_aliases("post_faq_by_number"), enabled=get_command_enabled('post_faq_by_number'))
-    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @auto_meta_info_command(enabled=get_command_enabled('post_faq_by_number'))
+    @ allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     @commands.cooldown(1, 10, commands.BucketType.channel)
-    async def post_faq_by_number(self, ctx, faq_numbers: commands.Greedy[int], as_template: bool = False):
+    async def post_faq_by_number(self, ctx, faq_numbers: commands.Greedy[int], as_template: bool = None):
+        as_template = self.use_templated if as_template is None else as_template
         for faq_number in faq_numbers:
             faq_number = str(faq_number)
 
@@ -228,45 +224,53 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
                 await ctx.send(**embed_data)
         await ctx.message.delete()
 
-    @ commands.command(aliases=get_aliases("create_faqs_as_embed"), enabled=get_command_enabled("create_faqs_as_embed"))
+    @auto_meta_info_command(enabled=get_command_enabled("create_faqs_as_embed"))
     @ owner_or_admin()
     @ log_invoker(logger=log, level="info")
     @ commands.cooldown(1, minute_to_second(5), commands.BucketType.channel)
-    async def create_faqs_as_embed(self, ctx: commands.Context, as_template: bool = False):
-        delete_after = 60
+    async def create_faqs_as_embed(self, ctx: commands.Context, as_template: bool = None):
+        link_data = []
+        as_template = self.use_templated if as_template is None else as_template
+        # delete_after = 60 if self.bot.is_debug is True else None
+        delete_after = None
         async with ctx.typing():
             for faq_number in self.all_faq_data:
 
                 embed_data = await self.make_faq_embed(faq_number, with_author=False, from_template=as_template)
                 await ctx.send(f'**{"┳"*30}**', delete_after=delete_after)
-                await ctx.send(**embed_data, delete_after=delete_after)
+                faq_message = await ctx.send(**embed_data, delete_after=delete_after)
                 await ctx.send(f'**{"┻"*30}**\n{ZERO_WIDTH}', delete_after=delete_after)
+                question = self.all_faq_data[faq_number] if as_template is False else await self.process_template_faq_data(faq_number)
+                question = question['content'].get('question')
+                link_data.append((faq_number, question, faq_message.jump_url))
                 if faq_number != list(self.all_faq_data)[-1]:
-                    await asyncio.sleep(random.randint(2, 15))
+                    await asyncio.sleep(random.randint(1, 3) / random.randint(1, 3))
+        await self._make_toc(ctx, link_data=link_data)
 
-    @ commands.command(aliases=get_aliases("get_current_faq_data"), enabled=get_command_enabled("get_current_faq_data"))
-    async def get_current_faq_data(self, ctx: commands.Context):
-        channel = await self.bot.channel_from_name(COGS_CONFIG.retrieve(self.config_name, "faq_channel", typus=str, direct_fallback='faq'))
-        faq_num_regex = re.compile(r"\*\*FAQ No (?P<faq_number>\d+)", re.IGNORECASE)
-        del_time = 30
-        data = {}
-        async for message in channel.history():
+    # TODO: Needs reimplementation to make backup and to also read embeds
+    # @ commands.command(aliases=get_aliases("get_current_faq_data"), enabled=get_command_enabled("get_current_faq_data"))
+    # async def get_current_faq_data(self, ctx: commands.Context):
+    #     channel = await self.bot.channel_from_name(COGS_CONFIG.retrieve(self.config_name, "faq_channel", typus=str, direct_fallback='faq'))
+    #     faq_num_regex = re.compile(r"\*\*FAQ No (?P<faq_number>\d+)", re.IGNORECASE)
+    #     del_time = 30
+    #     data = {}
+    #     async for message in channel.history():
 
-            match = faq_num_regex.match(message.content)
-            if match:
-                faq_number = int(match.groupdict().get('faq_number'))
-                files = []
-                for attachment in message.attachments:
-                    file_name = f"faq_{faq_number}_{attachment.filename}"
-                    path = pathmaker(self.faq_image_folder, file_name)
-                    with open(path, 'wb') as f:
-                        await attachment.save(f)
-                        files.append(file_name)
+    #         match = faq_num_regex.match(message.content)
+    #         if match:
+    #             faq_number = int(match.groupdict().get('faq_number'))
+    #             files = []
+    #             for attachment in message.attachments:
+    #                 file_name = f"faq_{faq_number}_{attachment.filename}"
+    #                 path = pathmaker(self.faq_image_folder, file_name)
+    #                 with open(path, 'wb') as f:
+    #                     await attachment.save(f)
+    #                     files.append(file_name)
 
-                data[faq_number] = {"content": message.content, "files": files, "created_datetime": message.created_at.strftime(self.bot.std_date_time_format), "link": message.jump_url}
-        writejson(data, pathmaker(APPDATA['json_data'], "raw_faqs.json"))
-        await self._transform_raw_faq_data(data)
-        await ctx.send('Done')
+    #             data[faq_number] = {"content": message.content, "files": files, "created_datetime": message.created_at.strftime(self.bot.std_date_time_format), "link": message.jump_url}
+    #     writejson(data, pathmaker(APPDATA['json_data'], "raw_faqs.json"))
+    #     await self._transform_raw_faq_data(data)
+    #     await ctx.send('Done')
 
 
 # endregion [Commands]
@@ -283,7 +287,6 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 
 # region [HelperMethods]
 
-
     async def _transform_raw_faq_data(self, data):
         new_data = {}
         clearit('check_faq.txt')
@@ -296,7 +299,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
         writejson(new_data, pathmaker(APPDATA['json_data'], 'cleaned_faqs.json'))
 
     @ staticmethod
-    async def _get_text_dimensions(text_string, font):
+    def _get_text_dimensions(text_string, font):
         # https://stackoverflow.com/a/46220683/9263761
         ascent, descent = font.getmetrics()
 
@@ -305,24 +308,24 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 
         return (text_width, text_height)
 
-    async def _make_perfect_fontsize(self, text, image_width, image_height):
+    def _make_perfect_fontsize(self, text, image_width, image_height):
         padding_width = image_width // 5
         padding_height = image_height // 5
         font_size = 16
         font = ImageFont.truetype(APPDATA['stencilla.ttf'], font_size)
-        text_size = await self._get_text_dimensions(text, font)
+        text_size = self._get_text_dimensions(text, font)
         while text_size[0] <= (image_width - padding_width) and text_size[1] <= (image_height - padding_height):
             font_size += 1
             font = ImageFont.truetype(APPDATA['stencilla.ttf'], font_size)
-            text_size = await self._get_text_dimensions(text, font)
+            text_size = self._get_text_dimensions(text, font)
 
         return ImageFont.truetype(APPDATA['stencilla.ttf'], font_size - 1)
 
-    async def _make_number_image(self, number: int):
+    def _make_number_image(self, number: int):
         number_string = str(number)
         image = Image.open(APPDATA[COGS_CONFIG.retrieve(self.config_name, 'numbers_background_image', typus=str, direct_fallback="ASFlagexp.png")]).copy()
         width, height = image.size
-        font = await self._make_perfect_fontsize(number_string, width, height)
+        font = self._make_perfect_fontsize(number_string, width, height)
         draw = ImageDraw.Draw(image)
         w, h = draw.textsize(number_string, font=font)
         h += int(h * 0.01)
@@ -341,7 +344,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
             author = {"name": f"FAQ No {faq_number}", "url": faq_data.get('link'), "icon_url": "https://pbs.twimg.com/profile_images/1123720788924932098/C5bG5UPq.jpg"}
 
         embed_data = await self.bot.make_generic_embed(author=author,
-                                                       thumbnail=await self._make_number_image(faq_number) if with_image is True else "no_thumbnail",
+                                                       thumbnail=await self.bot.execute_in_thread(self._make_number_image, faq_number) if with_image is True else "no_thumbnail",
                                                        image=APPDATA[faq_data.get('file')] if faq_data.get('file') != "" else None,
                                                        title=question,
                                                        description=answer,
@@ -359,6 +362,30 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
         raw_data['content']['answer'] = answer_template.render(**self.template_vars)
         return raw_data
 
+    async def _number_with_emojis(self, number: int):
+        digit_emojis = {"0": "0️⃣",
+                        "1": "1️⃣",
+                        "2": "2️⃣",
+                        "3": "3️⃣",
+                        "4": "4️⃣",
+                        "5": "5️⃣",
+                        "6": "6️⃣",
+                        "7": "7️⃣",
+                        "8": "8️⃣",
+                        "9": "9️⃣"}
+        _out = ""
+        for char in str(number):
+            _out += digit_emojis.get(char)
+        return _out
+
+    async def _make_toc(self, ctx, link_data: List[Tuple[int, str, str]]):
+        fields = []
+        for faq_number, question, link in link_data:
+            faq_emoji_number = await self._number_with_emojis(int(faq_number))
+            fields.append(self.bot.field_item(name=f"No. {faq_emoji_number} {ZERO_WIDTH} {question}", value=f"{link} 🔗\n{ZERO_WIDTH}", inline=False))
+
+        async for embed_data in self.bot.make_paginatedfields_generic_embed(title="FAQ Table of Contents", fields=fields):
+            await ctx.send(**embed_data)
 # endregion [HelperMethods]
 
 # region [SpecialMethods]

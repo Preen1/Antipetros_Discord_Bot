@@ -192,8 +192,9 @@ def update_config(cog: commands.Cog):
     for option_name, default_value in cog.required_config_options.items():
         if not COGS_CONFIG.has_option(config_name, option_name):
             COGS_CONFIG.set(config_name, option_name, default_value)
-
-    for command in cog.get_commands():
+    COGS_CONFIG.set(config_name, '# ' + ('+' * 40), '\n\n')
+    for index, command in enumerate(cog.get_commands()):
+        COGS_CONFIG.set(config_name, '# ' + ('-' * 25) + '--' * index, '')
         for key, option_values in COMMAND_CONFIG_SUFFIXES.items():
             if key == 'dm_ids' and all(getclosurevars(check).nonlocals.get('in_dm_allowed', False) is False for check in command.checks):
                 continue
@@ -347,3 +348,7 @@ def make_config_name(name):
     name = split_camel_case_string(name).replace('Cog', '').strip().replace(' ', '_').casefold()
 
     return name
+
+
+def is_even(number: int):
+    return not number & 1

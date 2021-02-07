@@ -28,7 +28,7 @@ from antipetros_discordbot.utility.data_gathering import gather_data
 from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pickleit, pathmaker, writejson, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from antipetros_discordbot.utility.enums import CogState
 # endregion[Imports]
 
 # region [TODO]
@@ -71,7 +71,9 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
     config_name = CONFIG_NAME
 
     docattrs = {'show_in_readme': False,
-                'is_ready': True}
+                'is_ready': (CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED,
+                             "2021-02-06 05:21:10",
+                             "8f8fac3c998a0c078515c34712eff238644084f8de06831e9aa13dc36d42978885790242db11e078f4b8f3aa576af177c5143144351d807347e58797eb614027")}
     # endregion[ClassAttributes]
 
 # region [Init]
@@ -88,6 +90,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
 # endregion[Init]
 
 # region [Properties]
+
 
     @ property
     def allowed_dm_invoker_ids(self):
