@@ -19,7 +19,7 @@ import discord
 from dotenv import find_dotenv, load_dotenv
 import gidlogger as glog
 from antipetros_discordbot import MAIN_DIR
-from antipetros_discordbot.utility.misc import check_if_int
+from antipetros_discordbot.utility.misc import check_if_int, generate_base_cogs_config, save_commands
 from antipetros_discordbot.utility.crypt import decrypt_db, encrypt_db
 from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from antipetros_discordbot.utility.gidtools_functions import writeit, pathmaker, writejson
@@ -38,6 +38,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
+COGS_CONFIG.save()
 # endregion [Constants]
 
 # region [Logging]
@@ -101,29 +102,7 @@ def cli():
     """
 
 
-@cli.command(name='create_alias_data')
-def command_alias_run():
-    """
-    function and cli command to start up the bot, create aliases but not connect to discord.
-    Creates 4 versions for each alias:
-        - base version
-        - version where _ are replaced with -
-        - version where _ are replaced with .
-        - version where _ are removed
-    """
-    _out = {}
-    anti_petros_bot = AntiPetrosBot()
-    for command in anti_petros_bot.walk_commands():
-        _out[command.name] = list(map(lambda x: x.replace('_', '-'), command.aliases))
-        _out[command.name] += [alias.replace('-', '').replace('_', '') for alias in command.aliases if alias != command.name and alias.replace('-', '').replace('_', '') not in _out[command.name]]
-        _out[command.name] += [alias.replace('-', '.').replace('_', '.') for alias in command.aliases if alias != command.name and alias.replace('-', '.').replace('_', '.') not in _out[command.name]]
-        if '_' in command.name and command.name.replace('_', '-') not in _out[command.name]:
-            _out[command.name].append(command.name.replace('_', '-'))
-        _out[command.name] = list(set(_out[command.name]))
-    writejson(_out, APPDATA['command_aliases.json'])
-
-
-@cli.command(name='only_command_info')
+@cli.command(name='info')
 def command_info_run():
     """
     Function and cli command to start up the bot, collect bot-commands extended info, but not connect to discord.
@@ -132,29 +111,27 @@ def command_info_run():
 
     """
     anti_petros_bot = AntiPetrosBot()
-    _commands = {}
+    generate_base_cogs_config(anti_petros_bot)
     for cog_name, cog_object in anti_petros_bot.cogs.items():
-        for command in cog_object.get_commands():
-            clean_params = {}
-            for name, parameter in command.clean_params.items():
+        save_commands(cog_object)
 
-                clean_params[name] = {'annotation': str(parameter.annotation).replace("<class '", '').replace("'>", '').strip() if parameter.annotation is not parameter.empty else None,
-                                      'default': check_if_int(parameter.default) if parameter.default is not parameter.empty else None,
-                                      'kind': parameter.kind.description}
 
-            _commands[command.name] = {'cog_name': command.cog_name,
-                                       'aliases': command.aliases,
-                                       'brief': command.brief,
-                                       'clean_params': clean_params,
-                                       'description': command.description,
-                                       'enabled': command.enabled,
-                                       'help': command.help,
-                                       'hidden': command.hidden,
-                                       'short_doc': command.short_doc,
-                                       'signature': command.signature,
-                                       'usage': command.usage,
-                                       'require_var_positional': command.require_var_positional}
-    writejson(_commands, pathmaker(APPDATA['documentation'], 'command_data.json'), sort_keys=True)
+def non_click_command_info_run():
+    """
+    Function and cli command to start up the bot, collect bot-commands extended info, but not connect to discord.
+
+    collected as json in /docs
+
+    """
+    anti_petros_bot = AntiPetrosBot()
+    generate_base_cogs_config(anti_petros_bot)
+    command_json_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/commands.json')
+    command_help_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/command_help.json')
+    for file in [command_json_file, command_help_file]:
+        if os.path.isfile(file) is True:
+            os.remove(file)
+    for cog_name, cog_object in anti_petros_bot.cogs.items():
+        save_commands(cog_object)
 
 
 @cli.command(name="clean")
@@ -162,18 +139,6 @@ def clean_user_data():
     if os.environ['IS_DEV'].casefold() in ['true', 'yes', '1'] or APPDATA.dev is True:
         raise RuntimeError("Cleaning not possible in Dev Mode")
     APPDATA.clean(APPDATA.AllFolder)
-
-
-@cli.command(name='only_info')
-def info_run():
-    """
-    Function and cli command to start up the bot, collect bot-commands basic info, but not connect to discord.
-    used to auto build the readme
-    """
-    os.environ['INFO_RUN'] = "1"
-    command_json_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/commands.json')
-    writejson({}, command_json_file)
-    anti_petros_bot = AntiPetrosBot()
 
 
 @cli.command(name='stop')
@@ -194,8 +159,7 @@ def stop():
 
 @cli.command(name='run')
 @click.option('--token', '-t')
-@click.option('--db-key', '-dbk')
-def run(token, db_key):
+def run(token):
     """
     Standard way to start the bot and connect it to discord.
     takes the token as string and the key to decrypt the db also as string.
@@ -206,10 +170,10 @@ def run(token, db_key):
         save_token_file ([str]): key to decrypt the db's
     """
     os.environ['INFO_RUN'] = "0"
-    main(token=token, db_key=db_key)
+    main(token=token)
 
 
-def main(token: str, db_key: str):
+def main(token: str):
     """
     Starts the Antistasi Discord Bot 'AntiPetros'.
 
@@ -221,13 +185,9 @@ def main(token: str, db_key: str):
         save_token_file ([str]): key to decrypt the db's
     """
     os.environ['INFO_RUN'] = "0"
-    decrypt_db(db_key)
-    anti_petros_bot = AntiPetrosBot(token=token, db_key=db_key)
+    anti_petros_bot = AntiPetrosBot(token=token)
 
-    try:
-        anti_petros_bot.run()
-    finally:
-        encrypt_db(db_key)
+    anti_petros_bot.run()
 
 
 # endregion [Main_function]
@@ -236,7 +196,7 @@ if __name__ == '__main__':
     if os.getenv('IS_DEV') == 'true':
         load_dotenv('token.env')
 
-        main(token=os.getenv('ANTIDEVTROS_TOKEN'), db_key=os.getenv('DB_KEY'))
+        main(token=os.getenv('ANTIDEVTROS_TOKEN'))
     else:
         main()
 

@@ -32,7 +32,7 @@ import gidlogger as glog
 
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.misc import save_commands, datetime_isoformat_to_discord_format
-from antipetros_discordbot.utility.checks import log_invoker, has_attachments, in_allowed_channels, allowed_channel_and_allowed_role
+from antipetros_discordbot.utility.checks import log_invoker, has_attachments, in_allowed_channels
 from antipetros_discordbot.utility.converters import FlagArg, DateOnlyConverter
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -86,8 +86,6 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
         self.support = self.bot.support
         self.allowed_channels = set(COGS_CONFIG.getlist('test_playground', 'allowed_channels'))
         self.translator = Translator()
-        if os.environ.get('INFO_RUN', '') == "1":
-            save_commands(self)
         glog.class_init_notification(log, self)
 
     @commands.command(aliases=get_aliases("check_date_converter"))
@@ -294,7 +292,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
 
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.bot.user.name})"
+        return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
 
     def __str__(self):
         return self.qualified_name

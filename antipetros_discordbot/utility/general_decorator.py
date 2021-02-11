@@ -48,7 +48,8 @@ def debug_timing_print(func):
     def _function_print_time(*args, **kwargs):
         start_time = time()
         _out = func(*args, **kwargs)
-        if hasattr(args[0], func.__name__):
+
+        if len(args) != 0 and hasattr(args[0], func.__name__):
             report = f"'{func.__name__}' of the '{args[0].__class__.__name__}' class took {str(round(time()-start_time, ndigits=4))} seconds"
         else:
             report = f"'{func.__name__}' took {str(round(time()-start_time, ndigits=4))} seconds"
@@ -67,7 +68,7 @@ def debug_timing_log(logger):
         def _function_print_time(*args, **kwargs):
             start_time = time()
             _out = func(*args, **kwargs)
-            if hasattr(args[0], func.__name__):
+            if len(args) != 0 and hasattr(args[0], func.__name__):
                 report = f"'{func.__name__}' of '{str(args[0])}' took {str(round(time()-start_time, ndigits=4))} seconds"
             else:
                 report = f"'{func.__name__}' took {str(round(time()-start_time, ndigits=4))} seconds"

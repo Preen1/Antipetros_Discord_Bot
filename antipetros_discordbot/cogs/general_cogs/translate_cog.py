@@ -13,6 +13,7 @@ from discord.ext import commands
 from googletrans import LANGUAGES, Translator
 from typing import Optional
 import unicodedata
+from textwrap import dedent
 import emoji
 import discord
 from icecream import ic
@@ -22,8 +23,8 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import CogConfigReadOnly, day_to_second, save_commands, hour_to_second, minute_to_second, update_config, make_config_name
-from antipetros_discordbot.utility.checks import log_invoker, in_allowed_channels, allowed_channel_and_allowed_role, allowed_channel_and_allowed_role_2, allowed_requester, command_enabled_checker
+from antipetros_discordbot.utility.misc import CogConfigReadOnly, day_to_second, save_commands, hour_to_second, minute_to_second, make_config_name
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, allowed_requester, command_enabled_checker
 from antipetros_discordbot.utility.named_tuples import CITY_ITEM, COUNTRY_ITEM
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -31,7 +32,7 @@ from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.converters import LanguageConverter
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import RequestStatus, CogState
-
+from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 # endregion[Imports]
 
 # region [TODO]
@@ -71,22 +72,48 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
     # region [ClassAttributes]
 
     language_dict = {value: key for key, value in LANGUAGES.items()}
-    language_emoji_map = {'de': 'de',
-                          'rs': 'ru',
-                          'gb': 'en',
-                          'au': 'en',
-                          'us': 'en',
-                          'gr': 'el',
-                          'za': 'af',
+    language_emoji_map = {'Germany': 'de',
+                          'Austria': 'de',
+                          'Russia': 'ru',
+                          'United_Kingdom': 'en',
+                          'Australia': 'en',
+                          'United_States': 'en',
+                          'Greece': 'el',
+                          'South_Africa': 'af',
+                          'Norway': 'no',
+                          'Portugal': 'pt',
+                          'France': 'fr',
+                          'Spain': 'es',
+                          'Israel': 'he',
+                          'Kuwait': 'ar',
+                          'Syria': 'ar',
+                          'Turkey': 'tr',
+                          'Japan': 'ja',
+                          'Slovenia': 'sl',
+                          'Croatia': 'hr',
+                          'Serbia': 'sr',
+                          'Bosnia_&_Herzegovina': 'bs',
+                          'Macedonia': 'mk',
+                          'Montenegro': 'hr',
+                          'Czechia': 'cs',
+                          'Poland': 'pl',
+                          'Slovakia': 'sk',
+                          'rainbow_flag_selector': 'eo',
+                          'Albania': 'sq',
+                          'China': 'zh-tw',
+                          'South_Korea': 'ko',
+                          'Hungary': 'hu',
+                          'Netherlands': 'nl'
                           }
     docattrs = {'show_in_readme': True,
                 'is_ready': (CogState.WORKING | CogState.UNTESTED | CogState.FEATURE_MISSING,
                              "2021-02-06 03:40:46",
                              "29d140f50313ab11e4ec463a204b56dbcba90f86502c5f4a027f4d1ab7f25525dcf97a5619fd1b88709b95e6facb81a7620b39551c98914dcb6f6fbf3038f542")}
 
-    required_config_options = {"emoji_translate_listener_enabled": "yes",
-                               "emoji_translate_listener_allowed_channels": "bot-testing",
-                               "emoji_translate_listener_allowed_roles": "member"}
+    required_config_data = dedent("""
+                                        emoji_translate_listener_enabled = yes
+                                        emoji_translate_listener_allowed_channels = bot-testing
+                                        emoji_translate_listener_allowed_roles = member""")
     config_name = CONFIG_NAME
 # endregion [ClassAttributes]
 
@@ -97,12 +124,9 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
         self.support = self.bot.support
         self.translator = Translator()
         self.flag_emoji_regex = re.compile(r'REGIONAL INDICATOR SYMBOL LETTER (?P<letter>\w)')
-        update_config(self)
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
-        if os.environ.get('INFO_RUN', '') == "1":
-            save_commands(self)
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -113,6 +137,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 # endregion [Properties]
 
 # region [Setup]
+
 
     async def on_ready_setup(self):
 
@@ -130,6 +155,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 # endregion [Loops]
 
 # region [Listener]
+
 
     async def _emoji_translate_checks(self, payload):
         command_name = "emoji_translate_listener"
@@ -149,7 +175,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
         if channel.name.casefold() not in self.allowed_channels(command_name):
             return False
 
-        emoji_name = payload.emoji.name
+        emoji_name = normalize_emoji(payload.emoji.name)
         if emoji_name not in self.language_emoji_map:
             return False
 
@@ -164,16 +190,45 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
             return
         channel = self.bot.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
+        country_code = self.language_emoji_map.get(normalize_emoji(payload.emoji.name))
 
-        country_code = self.language_emoji_map.get(payload.emoji.name)
+        if message.embeds != []:
+            log.debug('translating embed')
+            await self.translate_embed(channel, message, message.embeds[0], country_code)
+            return
+
         translated = self.translator.translate(text=message.content, dest=country_code, src="auto")
-        await message.reply(f"**in {LANGUAGES.get(country_code)}:** *{translated.text}*", allowed_mentions=AllowedMentions.none())
+        await message.reply(f"**in {LANGUAGES.get(country_code)}:**\n {translated.text.strip('.')}", allowed_mentions=AllowedMentions.none())
 
+    async def translate_embed(self, channel, message, embed, country_code):
+        embed_dict = embed.to_dict()
+        if "author" in embed_dict:
+            embed_dict['author']['name'] = await self._translate_text(embed_dict['author'].get('name', ''), country_code=country_code)
+        if "title" in embed_dict:
+            embed_dict['title'] = await self._translate_text(embed_dict.get('title', ''), country_code=country_code)
+        if "description" in embed_dict:
+            embed_dict['description'] = await self._translate_text(embed_dict.get('description', ''), country_code=country_code)
+        if 'footer' in embed_dict:
+            embed_dict['footer']['text'] = await self._translate_text(embed_dict['footer'].get('text', ''), country_code=country_code)
+        _new_fields = []
+        for field in embed_dict.get('fields', []):
+            _new_fields.append({'name': await self._translate_text(field.get('name', ''), country_code=country_code),
+                                'value': await self._translate_text(field.get('value', ''), country_code=country_code),
+                                'inline': field.get('inline', False)})
+        embed_dict['fields'] = _new_fields
+        await message.reply(embed=discord.Embed.from_dict(embed_dict), allowed_mentions=AllowedMentions.none())
+
+    async def _translate_text(self, text: str, country_code: str):
+        try:
+            return self.translator.translate(text=text, dest=country_code, src='auto').text.strip('.')
+        except IndexError:
+            return text
+        except TypeError:
+            return text
 
 # endregion [Listener]
 
 # region [Commands]
-
 
     @commands.command(aliases=get_aliases('translate'), **get_doc_data('translate'))
     @allowed_channel_and_allowed_role_2()
@@ -205,7 +260,6 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 
 # region [HelperMethods]
 
-
     @staticmethod
     def get_emoji_name(s):
         return s.encode('ascii', 'namereplace').decode('utf-8', 'namereplace')
@@ -215,9 +269,8 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 
 # region [SpecialMethods]
 
-
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.bot.user.name})"
+        return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
 
     def __str__(self):
         return self.qualified_name

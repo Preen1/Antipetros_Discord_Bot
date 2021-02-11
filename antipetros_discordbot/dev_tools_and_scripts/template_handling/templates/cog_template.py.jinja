@@ -58,7 +58,7 @@ from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, 
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed, EMBED_SYMBOLS
 from antipetros_discordbot.utility.misc import save_commands, CogConfigReadOnly
-from antipetros_discordbot.utility.checks import in_allowed_channels, allowed_channel_and_allowed_role, log_invoker
+from antipetros_discordbot.utility.checks import in_allowed_channels log_invoker
 from antipetros_discordbot.cogs import get_aliases
 
 if TYPE_CHECKING:
@@ -219,7 +219,7 @@ class {{ cog_item.name }}(commands.Cog, command_attrs={{ "{" }}'name':"{{ cog_it
 
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.bot.user.name})"
+        return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
 
     def __str__(self):
         return self.__class__.__name__

@@ -1,24 +1,27 @@
 
-# * Standard Library Imports -->
-# * Standard Library Imports ---------------------------------------------------------------------------->
+# region [Imports]
+
+
 import os
 import shutil
 from datetime import datetime
 
-# * Third Party Imports --------------------------------------------------------------------------------->
-# * Third Party Imports -->
+
 from fuzzywuzzy import process as fuzzprocess
-from emoji import EMOJI_UNICODE_ENGLISH
-# * Gid Imports ----------------------------------------------------------------------------------------->
-# * Gid Imports -->
+
+
 import gidlogger as glog
 
-# * Local Imports --------------------------------------------------------------------------------------->
-# * Local Imports -->
+
 from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
 from antipetros_discordbot.utility.gidsql.facade import Fetch, GidSqliteDatabase, AioGidSqliteDatabase
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, timenamemaker, limit_amount_files_absolute
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+from antipetros_discordbot.utility.crypt import encrypt_file, decrypt_file
+
+# endregion[Imports]
+
+# region [Constants]
 
 APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
@@ -33,116 +36,24 @@ SCRIPT_LOC_SUGGESTIONS = APPDATA['save_suggestion_sql']
 ARCHIVE_LOCATION = APPDATA['archive']
 LOG_EXECUTION = False
 
-# TODO: create regions for this file
-# TODO: update save link Storage to newer syntax (composite access)
-# TODO: Document and Docstrings
-# TODO: refractor to subfolder
+# endregion [Constants]
+
+# region [Logging]
 
 
 log = glog.aux_logger(__name__)
 glog.import_notification(log, __name__)
 
 
-class AioLinkDataStorageSQLite:
-    def __init__(self):
-        self.db = AioGidSqliteDatabase(DB_LOC_LINKS, SCRIPT_LOC_LINKS)
-        self.db.startup_db()
-        self.db.vacuum()
-        glog.class_init_notification(log, self)
-
-    async def add_data(self, item, message_id):
-        if isinstance(item, LINK_DATA_ITEM):
-            await self.db.aio_write(self.db.scripter['insert_link_author'], (item.author.name, item.author.display_name, item.author.id, any(str(_role) == 'Member' for _role in item.author.roles)))
-            await self.db.aio_write(self.db.scripter['insert_saved_link'], (item.link_name, item.link, item.date_time, item.delete_date_time, item.author.id, message_id))
-
-    @property
-    def std_datetime_format(self):
-        return BASE_CONFIG.get('datetime', 'std_format')
-
-    @property
-    def link_messages_to_remove(self):
-        for item in self.db.query('SELECT "message_discord_id" FROM "saved_links_tbl" WHERE "is_removed"=0 AND "delete_time"<?', (datetime.utcnow(),)):
-            yield item[0]
-
-    @ property
-    def all_link_names(self):
-        _out_list = []
-        for item in self.db.reader.query(self.db.scripter['list_of_name_save_link']):
-            _out_list.append(item[0])
-        return set(_out_list)
-
-    def update_removed_status(self, message_id):
-        self.db.write('update_removed', (message_id,))
-
-    def clear(self):
-        BASE_CONFIG.read()
-        use_backup = BASE_CONFIG.getboolean('databases', 'backup_db')
-        amount_backups = BASE_CONFIG.getint('databases', 'amount_backups_to_keep')
-        location = self.db.path
-        if use_backup:
-            new_name = os.path.basename(timenamemaker(location))
-            new_location = pathmaker(ARCHIVE_LOCATION, new_name)
-            shutil.move(location, new_location)
-            basename = os.path.basename(location).split('.')[0]
-            limit_amount_files_absolute(basename, ARCHIVE_LOCATION, amount_backups)
-        else:
-            os.remove(location)
-
-        self.db.startup_db()
-
-    def delete_link(self, name):
-        self.db.write('delete_link', (name,))
-        self.db.vacuum()
-
-    def get_all_posted_links(self):
-        for item in self.db.query('get_all_link_delete_info'):
-            yield item[0]
-
-    def get_link_for_delete(self, name):
-        _name = fuzzprocess.extractOne(name, self.all_link_names, score_cutoff=80)
-        if _name is None:
-            return None, None, None
-        _name = _name[0]
-        result = self.db.query(self.db.scripter['get_link_delete_info'], (_name,), fetch=Fetch.One)
-        print(result[0], result[1], result[2])
-        return result[0], result[1], result[2]
-
-    def get_link(self, name):
-        _name = fuzzprocess.extractOne(name, self.all_link_names)
-        if _name is None:
-            return None, None
-        _name = _name[0]
-        _out = self.db.reader.query(self.db.scripter['get_link'], (_name,))[0]
-
-        return _out[0], _out[1]
-
-    def get_all_links(self, in_format='plain'):
-        if in_format == 'json':
-            _out = {}
-            for item in self.db.reader.query(self.db.scripter['get_all_links']):
-                if item[2] not in _out:
-                    _out[item[2]] = []
-                _out[item[2]].append((item[0], item[1]))
-        elif in_format == 'plain':
-            _out = []
-            for item in self.db.reader.query(self.db.scripter['get_all_links']):
-                _out.append(item[0] + ' --> ' + item[1])
-        return _out
+# endregion[Logging]
 
 
 class AioSuggestionDataStorageSQLite:
     def __init__(self):
-        self.db = AioGidSqliteDatabase(DB_LOC_SUGGESTIONS, SCRIPT_LOC_SUGGESTIONS, log_execution=LOG_EXECUTION)
+        self.db = AioGidSqliteDatabase(db_location=DB_LOC_SUGGESTIONS, script_location=SCRIPT_LOC_SUGGESTIONS, log_execution=LOG_EXECUTION)
         self.was_created = self.db.startup_db()
         self.db.vacuum()
         glog.class_init_notification(log, self)
-
-    async def insert_emojis(self):
-        in_data = []
-        for unicode_data, alias in EMOJI_UNICODE_ENGLISH.items():
-            name = alias.strip(':').replace('_', ' ').title().replace(' ', '_')
-            in_data.append((name, alias, unicode_data))
-        await self.db.aio_write('insert_emojis', in_data)
 
     async def category_emojis(self):
         _out = {}

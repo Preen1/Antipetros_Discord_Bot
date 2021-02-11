@@ -21,7 +21,7 @@ import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.misc import save_commands, seconds_to_pretty, async_seconds_to_pretty_normal
-from antipetros_discordbot.utility.checks import in_allowed_channels, allowed_channel_and_allowed_role, allowed_channel_and_allowed_role_2
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2
 from antipetros_discordbot.utility.named_tuples import FeatureSuggestionItem
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.data_gathering import gather_data
@@ -82,15 +82,12 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
         self.bot = bot
         self.support = self.bot.support
         self.do_not_reload_cogs = ['admin_cogs.admin_cog', 'admin_cogs.performance_cog']
-        if os.environ.get('INFO_RUN', '') == "1":
-            save_commands(self)
         glog.class_init_notification(log, self)
 
 
 # endregion[Init]
 
 # region [Properties]
-
 
     @ property
     def allowed_dm_invoker_ids(self):

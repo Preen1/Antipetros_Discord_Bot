@@ -18,7 +18,7 @@ INSERT INTO category_tbl (
 VALUES (
         1,
         'General',
-        '🇴'
+        'regional_indicator_symbol_letter_o'
     );
 INSERT INTO category_tbl (
         id,
@@ -28,7 +28,7 @@ INSERT INTO category_tbl (
 VALUES (
         2,
         'Bug',
-        '🇧'
+        'regional_indicator_symbol_letter_b'
     );
 INSERT INTO category_tbl (
         id,
@@ -38,7 +38,7 @@ INSERT INTO category_tbl (
 VALUES (
         3,
         'Change request',
-        '🇨'
+        'regional_indicator_symbol_letter_c'
     );
 INSERT INTO category_tbl (
         id,
@@ -48,7 +48,7 @@ INSERT INTO category_tbl (
 VALUES (
         4,
         'Feature request',
-        '🇫'
+        'regional_indicator_symbol_letter_f'
     );
 INSERT INTO category_tbl (
         id,
@@ -58,7 +58,7 @@ INSERT INTO category_tbl (
 VALUES (
         5,
         'Game Balance',
-        '🇬'
+        'regional_indicator_symbol_letter_g'
     );
 INSERT INTO category_tbl (
         id,
@@ -68,7 +68,7 @@ INSERT INTO category_tbl (
 VALUES (
         6,
         'Minor Task',
-        '🚸'
+        'children_crossing'
     );
 CREATE TABLE extra_data_tbl (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,

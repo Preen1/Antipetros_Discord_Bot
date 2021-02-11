@@ -5,7 +5,8 @@ import os
 import logging
 from enum import Enum, auto
 from typing import Union
-
+from contextlib import asynccontextmanager, contextmanager
+from cryptography.fernet import InvalidToken
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
@@ -14,7 +15,7 @@ from antipetros_discordbot.utility.gidsql.phrasers import GidSqliteInserter
 from antipetros_discordbot.utility.gidsql.db_reader import Fetch, GidSqliteReader, AioGidSqliteReader
 from antipetros_discordbot.utility.gidsql.db_writer import GidSQLiteWriter, AioGidSQLiteWriter
 from antipetros_discordbot.utility.gidsql.script_handling import GidSqliteScriptProvider
-
+from antipetros_discordbot.utility.crypt import encrypt_file, decrypt_file
 # endregion[Imports]
 
 __updated__ = '2020-11-28 03:29:05'
@@ -72,12 +73,14 @@ class GidSqliteDatabase:
             os.remove(self.path)
         for script in self.scripter.setup_scripts:
             self.writer.write(script)
+
         return True
 
     def new_phrase(self, typus: PhraseType):
         return self.phrase_objects.get(typus)()
 
     def write(self, phrase, variables=None):
+
         if isinstance(phrase, str):
             sql_phrase = self.scripter.get(phrase, None)
             if sql_phrase is None:
@@ -85,6 +88,7 @@ class GidSqliteDatabase:
             self.writer.write(sql_phrase, variables)
 
     def query(self, phrase, variables=None, fetch: Fetch = Fetch.All, row_factory: Union[bool, any] = False):
+
         if row_factory:
             _factory = None if isinstance(row_factory, bool) is True else row_factory
             self.reader.enable_row_factory(in_factory=_factory)
@@ -113,13 +117,16 @@ class AioGidSqliteDatabase(GidSqliteDatabase):
 
     async def aio_startup_db(self, overwrite=False):
         if os.path.exists(self.path) is True and overwrite is False:
-            return None
+            return False
         if os.path.exists(self.path) is True:
             os.remove(self.path)
         for script in self.scripter.setup_scripts:
             await self.aio_write(script)
 
+        return True
+
     async def aio_write(self, phrase, variables=None):
+
         if isinstance(phrase, str):
             sql_phrase = self.scripter.get(phrase, None)
             if sql_phrase is None:
@@ -127,6 +134,7 @@ class AioGidSqliteDatabase(GidSqliteDatabase):
             await self.aio_writer.write(sql_phrase, variables)
 
     async def aio_query(self, phrase, variables=None, fetch: Fetch = Fetch.All, row_factory: Union[bool, any] = False):
+
         if row_factory:
             _factory = None if isinstance(row_factory, bool) is True else row_factory
             await self.aio_reader.enable_row_factory(in_factory=_factory)
@@ -138,4 +146,5 @@ class AioGidSqliteDatabase(GidSqliteDatabase):
         return _out
 
     async def aio_vacuum(self):
+
         await self.aio_write('VACUUM')

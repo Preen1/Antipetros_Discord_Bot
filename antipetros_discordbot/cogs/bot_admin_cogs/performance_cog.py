@@ -91,8 +91,6 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         self.memory_data = deque(maxlen=DEQUE_SIZE)
         self.plot_formatting_info = {'latency': COGS_CONFIG.get(self.config_name, 'latency_graph_formatting'), 'memory': COGS_CONFIG.get(self.config_name, 'memory_graph_formatting')}
         create_folder(self.save_folder)
-        if os.environ.get('INFO_RUN', '') == "1":
-            save_commands(self)
         glog.class_init_notification(log, self)
 
     async def on_ready_setup(self):

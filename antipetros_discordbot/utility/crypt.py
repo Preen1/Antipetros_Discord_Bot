@@ -97,18 +97,7 @@ def decrypt_string(in_data: bytes, key=None, key_file=None):
     return fernet_crypt.decrypt(in_data).decode()
 
 
-@debug_timing_log(log)
-def encrypt_file(file_path, key=None, key_file=None):
-
-    if key is None:
-        if key_file is not None:
-            if os.path.exists(key_file):
-                key = load_key(key_file)
-            else:
-                write_key(key_file)
-                key = load_key(key_file)
-        else:
-            raise RuntimeError
+def encrypt_file(file_path, key):
     fernet_crypt = Fernet(key)
     with open(file_path, 'rb') as in_f:
         file_data = in_f.read()
@@ -117,17 +106,7 @@ def encrypt_file(file_path, key=None, key_file=None):
         out_f.write(encrypt_file_data)
 
 
-@debug_timing_log(log)
-def decrypt_file(file_path, key=None, key_file=None):
-
-    if key is None:
-        if key_file is not None:
-            if os.path.exists(key_file):
-                key = load_key(key_file)
-
-    if key is None:
-        raise RuntimeError
-
+def decrypt_file(file_path, key):
     fernet_crypt = Fernet(key)
     with open(file_path, 'rb') as in_f:
         file_data = in_f.read()

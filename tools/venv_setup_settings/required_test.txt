@@ -1,8 +1,8 @@
+dpytest
 pytest
+pytest-asyncio
 pytest-click
 pytest-cov
 pytest-qt
-pytest-venv
 pytest-sugar
-pytest-asyncio
-dpytest
+pytest-venv

@@ -9,18 +9,20 @@ from time import time
 from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
 import asyncio
 from io import BytesIO
+from textwrap import dedent
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from discord.ext import commands
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+from emoji import demojize
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import save_commands, color_hex_embed, async_seconds_to_pretty_normal, make_config_name, update_config
-from antipetros_discordbot.utility.checks import log_invoker, in_allowed_channels, allowed_channel_and_allowed_role, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester
+from antipetros_discordbot.utility.misc import save_commands, color_hex_embed, async_seconds_to_pretty_normal, make_config_name
+from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester
 from antipetros_discordbot.utility.named_tuples import MovieQuoteItem
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
@@ -28,6 +30,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
+from antipetros_discordbot.utility.emoji_handling import create_emoji_custom_name
 # endregion [Imports]
 
 # region [Logging]
@@ -64,23 +67,20 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     """
     Cog for debug or test commands, should not be enabled fo normal Bot operations.
     """
-    command_enabled = get_command_enabled
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': False,
                 'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,
                              "2021-02-06 05:26:32",
                              "a296317ad6ce67b66c11e18769b28ef24060e5dac5a0b61a9b00653ffbbd9f4e521b2481189f075d029a4e9745892052413d2364e0666a97d9ffc7561a022b07")}
-    required_config_options = {}
+    required_config_data = dedent("""""")
 
     def __init__(self, bot):
         self.bot = bot
         self.support = self.bot.support
-        update_config(self)
+
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
-        if os.environ.get('INFO_RUN', '') == "1":
-            save_commands(self)
 
         glog.class_init_notification(log, self)
 
@@ -91,6 +91,24 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     async def update(self, typus):
         return
         log.debug('cog "%s" was updated', str(self))
+
+    @commands.Cog.listener(name="on_raw_reaction_add")
+    async def emoji_tester(self, payload):
+        emoji = payload.emoji
+
+        if emoji.is_custom_emoji():
+            log.debug("custom emoji as str(): '%s'", str(emoji))
+            log.debug("custom emoji id: '%s'", emoji.id)
+            log.debug("custom emoji name: '%s'", emoji.name)
+            log.debug("custom emoji demojized: '%s'", demojize(str(emoji)))
+            log.debug("custom emoji hash: '%s'", hash(emoji))
+        elif emoji.is_unicode_emoji():
+            log.debug("unicode emoji as str(): '%s'", str(emoji))
+            log.debug("unicode emoji id: '%s'", emoji.id)
+            log.debug("unicode emoji name: '%s'", emoji.name)
+            log.debug("unicode emoji demojized: '%s'", demojize(emoji.name))
+            log.debug("unicode emoji hash: '%s'", hash(emoji))
+            log.debug("unicode emoji customized name: '%s'", create_emoji_custom_name(str(emoji)))
 
     @commands.command(aliases=get_aliases("roll"), enabled=get_command_enabled('roll'))
     @allowed_channel_and_allowed_role_2()
@@ -150,7 +168,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
                 await ctx.send(file=discord.File(image_binary, filename='checkrandomgraph.png'), delete_after=120)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.bot.user.name})"
+        return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
 
     def __str__(self):
         return self.qualified_name

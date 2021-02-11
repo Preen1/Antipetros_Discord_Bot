@@ -2,6 +2,7 @@
 Jinja2
 Pillow
 PyGithub
+TextBlob
 WeasyPrint
 aiosqlite
 antistasi_template_checker
@@ -45,8 +46,8 @@ python-magic
 python-magic-bin
 pytz
 regex
+tldextract
 udpy
 url-normalize
 watchgod
 wikipedia
-TextBlob

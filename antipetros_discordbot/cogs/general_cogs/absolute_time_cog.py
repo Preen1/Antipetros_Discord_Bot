@@ -217,7 +217,7 @@ class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "Abso
 # region [SpecialMethods]
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.bot.user.name})"
+        return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
 
     def __str__(self):
         return self.qualified_name

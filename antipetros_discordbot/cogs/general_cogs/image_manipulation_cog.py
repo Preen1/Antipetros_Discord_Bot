@@ -20,9 +20,9 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import save_commands, make_config_name, update_config
+from antipetros_discordbot.utility.misc import save_commands, make_config_name
 from antipetros_discordbot.utility.enums import WatermarkPosition
-from antipetros_discordbot.utility.checks import log_invoker, in_allowed_channels, allowed_channel_and_allowed_role, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -69,7 +69,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
                 'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,
                              "2021-02-06 05:09:20",
                              "f166431cb83ae36c91d70d7d09020e274a7ebea84d5a0c724819a3ecd2230b9eca0b3e14c2d473563d005671b7a2bf9d87f5449544eb9b57bcab615035b0f83d")}
-    required_config_options = {}
+    required_config_data = """"""
 # endregion[ClassAttributes]
 
 # region [Init]
@@ -94,18 +94,16 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
                                 'airport': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_airport_marker.png")}
         self.old_map_message = None
         self._get_stamps()
-        update_config(self)
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
-        if os.environ.get('INFO_RUN', '') == "1":
-            save_commands(self)
         glog.class_init_notification(log, self)
 
 
 # endregion[Init]
 
 # region [Setup]
+
 
     async def on_ready_setup(self):
         self._get_stamps()
@@ -259,7 +257,14 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
     @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def stamp_image(self, ctx, **flags):
+        """
+        Stamps an image with a small image from the available stamps.
 
+        Usefull for watermarking images.
+
+        Get all available stamps with '@AntiPetros available_stamps'
+
+        """
         async with ctx.channel.typing():
 
             if len(ctx.message.attachments) == 0:
@@ -301,6 +306,10 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
     @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     @commands.cooldown(1, 120, commands.BucketType.channel)
     async def available_stamps(self, ctx):
+        """
+        Posts all available stamps.
+
+        """
         await ctx.message.delete()
         await ctx.send(embed=await make_basic_embed(title="__**Currently available Stamps are:**__", footer="These messages will be deleted in 120 seconds", symbol='photo'), delete_after=120)
         for name, image_path in self.stamps.items():
@@ -320,6 +329,12 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
     @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     @commands.cooldown(1, 120, commands.BucketType.member)
     async def member_avatar(self, ctx):
+        """
+        Stamps the avatar of a Member with the Antistasi Crest.
+
+        Returns the new stamped avatar as image, that the Member can save and replace his orginal avatar with.
+
+        """
         avatar_image = await self.get_avatar_from_user(ctx.author)
         stamp = self.avatar_stamp
         modified_avatar = await self.bot.execute_in_thread(self._to_bottom_right, avatar_image, stamp, self.avatar_stamp_fraction)
@@ -354,6 +369,9 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
     @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
     async def map_changed(self, ctx, marker, color):
+        """
+        Proof of concept for future real time server map.
+        """
         log.info("command was initiated by '%s'", ctx.author.name)
         with BytesIO() as image_binary:
 
@@ -372,9 +390,8 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
 
 # region [SpecialMethods]
 
-
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.bot.user.name})"
+        return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
 
     def __str__(self):
         return self.qualified_name

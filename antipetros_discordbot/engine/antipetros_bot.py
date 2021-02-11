@@ -69,7 +69,7 @@ class AntiPetrosBot(commands.Bot):
     bot_feature_suggestion_folder = APPDATA["bot_feature_suggestion_data"]
     bot_feature_suggestion_json_file = APPDATA['bot_feature_suggestions.json']
 
-    def __init__(self, help_invocation='help', token=None, db_key=None, is_test=False, ** kwargs):
+    def __init__(self, help_invocation='help', token=None, is_test=False, ** kwargs):
         super().__init__(owner_ids={self.creator.id, 413109712695984130, 122348088319803392},
                          case_insensitive=BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive'),
                          self_bot=False,
@@ -78,7 +78,6 @@ class AntiPetrosBot(commands.Bot):
                          intents=self.get_intents(),
                          ** kwargs)
         self.token = token
-        self.db_key = db_key
         self.help_invocation = help_invocation
         self.description = readit(APPDATA['bot_description.md'])
         self.support = BotSupporter(self)
@@ -326,6 +325,15 @@ class AntiPetrosBot(commands.Bot):
             if _emoji.name.casefold() == name.casefold():
                 return _emoji
 
+    @property
+    def admins(self):
+        role = {role.name.casefold(): role for role in self.antistasi_guild.roles}.get("admin".casefold())
+        _out = []
+        for member in self.antistasi_guild.members:
+            if role in member.roles:
+                _out.append(member)
+        return list(set(_out))
+
     @ property
     def antistasi_guild(self):
         return self.get_guild(self.general_data.get('antistasi_guild_id'))
@@ -418,9 +426,8 @@ class AntiPetrosBot(commands.Bot):
     async def role_from_string(self, role_name):
         return {role.name.casefold(): role for role in self.antistasi_guild.roles}.get(role_name.casefold())
 
-    async def all_members_with_role(self, role: Union[discord.Role, str]):
-        if isinstance(role, str):
-            role = await self.role_from_string(role)
+    async def all_members_with_role(self, role: str):
+        role = await self.role_from_string(role)
         _out = []
         for member in self.antistasi_guild.members:
             if role in member.roles:

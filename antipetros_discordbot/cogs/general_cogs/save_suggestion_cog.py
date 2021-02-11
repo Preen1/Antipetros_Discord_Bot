@@ -11,7 +11,8 @@ import sqlite3 as sqlite
 import unicodedata
 from datetime import datetime
 from tempfile import TemporaryDirectory
-
+from urllib.parse import urlparse
+from textwrap import dedent
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from jinja2 import Environment, FileSystemLoader
@@ -24,8 +25,8 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import save_commands, make_config_name, update_config
-from antipetros_discordbot.utility.checks import in_allowed_channels, command_enabled_checker, allowed_channel_and_allowed_role_2, owner_or_admin, allowed_requester
+from antipetros_discordbot.utility.misc import save_commands, make_config_name
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_channel_and_allowed_role_2, owner_or_admin, allowed_requester
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.named_tuples import SUGGESTION_DATA_ITEM
 from antipetros_discordbot.utility.embed_helpers import EMBED_SYMBOLS, DEFAULT_FOOTER, make_basic_embed
@@ -33,7 +34,8 @@ from antipetros_discordbot.utility.sqldata_storager import AioSuggestionDataStor
 from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
-from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.enums import CogState, RequestStatus
+from antipetros_discordbot.utility.emoji_handling import normalize_emoji, get_emoji_unicode
 # endregion[Imports]
 
 # region [Logging]
@@ -91,13 +93,14 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
                              "2021-02-06 03:41:58",
                              "82a2afc155a40808a8e2dcf7385bb5db0769ff2bf8e08f1829b97bfc58551531ebc0deeb178e850b3fb89cbe55522812226865fac0b389a082992130de175fcb")}
 
-    required_config_options = {"suggestion_reaction_listener_enabled": "yes",
-                               "suggestion_reaction_listener_allowed_channels": "suggestions, bot-testing",
-                               "suggestion_reaction_listener_allowed_roles": "Dev Helper, Admin",
-                               "save_emoji": "💾",
-                               "downvote_emoji": "👎",
-                               "upvote_emoji": "👍",
-                               "add_success_embed_verbose": "yes"}
+    required_config_data = dedent("""
+                                        suggestion_reaction_listener_enabled = yes
+                                        suggestion_reaction_listener_allowed_channels = suggestions, bot-testing
+                                        suggestion_reaction_listener_allowed_roles = Dev Helper, Admin
+                                        save_emoji = 💾
+                                        downvote_emoji = 👎
+                                        upvote_emoji = 👍
+                                        add_success_embed_verbose = yes""")
 
 # endregion [ClassAttributes]
 
@@ -107,48 +110,38 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         self.bot = bot
         self.support = self.bot.support
         self.data_storage_handler = AioSuggestionDataStorageSQLite()
-        update_config(self)
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
-        if os.environ.get('INFO_RUN', '') == "1":
-            save_commands(self)
         glog.class_init_notification(log, self)
-
-    async def on_ready_setup(self):
-        await self.data_storage_handler.insert_emojis()
-        log.debug('setup for cog "%s" finished', str(self))
-
-    async def update(self, typus):
-        return
-        log.debug('cog "%s" was updated', str(self))
 
 
 # endregion [Init]
 # region [Setup]
 
     async def on_ready_setup(self):
-        # await self.data_storage_handler.insert_emojis()
+
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus):
         return
         log.debug('cog "%s" was updated', str(self))
 
+
 # endregion[Setup]
 # region [Properties]
 
     @property
     def command_emojis(self):
-        return {'save': COGS_CONFIG.get(self.config_name, 'save_emoji'),
-                'upvote': COGS_CONFIG.get(self.config_name, 'upvote_emoji'),
-                'downvote': COGS_CONFIG.get(self.config_name, 'downvote_emoji')}
+        return {'save': normalize_emoji(COGS_CONFIG.get(self.config_name, 'save_emoji')),
+                'upvote': normalize_emoji(COGS_CONFIG.get(self.config_name, 'upvote_emoji')),
+                'downvote': normalize_emoji(COGS_CONFIG.get(self.config_name, 'downvote_emoji'))}
 
     async def categories_emojis(self):
 
         categories_emojis = await self.data_storage_handler.category_emojis()
 
-        return {pyemoji.emojize(key): value for key, value in categories_emojis.items()}
+        return {normalize_emoji(key): value for key, value in categories_emojis.items()}
 
     async def get_category_name(self, emoji_name):
         data = await self.data_storage_handler.category_emojis()
@@ -182,7 +175,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         command_name = "suggestion_reaction_listener"
         channel = self.bot.get_channel(payload.channel_id)
         emoji = payload.emoji
-        emoji_name = emoji.name
+
         reaction_member = payload.member
 
         if get_command_enabled(command_name) is False:
@@ -198,6 +191,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         if all(role.name.casefold() not in self.allowed_roles(command_name) for role in reaction_member.roles):
             return False
 
+        emoji_name = normalize_emoji(emoji.name)
         if emoji_name not in {value for key, value in self.command_emojis.items()} and emoji_name not in await self.categories_emojis():
 
             return False
@@ -215,7 +209,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         reaction_user = await self.bot.fetch_user(payload.user_id)
         message = await channel.fetch_message(payload.message_id)
 
-        emoji_name = unicodedata.name(payload.emoji.name) if not isinstance(payload.emoji.name, str) else payload.emoji.name
+        emoji_name = normalize_emoji(payload.emoji.name)
         log.debug(f"{emoji_name=}")
         log.debug(f"{message.id=}")
         if emoji_name == self.command_emojis['save']:
@@ -502,7 +496,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
     async def specifc_reaction_from_message(self, message, target_reaction):
         for reaction in message.reactions:
-            if unicodedata.name(reaction.emoji) == target_reaction:
+            if normalize_emoji(reaction.emoji) == target_reaction:
                 return reaction
 
     async def _new_suggestion(self, channel, message, guild_id, reaction_user):
@@ -540,7 +534,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         if category:
             success = await self._set_category(category, message.id)
             if success:
-                await channel.send(embed=await self.make_changed_category_embed(message, category))
+                await channel.send(embed=await self.make_changed_category_embed(message, category), delete_after=30)
                 log.info("updated category for suggestion (id: %s) to category '%s'", message.id, category)
                 await self._remove_previous_categories(message, emoji_name)
 
@@ -569,7 +563,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 # region [SpecialMethods]
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.bot.user.name})"
+        return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
 
     def __str__(self):
         return self.qualified_name

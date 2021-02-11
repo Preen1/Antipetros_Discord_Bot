@@ -8,10 +8,11 @@ import asyncio
 import unicodedata
 from datetime import datetime
 import re
-from typing import List, Tuple, Set, Union
+from typing import List, Tuple, Set, Union, Optional
+
 import random
 from io import BytesIO
-from textwrap import indent
+from textwrap import indent, dedent
 # * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
 from jinja2 import BaseLoader, Environment
@@ -25,9 +26,9 @@ import gidlogger as glog
 from icecream import ic
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import CogConfigReadOnly, day_to_second, save_commands, hour_to_second, minute_to_second, update_config, make_config_name
+from antipetros_discordbot.utility.misc import CogConfigReadOnly, day_to_second, save_commands, hour_to_second, minute_to_second, make_config_name
 from antipetros_discordbot.utility.enums import RequestStatus
-from antipetros_discordbot.utility.checks import log_invoker, in_allowed_channels, allowed_channel_and_allowed_role, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, owner_or_admin
+from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, owner_or_admin
 from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
 from antipetros_discordbot.utility.embed_helpers import EMBED_SYMBOLS, make_basic_embed
 
@@ -81,7 +82,7 @@ _from_cog_config = CogConfigReadOnly(CONFIG_NAME)
 class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 
     """
-    Soon
+    Creates Embed FAQ items.
 
     """
 # region [ClassAttributes]
@@ -98,25 +99,25 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
                              "2021-02-06 03:33:42",
                              "6e72c93ce50bf8f6a95d55b1a8c1c8b51588f5a804902c2ba57c9f5b2afe3f35b31b5bc52d3f6a71b1a887e82345453771c797b53e41780e4beaff3388b64331")}
 
-    required_config_options = {"use_templated_faq": "yes",
-                               "faq_channel": "faq",
-                               "numbers_background_image": "faq_num_background.png",
-                               "antistasi_decoration_pre": '**',
-                               "antistasi_decoration_corpus": 'Antistasi',
-                               "antistasi_decoration_post": '**',
-                               "link_decoration_pre": '',
-                               "link_decoration_post": '',
-                               "step_decoration_pre": '',
-                               "step_decoration_post": '',
-                               "number": "1️⃣, 2️⃣, 3️⃣, 4️⃣, 5️⃣, 6️⃣, 7️⃣, 8️⃣, 9️⃣",
-                               "emphasis_decoration_pre": '***',
-                               "emphasis_decoration_post": '***'}
+    required_config_data = dedent("""
+                                        use_templated_faq = yes
+                                        faq_channel = faq
+                                        numbers_background_image = faq_num_background.png
+                                        antistasi_decoration_pre = **
+                                        antistasi_decoration_corpus = Antistasi
+                                        antistasi_decoration_post = **
+                                        link_decoration_pre =
+                                        link_decoration_post =
+                                        step_decoration_pre =
+                                        step_decoration_post =
+                                        number = 1️⃣, 2️⃣, 3️⃣, 4️⃣, 5️⃣, 6️⃣, 7️⃣, 8️⃣, 9️⃣
+                                        emphasis_decoration_pre = ***
+                                        emphasis_decoration_post = ***""")
 
 
 # endregion [ClassAttributes]
 
 # region [Init]
-
 
     def __init__(self, bot):
 
@@ -125,12 +126,9 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
         self.faq_image_folder = APPDATA['faq_images']
         self.faq_embeds = {}
         self.jinja_env = Environment(loader=BaseLoader())
-        update_config(self)
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
-        if os.environ.get('INFO_RUN', '') == "1":
-            save_commands(self)
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -162,6 +160,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 # endregion [Properties]
 
 # region [Setup]
+
 
     async def on_ready_setup(self):
         # await self._load_faq_embeds()
@@ -205,10 +204,22 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 
 # region [Commands]
 
+
     @auto_meta_info_command(enabled=get_command_enabled('post_faq_by_number'))
     @ allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     @commands.cooldown(1, 10, commands.BucketType.channel)
     async def post_faq_by_number(self, ctx, faq_numbers: commands.Greedy[int], as_template: bool = None):
+        """
+        Posts an FAQ as an embed on request.
+
+        Either as an normal message or as an reply, if the invoking message was also an reply.
+
+        Deletes invoking message
+
+        Args:
+            faq_numbers (commands.Greedy[int]): minimum one faq number to request, maximum as many as you want seperated by one space (i.e. 14 12 3)
+            as_template (bool, optional): if the resulting faq item should be created via the templated items or from the direct parsed faqs.
+        """
         as_template = self.use_templated if as_template is None else as_template
         for faq_number in faq_numbers:
             faq_number = str(faq_number)
@@ -229,9 +240,16 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
     @ log_invoker(logger=log, level="info")
     @ commands.cooldown(1, minute_to_second(5), commands.BucketType.channel)
     async def create_faqs_as_embed(self, ctx: commands.Context, as_template: bool = None):
+        """
+        Posts all faqs ,that it has saved, at once and posts a TOC afterwards.
+
+        Intended to recreate the FAQ's as embeds, or after changing an FAQ to rebuild it
+
+        Args:
+            as_template (bool, optional): if the resulting faq item should be created via the templated items or from the direct parsed faqs.
+        """
         link_data = []
         as_template = self.use_templated if as_template is None else as_template
-        # delete_after = 60 if self.bot.is_debug is True else None
         delete_after = None
         async with ctx.typing():
             for faq_number in self.all_faq_data:
@@ -246,6 +264,25 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
                 if faq_number != list(self.all_faq_data)[-1]:
                     await asyncio.sleep(random.randint(1, 3) / random.randint(1, 3))
         await self._make_toc(ctx, link_data=link_data)
+
+    @auto_meta_info_command(enabled=get_command_enabled("add_faq_item"))
+    @allowed_channel_and_allowed_role_2(in_dm_allowed=True)
+    async def add_faq_item(self, ctx: commands.Context, faq_number: Optional[int] = None, from_message: Optional[discord.Message] = None):
+        """
+        UNFINISHED
+
+        Args:
+            faq_number (Optional[int], optional): [description]. Defaults to None.
+            from_message (Optional[discord.Message], optional): [description]. Defaults to None.
+        """
+        if len(ctx.message.attachments) == 0 and from_message is None:
+            await ctx.author.send('no input for faq creation, you either need to specify a message to convert or attach an template file')
+            return
+        if len(ctx.message.attachments) != 0 and from_message is not None:
+            await ctx.author.send('either attach a template file or specify a message to convert, both at the same time is not possible')
+            return
+        if faq_number is None:
+            faq_number = len(self.all_faq_data) + 1
 
     # TODO: Needs reimplementation to make backup and to also read embeds
     # @ commands.command(aliases=get_aliases("get_current_faq_data"), enabled=get_command_enabled("get_current_faq_data"))
@@ -286,6 +323,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 # endregion [Embeds]
 
 # region [HelperMethods]
+
 
     async def _transform_raw_faq_data(self, data):
         new_data = {}
@@ -407,7 +445,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
         pass
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.bot.user.name})"
+        return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
 
     def __str__(self):
         return self.__class__.__name__

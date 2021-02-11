@@ -14,6 +14,7 @@ import queue
 import logging
 import platform
 import subprocess
+from typing import List, Tuple, Set, Optional
 from enum import Enum, Flag, auto
 from time import sleep
 from pprint import pprint, pformat
@@ -44,23 +45,26 @@ from io import BytesIO
 import aiohttp
 import discord
 from discord.ext import tasks, commands
-from discord import DiscordException, Embed, File
+from discord import DiscordException, Embed, File, ChannelType
 from async_property import async_property
 import magic
+import tldextract
+from textwrap import dedent
 # * Gid Imports -->
 import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.utility.enums import RequestStatus
 from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM, ListenerContext
-from antipetros_discordbot.utility.sqldata_storager import LinkDataStorageSQLite
+
 from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed, EMBED_SYMBOLS
-from antipetros_discordbot.utility.misc import save_commands, CogConfigReadOnly
-from antipetros_discordbot.utility.checks import in_allowed_channels, allowed_channel_and_allowed_role, log_invoker
+from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, save_commands, CogConfigReadOnly, make_config_name, is_even
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_channel_and_allowed_role_2, owner_or_admin, allowed_requester
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -69,6 +73,8 @@ if TYPE_CHECKING:
 
 # region [TODO]
 
+# TODO: create "on_message" and "on_message_edit" listener to check for urls
+# TODO: create method to find urls in messages
 
 # endregion [TODO]
 
@@ -90,18 +96,21 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-CONFIG_NAME = "security"
+COG_NAME = "SecurityCog"
+
+CONFIG_NAME = make_config_name(COG_NAME)
+
+get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 # endregion[Constants]
 
 # region [Helper]
 
-_from_cog_config = CogConfigReadOnly(CONFIG_NAME)
 
 # endregion [Helper]
 
 
-class SecurityCog(commands.Cog, command_attrs={'name': "SecurityCog", "description": ""}):
+class SecurityCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
     """
     [summary]
 
@@ -109,10 +118,44 @@ class SecurityCog(commands.Cog, command_attrs={'name': "SecurityCog", "descripti
 
     """
 # region [ClassAttributes]
+    config_name = CONFIG_NAME
     docattrs = {'show_in_readme': True,
                 'is_ready': (CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.CRASHING,
                              "2021-02-06 05:18:25",
                              "917274ca9966d8de3909eb5ac74869405c35f062db243440215e4f956b8e6beddd9cc812fe7e2f1b64fc93cf4b690f060c2b1da0e2f3aab6b39afe2f727013e1")}
+    required_config_data = dedent("""
+                                        blocklist_hostfile_urls = https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn/hosts, https://raw.githubusercontent.com/Ultimate-Hosts-Blacklist/Ultimate.Hosts.Blacklist/master/hosts/hosts0
+
+                                        forbidden_mime_types = application/zip,
+                                            application/x-tar,
+                                            application/x-rar,
+                                            application/x-msi,
+                                            application/x-gzip,
+                                            application/x-dosexec,
+                                            application/x-7z-compressed,
+                                            text/x-java,
+                                            text/x-msdos-batch,
+                                            text/x-python,
+                                            video/mp4,
+                                            video/mpeg
+                                        forbidden_file_extensions = exe, zip, 7z, rar, xz, bat, cmd, sh, js, py, mp4, mpeg, mp4, mp3
+
+                                        attachment_scanner_listener_enabled = no
+
+                                        attachment_scanner_listener_allowed_channels = suggestions, bot-testing
+
+                                        attachment_scanner_listener_exclude_roles = Dev Helper, Admin
+
+                                        link_scanner_listener_enabled = no
+
+                                        link_scanner_listener_allowed_channels = suggestions, bot-testing
+
+                                        link_scanner_listener_exclude_roles = Dev Helper, Admin
+
+
+                                        """)
+
+    bad_links_json_file = pathmaker(APPDATA['json_data'], 'forbidden_link_list.json')
 # endregion [ClassAttributes]
 
 # region [Init]
@@ -121,8 +164,11 @@ class SecurityCog(commands.Cog, command_attrs={'name': "SecurityCog", "descripti
         self.bot = bot
         self.support = self.bot.support
         self.file_magic = magic.Magic(mime=True, uncompress=True)
-        if os.environ.get('INFO_RUN', '') == "1":
-            save_commands(self)
+        self.bad_links = None
+        self.blocklist_hostfile_urls = COGS_CONFIG.retrieve(self.config_name, 'blocklist_hostfile_urls', typus=List[str])
+        self.allowed_channels = allowed_requester(self, 'channels')
+        self.allowed_roles = allowed_requester(self, 'roles')
+        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -131,11 +177,11 @@ class SecurityCog(commands.Cog, command_attrs={'name': "SecurityCog", "descripti
 
     @property
     def forbidden_extensions(self):
-        return [ext.casefold() for ext in _from_cog_config('forbidden_file_extensions', list)]
+        return [ext.casefold() for ext in COGS_CONFIG.retrieve(self.config_name, 'forbidden_file_extensions', typus=list, direct_fallback=[])]
 
     @property
     def forbidden_mime_types(self):
-        return _from_cog_config('forbidden_mime_types', list)
+        return COGS_CONFIG.retrieve(self.config_name, 'forbidden_mime_types', typus=list, direct_fallback=[])
 
 
 # endregion [Properties]
@@ -143,7 +189,16 @@ class SecurityCog(commands.Cog, command_attrs={'name': "SecurityCog", "descripti
 # region [Setup]
 
     async def on_ready_setup(self):
+        await self._create_forbidden_link_list()
         log.debug('setup for cog "%s" finished', str(self))
+
+    async def update(self, typus):
+        if typus == "time":
+            await self._create_forbidden_link_list()
+        else:
+            return
+        log.debug('cog "%s" was updated', str(self))
+
 
 # endregion [Setup]
 
@@ -156,10 +211,12 @@ class SecurityCog(commands.Cog, command_attrs={'name': "SecurityCog", "descripti
 
 
     @ commands.Cog.listener(name="on_message")
-    async def attachment_scanner(self, message: discord.Message):
+    async def attachment_scanner_listener(self, message: discord.Message):
+        if message.channel.type is not ChannelType.text:
+            return
         if message.channel.name.casefold() != 'bot-testing':
             return
-        if _from_cog_config('enable_attachment_scanner', bool) is False or len(message.attachments) == 0 or await self._attachment_scanner_exclusion_check(message) is True:
+        if get_command_enabled("attachment_scanner_listener") is False or len(message.attachments) == 0 or await self._attachment_scanner_exclusion_check(message) is True:
             return
         listener_context = ListenerContext(message=message,
                                            content=message.content,
@@ -192,6 +249,44 @@ class SecurityCog(commands.Cog, command_attrs={'name': "SecurityCog", "descripti
 
 # region [HelperMethods]
 
+    async def _process_raw_blocklist_content(self, raw_content):
+        """
+        Process downloaded Blacklist to a list of raw urls.
+
+        Returns:
+            set: forbidden_link_list as set for quick contain checks
+        """
+
+        _out = []
+        if self.bot.is_debug is True:
+            raw_content += '\n\n0 www.stackoverflow.com'  # added for Testing
+        for line in raw_content.splitlines():
+            if line.startswith('0') and line not in ['', '0.0.0.0 0.0.0.0']:
+                forbidden_url = line.split(' ')[-1].strip()
+                forbidden_url = forbidden_url.split('#')[0].strip()
+                _out.append(forbidden_url.strip().casefold())
+        return _out
+
+    async def _create_forbidden_link_list(self):
+        """
+        Downloads Blacklist and saves it to json, after processing (-->_process_raw_blocklist_content)
+        """
+        forbidden_links = []
+        for source_hostdata_url in self.blocklist_hostfile_urls:
+            async with self.bot.aio_request_session.get(source_hostdata_url) as _response:
+                if RequestStatus(_response.status) is RequestStatus.Ok:
+                    _content = await _response.read()
+                    _content = _content.decode('utf-8', errors='ignore')
+                    forbidden_links += await self._process_raw_blocklist_content(_content)
+                    log.debug("downloaded host file '%s'", source_hostdata_url)
+
+        forbidden_links = list(set(forbidden_links))
+        forbidden_links = sorted(forbidden_links, key=lambda x: x.split('.')[-1])
+        log.debug("writing link blacklist to json file")
+        writejson(forbidden_links, self.bad_links_json_file)
+        self.bad_links = forbidden_links
+        log.info("creating link blacklist completed")
+
     async def _handle_forbidden_attachment(self, listener_context: ListenerContext, filename: str):
         await listener_context.message.delete()
         await listener_context.channel.send(listener_context.author.mention + ' Your message was deleted as you tried to send a forbidden type of attachment')
@@ -205,6 +300,14 @@ class SecurityCog(commands.Cog, command_attrs={'name': "SecurityCog", "descripti
         if msg.channel.name.casefold in [channel_name.casefold() for channel_name in _from_cog_config('attachment_scanner_exclude_channels', list)]:
             return True
         return False
+
+    async def check_link(self, url):
+        extracted_url = tldextract.extract(url)
+        cleaned_url = f"{extracted_url.domain}.{extracted_url.suffix}".casefold()
+        for bad_url in self.bad_links:
+            if cleaned_url == bad_url:
+                return True, bad_url
+        return False, None
 
 # endregion [HelperMethods]
 
@@ -227,7 +330,7 @@ class SecurityCog(commands.Cog, command_attrs={'name': "SecurityCog", "descripti
         pass
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.bot.user.name})"
+        return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
 
     def __str__(self):
         return self.__class__.__name__
@@ -240,7 +343,7 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(SecurityCog(bot))
+    bot.add_cog(attribute_checker(SecurityCog(bot)))
 
 
 # region [Main_Exec]

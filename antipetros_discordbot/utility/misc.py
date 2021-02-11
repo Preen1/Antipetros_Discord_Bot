@@ -15,16 +15,18 @@ from pprint import pprint
 # * Third Party Imports -->
 import discord
 from discord.ext import commands
-
+from icecream import ic
 # * Gid Imports ----------------------------------------------------------------------------------------->
 # * Gid Imports -->
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 # * Local Imports -->
-from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
+from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson, writeit, readit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.data import COMMAND_CONFIG_SUFFIXES, DEFAULT_CONFIG_OPTION_NAMES
+from antipetros_discordbot.utility.data import COMMAND_CONFIG_SUFFIXES, DEFAULT_CONFIG_OPTION_NAMES, DEFAULT_CONFIG_SECTION
+from antipetros_discordbot.utility.checks import owner_or_admin
+from antipetros_discordbot.utility.enums import CogState
 
 log = glog.aux_logger(__name__)
 glog.import_notification(log, __name__)
@@ -149,7 +151,7 @@ def sync_to_async(_func):
 
 def save_commands(cog):
     command_json_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/commands.json')
-    command_help_file = pathmaker(APPDATA['documentation'], 'command_help.json')
+    command_help_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/command_help.json')
     if os.path.isfile(command_json_file) is False:
         writejson({}, command_json_file)
     if os.path.isfile(command_help_file) is False:
@@ -158,7 +160,10 @@ def save_commands(cog):
     command_help = loadjson(command_help_file)
     command_json[str(cog)] = {'file_path': pathmaker(os.path.abspath(inspect.getfile(cog.__class__))),
                               'description': dedent(str(inspect.getdoc(cog.__class__))),
-                              "commands": {}} | cog.docattrs
+                              "commands": {},
+                              "state": [' | '.join(map(str, CogState.split(cog.docattrs.get('is_ready')[0]))), cog.docattrs.get('is_ready')[1], cog.docattrs.get('is_ready')[2]]
+                              }
+
     for command in cog.get_commands():
         command_json[str(cog)]["commands"][command.name.strip()] = {"signature": command.signature.replace('<ctx>', '').replace('  ', ' ').strip(),
                                                                     "aliases": command.aliases,
@@ -180,29 +185,36 @@ def save_commands(cog):
     log.debug("commands for %s saved to %s", cog, command_json_file)
 
 
-def update_config(cog: commands.Cog):
-    config_name = cog.config_name
-    if not COGS_CONFIG.has_section(config_name):
-        COGS_CONFIG.add_section(config_name)
+def make_command_subsection_seperator(command_name):
+    command_name = f"{command_name} COMMAND"
+    return f'# {command_name.upper().center(75, "-")}'
 
-    for _, default_option_name in DEFAULT_CONFIG_OPTION_NAMES.items():
-        if not COGS_CONFIG.has_option(config_name, default_option_name):
-            COGS_CONFIG.set(config_name, default_option_name, '')
 
-    for option_name, default_value in cog.required_config_options.items():
-        if not COGS_CONFIG.has_option(config_name, option_name):
-            COGS_CONFIG.set(config_name, option_name, default_value)
-    COGS_CONFIG.set(config_name, '# ' + ('+' * 40), '\n\n')
-    for index, command in enumerate(cog.get_commands()):
-        COGS_CONFIG.set(config_name, '# ' + ('-' * 25) + '--' * index, '')
-        for key, option_values in COMMAND_CONFIG_SUFFIXES.items():
-            if key == 'dm_ids' and all(getclosurevars(check).nonlocals.get('in_dm_allowed', False) is False for check in command.checks):
-                continue
-            option_name = command.name + option_values[0]
-            if not COGS_CONFIG.has_option(config_name, option_name):
-                COGS_CONFIG.set(config_name, option_name, option_values[1])
+def generate_base_cogs_config(bot: commands.Bot):
+    out_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/standard_cogs_config.ini')
+    sub_section_seperator = f'# {"_"*75}'
+    command_section_seperator = f'# {"COMMANDS".center(75, "-")}'
+    listener_section_seperator = f'# {"LISTENER".center(75, "+")}'
+    out_lines = [DEFAULT_CONFIG_SECTION]
+    for cog_name, cog in bot.cogs.items():
+        config_name = cog.config_name
+        required_config_data = cog.required_config_data
 
-    COGS_CONFIG.save()
+        out_lines += [f'\n\n[{config_name}]',
+                      'default_allowed_dm_ids =',
+                      'default_allowed_channels =',
+                      'default_allowed_roles =',
+                      sub_section_seperator + '\n' + sub_section_seperator,
+                      required_config_data]
+        for command in cog.get_commands():
+            out_lines.append(make_command_subsection_seperator(command.name))
+            out_lines.append(f"{command.name}{COMMAND_CONFIG_SUFFIXES.get('enabled')[0]} = {COMMAND_CONFIG_SUFFIXES.get('enabled')[1]}")
+            out_lines.append(f"{command.name}{COMMAND_CONFIG_SUFFIXES.get('channels')[0]} = {COMMAND_CONFIG_SUFFIXES.get('channels')[1]}")
+            if all(isinstance(check, type(owner_or_admin)) is False for check in command.checks):
+                out_lines.append(f"{command.name}{COMMAND_CONFIG_SUFFIXES.get('roles')[0]} = {COMMAND_CONFIG_SUFFIXES.get('roles')[1]}")
+            if any(getclosurevars(check).nonlocals.get('in_dm_allowed', False) is True for check in command.checks):
+                out_lines.append(f"{command.name}{COMMAND_CONFIG_SUFFIXES.get('dm_ids')[0]} = {COMMAND_CONFIG_SUFFIXES.get('dm_ids')[1]}")
+    writeit(out_file, '\n\n'.join(out_lines))
 
 
 async def async_load_json(json_file):

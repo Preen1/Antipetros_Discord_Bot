@@ -3,7 +3,9 @@ PyQt5-stubs
 autopep8
 grip
 icecream
+ipython
 isort
+jupyter
 matplotlib
 memory-profiler
 objectgraph
@@ -14,5 +16,3 @@ pydeps
 pypandoc
 pyqt5-tools
 python-magic
-ipython
-jupyter

@@ -6,6 +6,7 @@ import os
 from pprint import pprint
 from inspect import getfullargspec, getargs
 import types
+from icecream import ic
 
 
 APPDATA = ParaStorageKeeper.get_appdata()
@@ -23,7 +24,10 @@ def _get_custom_aliases(command_name: str) -> List[str]:
     Returns:
         :class:`List[str]`: Custom Aliases.
     """
-    data = loadjson(APPDATA['command_aliases.json'])
+    file = APPDATA['command_aliases.json']
+    if os.path.isfile(file) is False:
+        return []
+    data = loadjson(file)
     return data.get(command_name, [])
 
 
@@ -89,9 +93,14 @@ def auto_meta_info_command(name=None, cls=None, **attrs):
 
     def decorator(func):
         command_name = func.__name__ if name is None else name
-        aliases = _default_alias_maker(command_name) + _get_custom_aliases(command_name) + attrs.get('aliases', [])
+        aliases = []
+        aliases += _default_alias_maker(command_name)
+        aliases += attrs.get('aliases', [])
+        aliases += _get_custom_aliases(command_name=command_name)
         if isinstance(func, Command):
             raise TypeError('Callback is already a command.')
+        ic(command_name)
+        ic(aliases)
         return cls(func, name=name, aliases=list(set(aliases)), ** attrs)
 
     return decorator

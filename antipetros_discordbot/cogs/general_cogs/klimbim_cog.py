@@ -9,6 +9,7 @@ import secrets
 import typing
 import asyncio
 from urllib.parse import quote as urlquote
+from textwrap import dedent
 # * Third Party Imports --------------------------------------------------------------------------------->
 from pytz import timezone, country_timezones
 from fuzzywuzzy import fuzz
@@ -22,8 +23,8 @@ import gidlogger as glog
 import aiohttp
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, save_commands, CogConfigReadOnly, make_config_name, update_config, is_even
-from antipetros_discordbot.utility.checks import in_allowed_channels, allowed_channel_and_allowed_role, has_attachments, command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2
+from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, save_commands, CogConfigReadOnly, make_config_name, is_even
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2
 from antipetros_discordbot.utility.named_tuples import CITY_ITEM, COUNTRY_ITEM
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -31,6 +32,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.the_dragon import THE
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import RequestStatus, CogState
+from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 # endregion[Imports]
 
 # region [TODO]
@@ -66,7 +68,7 @@ get_command_enabled = command_enabled_checker(CONFIG_NAME)
 # endregion[Constants]
 
 
-class KlimBimCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
+class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
     """
     Soon
     """
@@ -78,8 +80,9 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME})
                              "2021-02-06 03:32:39",
                              "05703df4faf098a7f3f5cea49c51374b3225162318b081075eb0745cc36ddea6ff11d2f4afae1ac706191e8db881e005104ddabe5ba80687ac239ede160c3178")}
 
-    required_config_options = {'coin_image_heads': "https://i.postimg.cc/XY4fhCf5/antipetros-coin-head.png",
-                               "coin_image_tails": "https://i.postimg.cc/HsQ0B2yH/antipetros-coin-tails.png"}
+    required_config_data = dedent("""
+                                        coin_image_heads = https://i.postimg.cc/XY4fhCf5/antipetros-coin-head.png,
+                                        coin_image_tails = https://i.postimg.cc/HsQ0B2yH/antipetros-coin-tails.png""")
 
     # endregion [ClassAttributes]
 
@@ -88,12 +91,9 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME})
     def __init__(self, bot):
         self.bot = bot
         self.support = self.bot.support
-        update_config(self)
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
-        if os.environ.get('INFO_RUN', '') == "1":
-            save_commands(self)
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -128,17 +128,24 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME})
 
 # region [Commands]
 
-
-    @ commands.command(aliases=get_aliases("the_dragon"), enabled=get_command_enabled('the_dragon'))
-    @allowed_channel_and_allowed_role_2()
+    @ auto_meta_info_command(enabled=get_command_enabled('the_dragon'))
+    @ allowed_channel_and_allowed_role_2()
     @commands.cooldown(1, 60, commands.BucketType.channel)
     async def the_dragon(self, ctx):
+        """
+        Posts and awesome ASCII Art Dragon!
+
+        """
         await ctx.send(THE_DRAGON)
 
-    @ commands.command(aliases=get_aliases("flip_coin"), enabled=get_command_enabled('flip_coin'))
+    @ auto_meta_info_command(enabled=get_command_enabled('flip_coin'))
     @allowed_channel_and_allowed_role_2()
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def flip_coin(self, ctx: commands.Context):
+        """
+        Simulates a coin flip and posts the result as an image of a Petros Dollar.
+
+        """
         with ctx.typing():
             result = (secrets.randbelow(2) + 1)
             coin = "heads" if is_even(result) is True else 'tails'
@@ -151,10 +158,19 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME})
 
             await ctx.reply(**embed, allowed_mentions=AllowedMentions.none())
 
-    @ commands.command(aliases=get_aliases("urban_dictionary"), enabled=get_command_enabled('urban_dictionary'))
+    @ auto_meta_info_command(enabled=get_command_enabled('urban_dictionary'))
     @allowed_channel_and_allowed_role_2()
     @commands.cooldown(1, 30, commands.BucketType.user)
     async def urban_dictionary(self, ctx, term: str, entries: int = 1):
+        """
+        Searches Urbandictionary for the search term and post the answer as embed
+
+        Args:
+
+            term (str): the search term
+            entries (int, optional): How many UD entries for that term it should post, max is 5. Defaults to 1.
+
+        """
         if entries > 5:
             await ctx.send('To many requested entries,max allowed return entries is 5')
             return
@@ -176,10 +192,16 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME})
                         await ctx.send(**_embed_data)
                         await asyncio.sleep(1)
 
-    @ commands.command(aliases=get_aliases("make_figlet"), enabled=get_command_enabled('make_figlet'))
+    @ auto_meta_info_command(enabled=get_command_enabled('make_figlet'))
     @ allowed_channel_and_allowed_role_2()
     @ commands.cooldown(1, 60, commands.BucketType.channel)
     async def make_figlet(self, ctx, *, text: str):
+        """
+        Posts an ASCII Art version of the input text.
+
+        Args:
+            text (str): text you want to see as ASCII Art.
+        """
         figlet = Figlet(font='gothic', width=300)
         new_text = figlet.renderText(text.upper())
         await ctx.send(f"```fix\n{new_text}\n```")
@@ -204,7 +226,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME})
 # region [SpecialMethods]
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.bot.user.name})"
+        return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
 
     def __str__(self):
         return self.qualified_name

@@ -67,8 +67,6 @@ class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": "Pur
     def __init__(self, bot):
         self.bot = bot
         self.support = self.bot.support
-        if os.environ.get('INFO_RUN', '') == "1":
-            save_commands(self)
         glog.class_init_notification(log, self)
 
     @commands.command(aliases=get_aliases("purge_antipetros"))
