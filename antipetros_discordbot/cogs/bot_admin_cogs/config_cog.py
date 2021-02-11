@@ -6,9 +6,11 @@ from __future__ import annotations
 import os
 import random
 from datetime import datetime
-
+import asyncio
 from configparser import ConfigParser, NoOptionError, NoSectionError
 from collections import namedtuple
+from textwrap import dedent
+from pprint import pprint, pformat
 # * Third Party Imports --------------------------------------------------------------------------------->
 import arrow
 import discord
@@ -24,16 +26,17 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import CogConfigReadOnly, day_to_second, save_commands, hour_to_second, minute_to_second
-from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, only_dm_only_allowed_id, log_invoker
+from antipetros_discordbot.utility.misc import CogConfigReadOnly, day_to_second, save_commands, hour_to_second, minute_to_second, make_config_name
+from antipetros_discordbot.utility.checks import only_dm_only_allowed_id, log_invoker, owner_or_admin, allowed_channel_and_allowed_role_2, allowed_requester, command_enabled_checker
 from antipetros_discordbot.utility.named_tuples import FeatureSuggestionItem
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.data_gathering import gather_data
-from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pickleit, pathmaker, writejson, get_pickled, readit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
+from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion[Imports]
@@ -65,14 +68,19 @@ APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
+COG_NAME = "ConfigCog"
+CONFIG_NAME = make_config_name(COG_NAME)
 
-CONFIG_NAME = 'config'
-
-_from_cog_config = CogConfigReadOnly(CONFIG_NAME)
 # endregion[Constants]
 
+# region [Helper]
 
-class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": "ConfigCog"}):
+get_command_enabled = command_enabled_checker(CONFIG_NAME)
+
+# endregion [Helper]
+
+
+class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
     """
     Cog with commands to access and manipulate config files, also for changing command aliases.
     Almost all are only available in DM's
@@ -80,12 +88,16 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": "ConfigCog"
     commands are hidden from the help command.
     """
     # region [ClassAttributes]
+    config_name = CONFIG_NAME
     config_dir = APPDATA['config']
     alias_file = APPDATA['command_aliases.json']
     docattrs = {'show_in_readme': False,
                 'is_ready': (CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.CRASHING,
                              "2021-02-06 05:24:31",
                              "87f320af11ad9e4bd1743d9809c3af554bedab8efe405cd81309088960efddba539c3a892101943902733d783835373760c8aabbcc2409db9403366373891baf")}
+    required_config_data = dedent("""
+                                  notify_when_changed = no
+                                """)
     # endregion[ClassAttributes]
 
     # region [Init]
@@ -95,46 +107,50 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": "ConfigCog"
         self.support = self.bot.support
         self.all_configs = [BASE_CONFIG, COGS_CONFIG]
         self.aliases = {}
-
-        if os.environ.get('INFO_RUN', '') == "1":
-            save_commands(self)
+        self.allowed_channels = allowed_requester(self, 'channels')
+        self.allowed_roles = allowed_requester(self, 'roles')
+        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
         glog.class_init_notification(log, self)
 
 
 # endregion[Init]
 
-# region [Properties]
+# region [Setup]
 
-
-    @property
-    def all_command_aliases(self):
-        """
-        Property to create a set of all command aliases, to check if any alias is already used.
-
-        Returns:
-            [set]: all aliases
-        """
-        _out = []
-        for com_name, aliases in self.aliases.items():
-            _out += aliases
-        return set(_out)
-
-    @property
-    def notify_when_changed(self):
-        return _from_cog_config('notify_when_changed', bool)
-
-
-# endregion[Properties]
-
-# region [HelperMethods]
 
     async def on_ready_setup(self):
         """
         standard setup async method.
         The Bot calls this method on all cogs when he has succesfully connected.
         """
-        self.refresh_command_aliases()
+
+        await self.refresh_command_aliases()
+        await self.save_command_aliases()
         log.debug('setup for cog "%s" finished', str(self))
+
+    async def update(self, typus):
+        return
+        log.debug('cog "%s" was updated', str(self))
+
+
+# endregion [Setup]
+
+# region [Properties]
+
+    @property
+    def notify_when_changed(self):
+        return COGS_CONFIG.retrieve(self.config_name, 'notify_when_changed', typus=bool, direct_fallback=False)
+
+    @property
+    def all_alias_names(self):
+        _out = []
+        for key, value in self.aliases.items():
+            _out.append(key)
+            _out += value
+        return _out
+# endregion[Properties]
+
+# region [HelperMethods]
 
     async def _get_available_configs(self):  # sourcery skip: dict-comprehension
         """
@@ -171,20 +187,15 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": "ConfigCog"
         else:
             return pathmaker(self.config_dir, available_configs[_result[0]])
 
-    def save_command_aliases(self):
+    async def save_command_aliases(self):
         writejson(self.aliases, self.alias_file)
 
-    def refresh_command_aliases(self):
-        self.aliases = loadjson(self.alias_file)
-
-    def get_alias_variations(self, alias):
-        variations = [lambda x: x.replace('_', '-'),
-                      lambda x: x.replace('-', '').replace('_', ''),
-                      lambda x: x.replace('-', '.').replace('_', '.')]
-        _out = [alias]
-        for variation_func in variations:
-            _out.append(variation_func(alias))
-        return list(set(_out))
+    async def refresh_command_aliases(self):
+        self.aliases = {}
+        for cog_name, cog in self.bot.cogs.items():
+            for command in cog.get_commands():
+                self.aliases[command.name] = command.aliases
+            await asyncio.sleep(0)
 
     @staticmethod
     async def config_to_set(config: ConfigParser):
@@ -247,7 +258,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": "ConfigCog"
 # region [Commands]
 
     @ commands.command(aliases=get_aliases("list_configs"))
-    @only_dm_only_allowed_id(CONFIG_NAME)
+    @commands.is_owner()
     async def list_configs(self, ctx):
         """
         Lists all available configs, usefull to get the name for the other commands
@@ -267,7 +278,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": "ConfigCog"
         log.info("config list send to '%s'", ctx.author.name)
 
     @ commands.command(aliases=get_aliases("config_request"))
-    @only_dm_only_allowed_id(CONFIG_NAME)
+    @ commands.is_owner()
     async def config_request(self, ctx, config_name: str = 'all'):
         """
         Sends config files via discord as attachments.
@@ -298,7 +309,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": "ConfigCog"
             log.info("requested configs (%s) send to %s", ", ".join(requested_configs), ctx.author.name)
 
     @ commands.command(aliases=get_aliases("overwrite_config_from_file"))
-    @only_dm_only_allowed_id(CONFIG_NAME)
+    @commands.is_owner()
     @log_invoker(log, 'critical')
     async def overwrite_config_from_file(self, ctx):
         """
@@ -340,7 +351,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": "ConfigCog"
             await self.changed_config_uploaded(ctx, config_name, old_config_content, new_config_content)
 
     @commands.command(aliases=get_aliases("change_setting_to"))
-    @only_dm_only_allowed_id(CONFIG_NAME)
+    @commands.is_owner()
     async def change_setting_to(self, ctx, config, section, option, value):
         """
         Command to change a single config setting.
@@ -372,7 +383,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": "ConfigCog"
             await ctx.send('config you specified does not exist!')
 
     @commands.command(aliases=get_aliases("show_config_content"))
-    @only_dm_only_allowed_id(CONFIG_NAME)
+    @commands.is_owner()
     async def show_config_content(self, ctx: commands.Context, config_name: str = "all"):
 
         config_name = config_name.casefold()
@@ -405,7 +416,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": "ConfigCog"
             await ctx.send(**embed)
 
     @commands.command(aliases=get_aliases("show_config_content_raw"))
-    @only_dm_only_allowed_id(CONFIG_NAME)
+    @commands.is_owner()
     async def show_config_content_raw(self, ctx: commands.Context, config_name: str = "all"):
 
         available_configs = await self._get_available_configs()
@@ -425,26 +436,38 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": "ConfigCog"
                 embed = await self.bot.make_generic_embed(thumbnail='no_thumbnail', title=os.path.splitext(os.path.basename(APPDATA[req_config]))[0].upper(), description=f"```ini\n{readit(APPDATA[req_config])}\n```")
                 await ctx.send(**embed)
 
-    @ commands.command(aliases=get_aliases("add_alias"))
-    @only_dm_only_allowed_id(CONFIG_NAME)
+    @auto_meta_info_command(enabled=get_command_enabled("add_alias"))
+    @commands.is_owner()
+    @log_invoker(log, 'critical')
     async def add_alias(self, ctx: commands.Context, command_name: str, alias: str):
 
         self.refresh_command_aliases()
         if command_name not in self.aliases:
             await ctx.send(f"I was not able to find the command with the name '{command_name}'")
             return
-        variant_aliases = self.get_alias_variations(alias)
-        if any(mod_alias in self.all_command_aliases for mod_alias in variant_aliases):
-            await ctx.send(f"Alias '{alias}' or its standard variations ({', '.join(variant_aliases)}) are already in use, and cant be set")
+        if alias in self.all_alias_names:
+            await ctx.send(f'Alias {alias} is already in use, either on this command or any other. Cannot be set as alias, aborting!')
             return
-        for variant in variant_aliases:
-            self.aliases[command_name].append(variant)
-        self.save_command_aliases()
-        await ctx.send(f"successfully added '{alias}' and {', '.join(variant_aliases)} to the command aliases")
+        self.aliases[command_name].append(alias)
+        log.debug(pformat(self.aliases))
+        await self.save_command_aliases()
+        await ctx.send(f"successfully added '{alias}' to the command aliases of '{command_name}'")
+        await ctx.invoke(self.bot.get_command('reload_all_ext'))
+        if self.notify_when_changed is True:
+            await self.notify()
 
 # endregion [Commands]
 
+# region [Helper]
+
+    async def notify(self, event, event_context):
+        pass
+
+
+# endregion[Helper]
+
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.name}({self.bot.user.name})"
@@ -459,4 +482,4 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(ConfigCog(bot))
+    bot.add_cog(attribute_checker(ConfigCog(bot)))
