@@ -9,6 +9,7 @@ from datetime import datetime
 import asyncio
 from configparser import ConfigParser, NoOptionError, NoSectionError
 from collections import namedtuple
+from typing import List, Set, Tuple
 from textwrap import dedent
 from pprint import pprint, pformat
 # * Third Party Imports --------------------------------------------------------------------------------->
@@ -37,6 +38,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.special_characters im
 from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
+from antipetros_discordbot.auxiliary_classes.for_cogs.aux_config_cog import AddedAliasChangeEvent
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion[Imports]
@@ -96,7 +98,9 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
                              "2021-02-06 05:24:31",
                              "87f320af11ad9e4bd1743d9809c3af554bedab8efe405cd81309088960efddba539c3a892101943902733d783835373760c8aabbcc2409db9403366373891baf")}
     required_config_data = dedent("""
-                                  notify_when_changed = no
+                                  notify_when_changed = yes
+                                  notify_via = bot-testing
+                                  notify_roles = call
                                 """)
     # endregion[ClassAttributes]
 
@@ -117,7 +121,6 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
         """
         standard setup async method.
@@ -137,9 +140,18 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
 
 # region [Properties]
 
+
     @property
     def notify_when_changed(self):
         return COGS_CONFIG.retrieve(self.config_name, 'notify_when_changed', typus=bool, direct_fallback=False)
+
+    @property
+    def notify_via(self):
+        return COGS_CONFIG.retrieve(self.config_name, 'notify_via', typus=str, direct_fallback='bot-testing')
+
+    @property
+    def notify_role_names(self):
+        return COGS_CONFIG.retrieve(self.config_name, 'notify_roles', typus=List[str], direct_fallback=['admin'])
 
     @property
     def all_alias_names(self):
@@ -151,6 +163,9 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
 # endregion[Properties]
 
 # region [HelperMethods]
+
+    async def get_notify_roles(self):
+        return [await self.bot.role_from_string(role_name) for role_name in self.notify_role_names]
 
     async def _get_available_configs(self):  # sourcery skip: dict-comprehension
         """
@@ -437,7 +452,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
                 await ctx.send(**embed)
 
     @auto_meta_info_command(enabled=get_command_enabled("add_alias"))
-    @commands.is_owner()
+    @owner_or_admin()
     @log_invoker(log, 'critical')
     async def add_alias(self, ctx: commands.Context, command_name: str, alias: str):
 
@@ -454,20 +469,25 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
         await ctx.send(f"successfully added '{alias}' to the command aliases of '{command_name}'")
         await ctx.invoke(self.bot.get_command('reload_all_ext'))
         if self.notify_when_changed is True:
-            await self.notify()
+            await self.notify(AddedAliasChangeEvent(ctx, command_name, alias))
 
 # endregion [Commands]
 
 # region [Helper]
 
-    async def notify(self, event, event_context):
-        pass
+    async def notify(self, event):
+        if self.notify_via.casefold() == 'dm':
+            pass
+        else:
+            channel = await self.bot.channel_from_name(self.notify_via)
+            roles = await self.get_notify_roles()
+            embed_data = await event.as_embed_message()
+            await channel.send(content=' '.join(role.mention for role in roles), **embed_data)
 
 
 # endregion[Helper]
 
 # region [SpecialMethods]
-
 
     def __repr__(self):
         return f"{self.name}({self.bot.user.name})"

@@ -99,8 +99,6 @@ def auto_meta_info_command(name=None, cls=None, **attrs):
         aliases += _get_custom_aliases(command_name=command_name)
         if isinstance(func, Command):
             raise TypeError('Callback is already a command.')
-        ic(command_name)
-        ic(aliases)
         return cls(func, name=name, aliases=list(set(aliases)), ** attrs)
 
     return decorator

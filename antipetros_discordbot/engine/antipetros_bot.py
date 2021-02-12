@@ -35,6 +35,7 @@ from antipetros_discordbot.bot_support.bot_supporter import BotSupporter
 from antipetros_discordbot.utility.gidtools_functions import readit, loadjson, pathmaker, writejson, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 # endregion[Imports]
 
 
@@ -404,8 +405,14 @@ class AntiPetrosBot(commands.Bot):
             _out = f"```{syntax_highlighting}\n{_out}\n```"
         await ctx.send(_out)
 
+    def sync_channel_from_name(self, channel_name):
+        return {channel.name.casefold(): channel for channel in self.antistasi_guild.channels}.get(channel_name.casefold())
+
     async def channel_from_name(self, channel_name):
         return {channel.name.casefold(): channel for channel in self.antistasi_guild.channels}.get(channel_name.casefold())
+
+    async def channel_from_id(self, channel_id: int):
+        return {channel.id: channel for channel in self.antistasi_guild.channels}.get(channel_id)
 
     async def member_by_name(self, member_name):
         return {member.name.casefold(): member for member in self.antistasi_guild.members}.get(member_name.casefold())
@@ -446,7 +453,7 @@ class AntiPetrosBot(commands.Bot):
                 'bot_public': app_info.bot_public,
                 "bot_require_code_grant": app_info.bot_require_code_grant,
                 "summary": app_info.summary}
-
+        writejson({channel.id: channel.name for channel in self.antistasi_guild.channels}, 'all_emojis.json')
         writejson(_out, path + '.' + extension)
 
     def __repr__(self):
