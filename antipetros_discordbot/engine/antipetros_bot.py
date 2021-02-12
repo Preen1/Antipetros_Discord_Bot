@@ -326,6 +326,14 @@ class AntiPetrosBot(commands.Bot):
             if _emoji.name.casefold() == name.casefold():
                 return _emoji
 
+    async def not_implemented(self, ctx: commands.Context):
+        embed_data = await self.make_generic_embed(title='NOT IMPLEMENTED',
+                                                   description='Sorry but the command is a Placeholder and is not yet implemented',
+                                                   author='bot_author',
+                                                   footer='feature_request_footer',
+                                                   thumbnail="under_construction")
+        await ctx.send(**embed_data)
+
     @property
     def admins(self):
         role = {role.name.casefold(): role for role in self.antistasi_guild.roles}.get("admin".casefold())

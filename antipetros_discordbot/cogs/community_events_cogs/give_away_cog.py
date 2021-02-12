@@ -83,7 +83,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
     give_away_data_file = pathmaker(APPDATA['json_data'], 'give_aways.json')
     give_away_item = GiveAwayEvent
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.CRASHING,
+                'is_ready': (CogState.FEATURE_MISSING,
                              "2021-02-06 05:22:34",
                              "8afa88580ca36d0f7f103683f1fe29c200a2981113b8bb4b8ef9d52a4129de62545f1db6fd27be8c26e2fb52408b9f0f62e07faa4e23adf8e8c5d8864da389b1")}
     required_config_data = dedent("""
@@ -135,7 +135,6 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 
 # region [Loops]
 
-
     @tasks.loop(seconds=15, reconnect=True)
     async def check_give_away_ended_loop(self):
         for give_away_event in await self.give_aways:
@@ -171,7 +170,6 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 # endregion [Listener]
 
 # region [Commands]
-
 
     async def give_away_finished(self, event_item):
 
@@ -229,7 +227,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
         date_string = 'in ' + flags.get('end_date')
         end_date_time = date_parse(date_string).astimezone(timezone.utc)
         end_date_time = end_date_time.replace(second=0)
-        await ctx.message.delete()
+
         confirm_embed = await self.bot.make_generic_embed(title='Do you want to start a give away with these parameters?', fields=[self.bot.field_item('Name', give_away_title, False),
                                                                                                                                    self.bot.field_item('Number of Winners', flags.get('num_winners'), False),
                                                                                                                                    self.bot.field_item('End Date', end_date_time.strftime("%Y.%m.%d %H:%M:%S UTC"), False),
@@ -248,14 +246,26 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
             reaction, user = await self.bot.wait_for('reaction_add', timeout=300.0, check=check_confirm)
         except asyncio.TimeoutError:
             await confirm_message.delete()
-            await ctx.send('give_away initiation aborted, because of time out')
+            timeout_embed_data = await self.bot.make_generic_embed(title='Time-Out',
+                                                                   description=f'Give-away initialisation for Give-Away **"{flags.get("title")}"** aborted, because the conformation message timed out without an answer!',
+                                                                   author='not_set',
+                                                                   footer='not_set',
+                                                                   thumbnail='abort',
+                                                                   color='red')
+            await ctx.send(**timeout_embed_data, delete_after=2 * 60)
             return
         else:
             await confirm_message.delete()
             if str(reaction.emoji) == '❎':
-                await ctx.send('give_away initiation aborted, user abort')
+                canceled_embed_data = await self.bot.make_generic_embed(title='Cancelled',
+                                                                        description=f'Give-away initialisation for Give-Away **"{flags.get("title")}"** aborted, because of user cancellation!',
+                                                                        author='not_set',
+                                                                        footer='not_set',
+                                                                        thumbnail='abort',
+                                                                        color='red')
+                await ctx.send(**canceled_embed_data, delete_after=2 * 60)
                 return
-
+            await ctx.message.delete()
             embed_data = await self.bot.make_generic_embed(author='default_author',
                                                            title=flags.get('title'),
                                                            description=flags.get('start_message'),
@@ -278,13 +288,15 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
     @ allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     @ log_invoker(logger=log, level="info")
     async def abort_give_away(self, ctx):
-        pass
+        await self.bot.not_implemented(ctx)
+        return
 
     @ auto_meta_info_command(enabled=get_command_enabled("finish_give_away"))
     @ allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     @ log_invoker(logger=log, level="info")
     async def finish_give_away(self, ctx):
-        pass
+        await self.bot.not_implemented(ctx)
+        return
 
 
 # endregion [Commands]
@@ -300,6 +312,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 # endregion [Embeds]
 
 # region [HelperMethods]
+
 
     async def add_give_away(self, give_away_event):
         data = loadjson(self.give_away_data_file)
